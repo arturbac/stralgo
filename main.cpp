@@ -168,7 +168,7 @@ inline namespace function_objects
 template< strconv::integral_format_traits traits = strconv::integral_format_traits{} >
 constexpr double bar(double x) 
   {
-  if constexpr( traits.padd_with_zeros ) 
+  if constexpr( traits.padd_with == strconv::padd_with_e::zeros ) 
     return x+ 1;
   return x;
   }
@@ -176,15 +176,34 @@ constexpr double bar(double x)
 
 int main(int , char **) 
   {
-    
-  bar(3);
-  
   bar<strconv::integral_format_traits{
-      .format = strconv::format_e::hexadecimal,
       .precision = 10,
+      .format = strconv::format_e::hexadecimal,
       .char_case = strconv::char_case_e::uppercase
     }>(3);
+
+  using traits = strconv::integral_format_traits;
+  using strconv::format_e;
+  using strconv::char_case_e;
+  using strconv::prepend_sign_e;
+  using strconv::padd_with_e;
+  using strconv::include_prefix_e;
   
+  constexpr auto hex_lower = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::lowercase };
+  constexpr auto hex_upper = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::uppercase };
+  
+      {
+      constexpr uint64_t value{ 0b1100110011001100110011001100110011001100110011001100110011001ull };
+      constexpr std::string_view expected{ "0b1100110011001100110011001100110011001100110011001100110011001" };
+      char buffer_[strconv::detail::integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      auto oit = strconv::integral_to_string<traits{ .precision = 1, 
+                                                     .format = format_e::binary,
+                                                     .padd_with = padd_with_e::space,
+                                                     .include_prefix = include_prefix_e::with_prefix
+                                                      }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      }
   auto view1 = v::int2str(124);
   
   for (char i : view1 )
@@ -212,7 +231,7 @@ int main(int , char **)
   auto bits  = {v1,v2};
   auto x = bits | views::join;
 //   auto v{ ranges::join_view(v1,v2);
-  std::string res{ strconv::compose('T', " tr "sv, 1235, ':', 345.5)};
-  cout << res;
+//   std::string res{ strconv::compose('T', " tr "sv, 1235, ':', 345.5)};
+//   cout << res;
   return 0;
   }

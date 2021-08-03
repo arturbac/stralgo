@@ -122,17 +122,33 @@ namespace stralgo::detail
             break;
     return first;
     }
-    
+  struct identity_projection
+    {
+    template<typename input_value_type >
+    constexpr auto operator()( input_value_type && value ) const
+      { return std::forward<input_value_type>(value); }
+    };
   //--------------------------------------------------------------------------------------------------------
-    template<typename input_iterator, typename output_iterator, typename unary_operation,
+    template<typename input_iterator, typename output_iterator, typename unary_operation = identity_projection,
       typename = std::enable_if_t<strconcept::is_input_iterator_v<input_iterator> 
                                && strconcept::is_writable_iterator_v<output_iterator>>
       >
-    constexpr auto transform(input_iterator first, input_iterator last, output_iterator result, unary_operation unary_op)
+    constexpr auto transform(input_iterator first, input_iterator last, output_iterator result, unary_operation unary_op = {})
       {
       for (; first != last; ++first, ++result)
         *result = std::invoke(unary_op, *first);
       return result;
+      }
+      
+  //--------------------------------------------------------------------------------------------------------
+  template<typename unary_operation = identity_projection, typename output_iterator, typename value_type,
+      typename = std::enable_if_t<strconcept::is_writable_iterator_v<output_iterator>>
+      >
+    constexpr auto fill(output_iterator first, output_iterator last, value_type value, unary_operation unary_op = {} )
+      {
+      for (; first != last; ++first)
+        *first = std::invoke(unary_op, value);
+      return first;
       }
   //--------------------------------------------------------------------------------------------------------
   struct not_is_space_pred_t

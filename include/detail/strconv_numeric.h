@@ -96,10 +96,27 @@ namespace strconv::detail
     return outit;
     }
     
+  struct base_2_t
+    {
+    static constexpr unsigned base = 2;
+    static constexpr std::string_view output_prefix{"0b"};
+    static constexpr unsigned integral_to_string_max_size = 70;
+    
+    template<typename integral_type, typename char_type>
+    static constexpr integral_type convert( char_type c ) noexcept 
+      {
+      return static_cast<integral_type>( unsigned(c) - unsigned('0'));
+      }
+      
+    template<typename char_type>
+    static constexpr bool is_number( char_type c ) noexcept { return c== '0' || c == '1'; }
+    };
+    
   struct base_10_t
     {
     static constexpr unsigned base = 10u;
     static constexpr std::string_view output_prefix{};
+    static constexpr unsigned integral_to_string_max_size = 22;
     
     template<typename integral_type, typename char_type>
     static constexpr integral_type convert( char_type c ) noexcept 
@@ -115,6 +132,7 @@ namespace strconv::detail
     {
     static constexpr unsigned base = 16u;
     static constexpr std::string_view output_prefix{"0x"};
+    static constexpr unsigned integral_to_string_max_size = 12;
     
     template<typename integral_type, typename char_type>
     static constexpr integral_type convert( char_type c ) noexcept 
@@ -132,70 +150,183 @@ namespace strconv::detail
   struct base_conv_by_format<format_e::decimal>{ using type = base_10_t; };
   template<>
   struct base_conv_by_format<format_e::hexadecimal>{ using type = base_16_t; };
+  template<>
+  struct base_conv_by_format<format_e::binary>{ using type = base_2_t; };
   
   template<format_e fmt>
   using base_conv_by_format_t = typename base_conv_by_format<fmt>::type;
   
   //--------------------------------------------------------------------------------------------------------
-  inline constexpr unsigned integral_to_string_max_size = 22;
+  template<typename output_char_type>
+  struct lower_projection
+    {
+    template<typename char_type>
+    constexpr output_char_type operator()( char_type c )
+      { return stralgo::to_lower(static_cast<output_char_type>(c)); }
+    };
+    
+  template<typename output_char_type>
+  struct upper_projection
+    {
+    template<typename char_type>
+    constexpr output_char_type operator()( char_type c )
+      { return stralgo::to_upper(static_cast<output_char_type>(c)); }
+    };
+    
+  template<typename output_char_type, char_case_e char_case>
+  constexpr auto char_case_projection() 
+    {
+    if constexpr( char_case == char_case_e::lowercase)
+      return lower_projection<output_char_type>{};
+    else
+      return upper_projection<output_char_type>{};
+    }
   //--------------------------------------------------------------------------------------------------------
-  template<typename base_conv_type, typename output_iterator, typename value_type>
-  constexpr output_iterator unsigned_to_str_rev_decimal( value_type value, output_iterator oit )
+  template<typename value_type>
+  struct size_div_info_t
+    {
+    value_type divisor_ {};
+    unsigned size_ {};
+    };
+  
+  template<uint64_t base, typename value_type>
+  constexpr auto calculate_size_div_info(value_type value)
+    {
+    size_div_info_t<value_type> result{};
+    if( std::is_constant_evaluated())
+      {
+      while(value != value_type{} )
+        {
+        result.size_ += 1;
+        if( result.divisor_ != 0u)
+          result.divisor_ *= base;
+        else
+          result.divisor_ =  1;
+        value /= base;
+        }
+      }
+    else
+      {
+      if(value != value_type{})
+        {
+        result.size_ = static_cast<unsigned>(1 + std::log(std::max<value_type>(1, value))/std::log(base) );
+        result.divisor_ = static_cast<value_type>( std::pow(base, result.size_-1) );
+        }
+      }
+    
+    return result;
+    }
+    
+  ///\brief pure convertion to destination iterator
+  template<typename base_conv_type, typename projection, typename output_iterator, typename value_type>
+  constexpr output_iterator unsigned_to_str_transform_( value_type value, projection prj, size_div_info_t<value_type> size_div_info, output_iterator oit )
     {
     constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
-    do
+
+    while( size_div_info.size_ != 0 )
       {
-      value_type next_val{ static_cast<value_type>(value / base) };
-      value_type decimal { static_cast<value_type>(value - (next_val * base)) };
-      value = next_val;
-      *oit =  value_to_hex_( static_cast<uint8_t>( decimal ) );
+      value_type decimal { value / size_div_info.divisor_ };
+      value = static_cast<value_type>( value - decimal * size_div_info.divisor_);
+      size_div_info.divisor_ /= base;
+      *oit = std::invoke( prj, value_to_hex_( static_cast<uint8_t>( decimal ) ));
       ++oit;
+      --size_div_info.size_;
       }
-    while( value != 0 );
+
     return oit;
     }
   
   //--------------------------------------------------------------------------------------------------------
-  template<typename base_conv_type, typename output_iterator, typename value_type,
-    typename = std::enable_if_t<std::is_unsigned_v<value_type>
-                            && strconcept::is_writable_iterator_v<output_iterator>>
+
+    
+  template<integral_format_traits traits,
+           typename base_conv_type, typename value_type, typename output_iterator, 
+           typename = std::enable_if_t<std::is_unsigned_v<value_type>
+                                    && strconcept::is_writable_iterator_v<output_iterator>>
            >
   [[nodiscard]]
-  constexpr output_iterator unsigned_to_str_decimal( value_type value, output_iterator oit ) noexcept
+  constexpr output_iterator unsigned_to_str_decimal( value_type value, std::basic_string_view<char> sign_prefix, output_iterator oit ) noexcept
     {
     using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
+    using iter_diff_type = strconcept::iterator_difference_type<output_iterator>;
     
-    oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit,
-                        [](char pxc) { return static_cast<char_type>(pxc); } );
-    output_iterator new_end { unsigned_to_str_rev_decimal<base_conv_type>(value, oit) };
-    std::reverse( oit, new_end );
-    return new_end;
+    constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
+    auto size_div_info = calculate_size_div_info<base>(value);
+    
+    if constexpr ( traits.precision != 0 )
+      if( size_div_info.size_ == 0 )
+        {
+        size_div_info.size_ = 1;
+        size_div_info.divisor_ = 1;
+        }
+    
+    if( size_div_info.size_ != 0 )
+      {
+      constexpr char pos_sign ='+';
+      if constexpr ( traits.sign == prepend_sign_e::always ) 
+        if(sign_prefix.empty())
+           sign_prefix = std::basic_string_view<char>{ &pos_sign , 1 };
+      
+      auto projection = char_case_projection<char_type,traits.char_case>();
+      
+      auto output_prefix_size{ 0u };
+      if constexpr (traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty() )
+        output_prefix_size = base_conv_type::output_prefix.size();
+
+      //exact output size after transform
+      const auto estimated_size { sign_prefix.size() +  output_prefix_size + size_div_info.size_ };
+    
+      if constexpr ( traits.padd_with == padd_with_e::space )
+        if( estimated_size < traits.precision )
+          {
+          const auto fill_len = static_cast<iter_diff_type>(traits.precision - estimated_size);
+          oit = stralgo::detail::fill( oit, std::next(oit,fill_len), ' ');
+          }
+    
+      oit = stralgo::detail::transform( std::begin(sign_prefix), std::end(sign_prefix), oit, projection );
+
+      if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
+        oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
+      
+      if constexpr ( traits.padd_with == padd_with_e::zeros )
+        if( estimated_size < traits.precision )
+          {
+          const auto fill_len = static_cast<iter_diff_type>(traits.precision - estimated_size);
+          oit = stralgo::detail::fill( oit, std::next(oit,fill_len), '0');
+          }
+      return unsigned_to_str_transform_<base_conv_type>(value, projection, size_div_info, oit);
+      }
+    else
+      return oit;
     }
   
   //--------------------------------------------------------------------------------------------------------
-  template<typename base_conv_type, typename output_iterator, typename value_type,
-    typename = std::enable_if_t<std::is_signed_v<value_type>
-                             && strconcept::is_writable_iterator_v<output_iterator>>
+  template<integral_format_traits traits,
+           typename base_conv_type, typename output_iterator, typename value_type,
+           typename = std::enable_if_t<std::is_signed_v<value_type>
+                                    && strconcept::is_writable_iterator_v<output_iterator>>
     >
   [[nodiscard]]
   constexpr output_iterator signed_to_str_decimal( value_type value, output_iterator oit ) noexcept
     {
     using unsigned_type = std::make_unsigned_t<value_type>;
-    using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
+//     using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
     
     unsigned_type uvalue;
+    constexpr char neg_sign ='-';
+    
+    std::basic_string_view<char> sign_prefix {};
     if( value >= 0 )
       uvalue = static_cast<unsigned_type>( value );
     else
       {
-      *oit = char_type('-');
-      ++oit;
+      sign_prefix = std::basic_string_view<char>{ &neg_sign , 1 };
       uvalue = static_cast<unsigned_type>( -value );
       }
-    return unsigned_to_str_decimal<base_conv_type>(uvalue, oit);
+    return unsigned_to_str_decimal<traits,base_conv_type>(uvalue, sign_prefix, oit);
     }
   //--------------------------------------------------------------------------------------------------------
-  template<format_e output_format = format_e::decimal,
+  template<integral_format_traits traits,
            typename output_iterator, typename value_type,
            typename = std::enable_if_t<std::is_integral_v<value_type> 
                                     && strconcept::is_writable_iterator_v<output_iterator>>
@@ -203,14 +334,14 @@ namespace strconv::detail
   [[nodiscard]]
   constexpr output_iterator integral_to_string_( value_type value, output_iterator oit ) noexcept
     {
-    using base_conv_type = detail::base_conv_by_format_t<output_format>;
+    using base_conv_type = detail::base_conv_by_format_t<traits.format>;
     if constexpr (std::is_unsigned_v<value_type>)
-      return detail::unsigned_to_str_decimal<base_conv_type>(value, oit);
+      return detail::unsigned_to_str_decimal<traits,base_conv_type>(value, {}, oit);
     else
-      return detail::signed_to_str_decimal<base_conv_type>(value, oit);
+      return detail::signed_to_str_decimal<traits,base_conv_type>(value, oit);
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename char_type = char, format_e output_format = format_e::decimal, typename value_type,
+  template<typename char_type = char, integral_format_traits traits, typename value_type,
      typename string_type = strconcept::string_by_char_type_t<char_type>,
      typename = std::enable_if_t<std::is_integral_v<value_type> 
                               && strconcept::is_char_type_v<char_type>>
@@ -218,9 +349,11 @@ namespace strconv::detail
   [[nodiscard]]
   auto integral_to_string_( value_type value ) noexcept
     {
-    std::array<char_type,detail::integral_to_string_max_size> result;
+    using base_conv_type = detail::base_conv_by_format_t<traits.format>;
+    
+    std::array<char_type,base_conv_type::integral_to_string_max_size> result;
     auto oit { std::begin(result) };
-    return string_type{ oit, integral_to_string_<output_format>(value, oit) };
+    return string_type{ oit, integral_to_string_<traits>(value, oit) };
     }
   //--------------------------------------------------------------------------------------------------------
   inline constexpr uint32_t default_decimal_places = 6;
@@ -248,8 +381,9 @@ namespace strconv::detail
       }
     value = value - static_cast<float_type>(uvalue);
     //store unsigned then fraction
-    auto new_end{ unsigned_to_str_rev_decimal<base_10_t>(uvalue, it_beg) };
-    std::reverse( it_beg, new_end );
+    auto size_div_info = calculate_size_div_info<base_10_t::base>(uvalue);
+    auto new_end{ unsigned_to_str_transform_<base_10_t>(uvalue, size_div_info, it_beg) };
+
     it_beg = new_end;
     auto it_last_nzero{ new_end };
     *it_beg = char_type('.');

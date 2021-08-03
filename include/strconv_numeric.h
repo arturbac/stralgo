@@ -87,7 +87,7 @@ namespace strconv
   //--------------------------------------------------------------------------------------------------------
 
   ///\brief converts itnergral signed or unsigned type to string
-  template<format_e output_format = format_e::decimal,
+  template<integral_format_traits traits = integral_format_traits{},
            typename output_iterator, typename value_type,
            typename = std::enable_if_t<std::is_integral_v<value_type> 
                                     && strconcept::is_writable_iterator_v<output_iterator>>
@@ -95,11 +95,11 @@ namespace strconv
   [[nodiscard]]
   constexpr output_iterator integral_to_string( value_type value, output_iterator oit ) noexcept
     {
-    return detail::integral_to_string_<output_format>(value, oit );
+    return detail::integral_to_string_<traits>(value, oit );
     }
-    
+  
   ///\brief converts itnergral signed or unsigned type to string
-  template<typename char_type = char, format_e output_format = format_e::decimal, typename value_type,
+  template<typename char_type = char, integral_format_traits traits = integral_format_traits{}, typename value_type,
     typename string_type = strconcept::string_by_char_type_t<char_type>,
     typename = std::enable_if_t<std::is_integral_v<value_type>
                              && strconcept::is_char_type_v<char_type>>
@@ -107,16 +107,16 @@ namespace strconv
   [[nodiscard]]
   auto integral_to_string( value_type value ) noexcept
     {
-    return detail::integral_to_string_<char_type,output_format,value_type,string_type>(value);
+    return detail::integral_to_string_<char_type,traits,value_type,string_type>(value);
     }
     
-  template<typename char_type = char, format_e output_format = format_e::decimal, typename value_type,
+  template<typename char_type = char, integral_format_traits traits = integral_format_traits{}, typename value_type,
     typename string_type = strconcept::string_by_char_type_t<char_type>,
     typename = std::enable_if_t<std::is_integral_v<value_type>
                              && strconcept::is_char_type_v<char_type>>
           >
   auto int2str( value_type value ) noexcept
-    { return detail::integral_to_string_<char_type,output_format,value_type,string_type>(value); }
+    { return detail::integral_to_string_<char_type,traits,value_type,string_type>(value); }
   
   //--------------------------------------------------------------------------------------------------------
   ///\brief converts floating point type to string
