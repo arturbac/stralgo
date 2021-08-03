@@ -86,7 +86,7 @@ namespace strconv
     
   //--------------------------------------------------------------------------------------------------------
 
-  ///\brief converts itnergral signed or unsigned type to string
+  ///\brief converts itnergral signed or unsigned type to string using specified formating traits
   template<integral_format_traits traits = integral_format_traits{},
            typename output_iterator, typename value_type,
            typename = std::enable_if_t<std::is_integral_v<value_type> 
@@ -98,7 +98,7 @@ namespace strconv
     return detail::integral_to_string_<traits>(value, oit );
     }
   
-  ///\brief converts itnergral signed or unsigned type to string
+  ///\brief converts itnergral signed or unsigned type to string using specified formating traits
   template<typename char_type = char, integral_format_traits traits = integral_format_traits{}, typename value_type,
     typename string_type = strconcept::string_by_char_type_t<char_type>,
     typename = std::enable_if_t<std::is_integral_v<value_type>
@@ -109,7 +109,8 @@ namespace strconv
     {
     return detail::integral_to_string_<char_type,traits,value_type,string_type>(value);
     }
-    
+  
+  ///\brief converts itnergral signed or unsigned type to string using specified formating traits
   template<typename char_type = char, integral_format_traits traits = integral_format_traits{}, typename value_type,
     typename string_type = strconcept::string_by_char_type_t<char_type>,
     typename = std::enable_if_t<std::is_integral_v<value_type>
@@ -370,7 +371,7 @@ namespace strconv
     template<typename char_type, typename maybe_enum_type,
       std::enable_if_t<std::is_enum_v<maybe_enum_type>, bool> = true>
     constexpr size_t view_size( maybe_enum_type const & ) noexcept 
-      { return detail::integral_to_string_max_size + detail::default_decimal_places; }
+      { return detail::base_10_t::integral_to_string_max_size + detail::default_decimal_places; }
       
     template<typename char_type, typename string_view_type,
       std::enable_if_t< std::is_convertible_v<string_view_type, std::basic_string_view<char_type>> &&
