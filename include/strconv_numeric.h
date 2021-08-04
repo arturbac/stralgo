@@ -85,7 +85,15 @@ namespace strconv
     }
     
   //--------------------------------------------------------------------------------------------------------
-
+  ///\brief estimates size info for integral_to_string with output_iterator
+  template<integral_format_traits traits, typename value_type,
+           typename = std::enable_if_t<std::is_integral_v<value_type>>
+           >
+  constexpr auto estimate_integral_to_str( value_type value )
+    {
+    return detail::estimate_integral_to_str_<traits>(value);
+    }
+    
   ///\brief converts itnergral signed or unsigned type to string using specified formating traits
   template<integral_format_traits traits = integral_format_traits{},
            typename output_iterator, typename value_type,

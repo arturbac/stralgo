@@ -188,19 +188,24 @@ int main(int , char **)
   using strconv::prepend_sign_e;
   using strconv::padd_with_e;
   using strconv::include_prefix_e;
+  using strconv::alignment_e;
   
   constexpr auto hex_lower = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::lowercase };
   constexpr auto hex_upper = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::uppercase };
   
       {
-      constexpr uint64_t value{ 0b1100110011001100110011001100110011001100110011001100110011001ull };
-      constexpr std::string_view expected{ "0b1100110011001100110011001100110011001100110011001100110011001" };
-      char buffer_[strconv::detail::integral_to_string_max_size]{};
+
+      char buffer_[128]{};
       auto itbeg{ &buffer_[0] };
-      auto oit = strconv::integral_to_string<traits{ .precision = 1, 
-                                                     .format = format_e::binary,
+      
+      constexpr unsigned value{ 0x1ffeb3e };
+      constexpr std::string_view expected{ "+0X1FFEB3E  " };
+      auto oit = strconv::integral_to_string<traits{ .precision = 12, 
+                                                     .format = format_e::hexadecimal,
+                                                     .char_case = char_case_e::uppercase,
                                                      .padd_with = padd_with_e::space,
-                                                     .include_prefix = include_prefix_e::with_prefix
+                                                     .sign = prepend_sign_e::always,
+                                                     .alignment = alignment_e::left
                                                       }>( value, itbeg );
       std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
       }

@@ -99,6 +99,7 @@ namespace integral_to_string_test
   using strconv::prepend_sign_e;
   using strconv::padd_with_e;
   using strconv::include_prefix_e;
+  using strconv::alignment_e;
   
   inline constexpr auto hex_lower = traits{ .format = format_e::hexadecimal,
                                             .char_case = char_case_e::lowercase };
@@ -477,6 +478,46 @@ namespace integral_to_string_test
       return expected == result;
       }
     static_assert( test_unsigned_4b() );
+    
+    constexpr bool test_unsigned_4c()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr unsigned value{ 0x1ffeb3e };
+      constexpr std::string_view expected{ "+0X1FFEB3E  " };
+      auto oit = strconv::integral_to_string<traits{ .precision = 12, 
+                                                     .format = format_e::hexadecimal,
+                                                     .char_case = char_case_e::uppercase,
+                                                     .padd_with = padd_with_e::space,
+                                                     .sign = prepend_sign_e::always,
+                                                     .alignment = alignment_e::left
+                                                      }>( value, itbeg );
+                                                      
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_unsigned_4c() );
+    
+    constexpr bool test_unsigned_4d()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr unsigned value{ 0x1ffeb3e };
+      constexpr std::string_view expected{ " +0X1FFEB3E " };
+      auto oit = strconv::integral_to_string<traits{ .precision = 12, 
+                                                     .format = format_e::hexadecimal,
+                                                     .char_case = char_case_e::uppercase,
+                                                     .padd_with = padd_with_e::space,
+                                                     .sign = prepend_sign_e::always,
+                                                     .alignment = alignment_e::middle
+                                                      }>( value, itbeg );
+                                                      
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_unsigned_4d() );
   //--------------------------------------------------------------------------------------------------------
     constexpr bool test_unsigned_5()
       {
@@ -554,6 +595,7 @@ namespace integral_to_string_test
       return expected == result;
       }
     static_assert( test_unsigned_6a() );
+    
     constexpr bool test_unsigned_6b()
       {
       constexpr int64_t value{ -0x1ffeb3ef1ffeb3ll };
@@ -568,6 +610,23 @@ namespace integral_to_string_test
       return expected == result;
       }
     static_assert( test_unsigned_6b() );
+    
+    constexpr bool test_unsigned_6c()
+      {
+      constexpr int64_t value{ -0x1ffeb3ef1ffeb3ll };
+      constexpr auto expected{ L"  -0x1ffeb3ef1ffeb3   "sv };
+      wchar_t buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      auto oit = strconv::integral_to_string<traits{ .precision = 22,
+                                                     .format = format_e::hexadecimal,
+                                                     .char_case = char_case_e::lowercase,
+                                                     .sign = prepend_sign_e::only_negative,
+                                                     .alignment = alignment_e::middle
+                                                    }>( value, itbeg );
+      std::wstring_view result{ itbeg, static_cast<std::wstring_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_unsigned_6c() );
   //--------------------------------------------------------------------------------------------------------
     constexpr bool test_unsigned_9()
       {

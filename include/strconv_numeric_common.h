@@ -17,6 +17,8 @@ namespace strconv
     
   enum struct include_prefix_e : bool { no_prefix, with_prefix };
   
+  enum struct alignment_e : uint8_t { left, middle, right};
+  
   ///\brief traits for custom integral_to_string formating
   struct integral_format_traits
     {
@@ -32,5 +34,7 @@ namespace strconv
     prepend_sign_e sign             { prepend_sign_e::only_negative };
     ///\brief include prefix when defined for format ex: for hexadecimal 0x
     include_prefix_e include_prefix { include_prefix_e::with_prefix };
+    ///\brief alignment when padding with space
+    alignment_e alignment { alignment_e::right };
     };
 }

@@ -220,7 +220,9 @@ namespace strconv::detail
     
   ///\brief pure convertion of unisgned integer to string at destination iterator
   template<typename base_conv_type, typename projection, typename output_iterator, typename value_type>
-  constexpr output_iterator unsigned_to_str_transform_( value_type value, projection prj, size_div_info_t<value_type> size_div_info, output_iterator oit )
+  constexpr output_iterator unsigned_to_str_transform_( value_type value, projection prj,
+                                                        size_div_info_t<value_type> size_div_info,
+                                                        output_iterator oit )
     {
     constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
 
@@ -238,26 +240,31 @@ namespace strconv::detail
     }
   
   //--------------------------------------------------------------------------------------------------------
+  ///\brief preprocessed info for output string calculation and future formating
   template<typename value_type>
   struct estimate_info_t
     {
-    size_div_info_t<value_type> size_div_info;
-    unsigned sign_prefix_size{};
-    unsigned output_prefix_size{};
+    static_assert( std::is_unsigned_v<value_type> );
     
-    constexpr std::size_t size() const { return sign_prefix_size +  output_prefix_size + size_div_info.size_; }
+    size_div_info_t<value_type> size_div_info;
+    value_type uvalue;
+    unsigned output_prefix_size{};
+    std::optional<char> sign;
+    
+    constexpr std::size_t size() const { return (sign ? 1u : 0u) +  output_prefix_size + size_div_info.size_; }
     };
     
   ///\brief calculate required output space for intergral to string convertion
   template<integral_format_traits traits, typename value_type,
            typename = std::enable_if_t<std::is_unsigned_v<value_type>>>
-  constexpr auto estimate_unsigned_to_str_( value_type value, unsigned sign_prefix_size = 0)
+  constexpr auto estimate_unsigned_to_str_( value_type value, std::optional<char> sign = {})
     {
     using base_conv_type = detail::base_conv_by_format_t<traits.format>;
     constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
     
     estimate_info_t<value_type> result{};
     result.size_div_info = calculate_size_div_info<base>(value);
+    result.uvalue = value;
     
     if constexpr ( traits.precision != 0 )
       if( result.size_div_info.size_ == 0 )
@@ -268,12 +275,17 @@ namespace strconv::detail
         
     if( result.size_div_info.size_ != 0 )
       {
+      
       if constexpr ( traits.sign == prepend_sign_e::always ) 
-        if(sign_prefix_size == 0 )
-           sign_prefix_size = 1;
-        
-      result.sign_prefix_size = sign_prefix_size;
-    
+        {
+        if(!sign )
+          result.sign = '+';
+        else
+          result.sign = sign;
+        }
+      else
+        result.sign = sign;
+      
       if constexpr (traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty() )
         result.output_prefix_size = base_conv_type::output_prefix.size();
       }
@@ -282,65 +294,72 @@ namespace strconv::detail
     }
 
   template<integral_format_traits traits,
-           typename base_conv_type, typename value_type, typename output_iterator, 
+           typename value_type, typename output_iterator, 
            typename = std::enable_if_t<std::is_unsigned_v<value_type>
                                     && strconcept::is_writable_iterator_v<output_iterator>>
            >
   [[nodiscard]]
-  constexpr output_iterator unsigned_to_str_( value_type value, std::basic_string_view<char> sign_prefix, output_iterator oit ) noexcept
+  constexpr output_iterator unsigned_to_str_( estimate_info_t<value_type> const & est_info, output_iterator oit ) noexcept
     {
     using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
     using iter_diff_type = strconcept::iterator_difference_type<output_iterator>;
+    using base_conv_type = base_conv_by_format_t<traits.format>;
     
-    constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
-    auto size_div_info = calculate_size_div_info<base>(value);
-    
-    if constexpr ( traits.precision != 0 )
-      if( size_div_info.size_ == 0 )
-        {
-        size_div_info.size_ = 1;
-        size_div_info.divisor_ = 1;
-        }
-    
-    if( size_div_info.size_ != 0 )
+    if( est_info.size_div_info.size_ != 0 )
       {
-      constexpr char pos_sign ='+';
-      if constexpr ( traits.sign == prepend_sign_e::always ) 
-        if(sign_prefix.empty())
-           sign_prefix = std::basic_string_view<char>{ &pos_sign , 1 };
       
       auto projection = char_case_projection<char_type,traits.char_case>();
-      
-      auto output_prefix_size{ 0u };
-      if constexpr (traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty() )
-        output_prefix_size = base_conv_type::output_prefix.size();
 
-      //exact output size after transform
-      const auto estimated_size { sign_prefix.size() +  output_prefix_size + size_div_info.size_ };
-    
+      const auto estimated_size { est_info.size() };
+
       // ----------------------------
-      if constexpr ( traits.padd_with == padd_with_e::space )
+      if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::left )
+        {
         if( estimated_size < traits.precision )
           {
-          const auto fill_len = static_cast<iter_diff_type>(traits.precision - estimated_size);
-          oit = stralgo::detail::fill( oit, std::next(oit,fill_len), ' ');
+          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_size);
+          iter_diff_type left_fill;
+          if constexpr( traits.alignment == alignment_e::right )
+            left_fill = fill_len;
+          else
+            left_fill = fill_len>>1;
+          oit = stralgo::detail::fill( oit, std::next(oit, left_fill), ' ');
           }
-    
-      oit = stralgo::detail::transform( std::begin(sign_prefix), std::end(sign_prefix), oit, projection );
+        }
+        
+      if(est_info.sign)
+        {
+        *oit = std::invoke(projection, *est_info.sign);
+        ++oit;
+        }
 
       if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
         oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
       
       if constexpr ( traits.padd_with == padd_with_e::zeros )
+        {
         if( estimated_size < traits.precision )
           {
-          const auto fill_len = static_cast<iter_diff_type>(traits.precision - estimated_size);
+          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_size);
           oit = stralgo::detail::fill( oit, std::next(oit,fill_len), '0');
           }
-      return unsigned_to_str_transform_<base_conv_type>(value, projection, size_div_info, oit);
+        }
+      
+      oit = unsigned_to_str_transform_<base_conv_type>(est_info.uvalue, projection, est_info.size_div_info, oit);
+      
+      if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::right )
+        if( estimated_size < traits.precision )
+          {
+          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_size);
+          iter_diff_type right_fill;
+          if constexpr( traits.alignment == alignment_e::left )
+            right_fill = fill_len;
+          else
+            right_fill = fill_len -(fill_len>>1);
+          oit = stralgo::detail::fill( oit, std::next(oit, right_fill), ' ');
+          }
       }
-    else
-      return oit;
+    return oit;
     }
   
   //--------------------------------------------------------------------------------------------------------
@@ -350,52 +369,40 @@ namespace strconv::detail
     {
     using unsigned_type = std::make_unsigned_t<value_type>;
     unsigned_type uvalue;
-    unsigned sign_prefix_size{};
+    std::optional<char> sign;
     if( value >= 0 )
       uvalue = static_cast<unsigned_type>( value );
     else
       {
-      sign_prefix_size = 1;
+      sign = '-';
       uvalue = static_cast<unsigned_type>( -value );
       }
-    return estimate_unsigned_to_str_<traits>(uvalue, sign_prefix_size);
+    return estimate_unsigned_to_str_<traits>(uvalue, sign);
     }
     
-  //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits,
-           typename base_conv_type, typename output_iterator, typename value_type,
-           typename = std::enable_if_t<std::is_signed_v<value_type>
-                                    && strconcept::is_writable_iterator_v<output_iterator>>
-    >
-  [[nodiscard]]
-  constexpr output_iterator signed_to_str_( value_type value, output_iterator oit ) noexcept
-    {
-    using unsigned_type = std::make_unsigned_t<value_type>;
-
-    unsigned_type uvalue;
-    constexpr char neg_sign ='-';
-    
-    std::basic_string_view<char> sign_prefix {};
-    if( value >= 0 )
-      uvalue = static_cast<unsigned_type>( value );
-    else
-      {
-      sign_prefix = std::basic_string_view<char>{ &neg_sign , 1 };
-      uvalue = static_cast<unsigned_type>( -value );
-      }
-    return unsigned_to_str_<traits,base_conv_type>(uvalue, sign_prefix, oit);
-    }
   //--------------------------------------------------------------------------------------------------------
   template<integral_format_traits traits, typename value_type,
            typename = std::enable_if_t<std::is_integral_v<value_type>>
            >
-  auto estimate_integral_to_str_( value_type value )
+  constexpr auto estimate_integral_to_str_( value_type value )
     {
     if constexpr (std::is_unsigned_v<value_type>)
       return estimate_unsigned_to_str_<traits>(value, {});
     else
       return estimate_signed_to_str_<traits>(value);
     }
+  //--------------------------------------------------------------------------------------------------------
+  template<integral_format_traits traits,
+           typename output_iterator, typename unsinged_value_type,
+           typename = std::enable_if_t<strconcept::is_writable_iterator_v<output_iterator>>
+    >
+  [[nodiscard]]
+  constexpr output_iterator integral_to_string_(  estimate_info_t<unsinged_value_type> const & est_info,
+                                                 output_iterator oit ) noexcept
+    {
+    return unsigned_to_str_<traits>(est_info, oit);
+    }
+    
   //--------------------------------------------------------------------------------------------------------
   template<integral_format_traits traits,
            typename output_iterator, typename value_type,
@@ -405,12 +412,10 @@ namespace strconv::detail
   [[nodiscard]]
   constexpr output_iterator integral_to_string_( value_type value, output_iterator oit ) noexcept
     {
-    using base_conv_type = base_conv_by_format_t<traits.format>;
-    if constexpr (std::is_unsigned_v<value_type>)
-      return unsigned_to_str_<traits,base_conv_type>(value, {}, oit);
-    else
-      return signed_to_str_<traits,base_conv_type>(value, oit);
+    auto est_info { estimate_integral_to_str_<traits>(value) };
+    return integral_to_string_<traits>(est_info, oit);
     }
+
   //--------------------------------------------------------------------------------------------------------
   template<typename char_type = char, integral_format_traits traits, typename value_type,
      typename string_type = strconcept::string_by_char_type_t<char_type>,
@@ -420,9 +425,10 @@ namespace strconv::detail
   [[nodiscard]]
   auto integral_to_string_( value_type value ) noexcept
     {
-    using base_conv_type = base_conv_by_format_t<traits.format>;
+//     using base_conv_type = base_conv_by_format_t<traits.format>;
+    constexpr auto est_info { estimate_integral_to_str_<traits>(value) };
     
-    std::array<char_type,base_conv_type::integral_to_string_max_size> result;
+    std::array<char_type,est_info.size()> result; //base_conv_type::integral_to_string_max_size
     auto oit { std::begin(result) };
     return string_type{ oit, integral_to_string_<traits>(value, oit) };
     }
