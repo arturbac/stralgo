@@ -34,22 +34,6 @@ constexpr number &lt;-> string convertions with full support of unterminated str
     BOOST_TEST( expected == result );
     }
     //exmple constexpr use without buffer allocation
-    constexpr bool test_unsigned_6c()
-      {
-      constexpr int64_t value{ -0x1ffeb3ef1ffeb3ll };
-      constexpr auto expected{ L"  -0x1ffeb3ef1ffeb3   "sv };
-      wchar_t buffer_[integral_to_string_max_size]{};
-      auto itbeg{ &buffer_[0] };
-      auto oit = strconv::integral_to_string<traits{ .precision = 22,
-                                                     .format = format_e::hexadecimal,
-                                                     .char_case = char_case_e::lowercase,
-                                                     .sign = prepend_sign_e::only_negative,
-                                                     .alignment = alignment_e::middle
-                                                    }>( value, itbeg );
-      std::wstring_view result{ itbeg, static_cast<std::wstring_view::size_type>(oit-itbeg) };
-      return expected == result;
-      }
-    static_assert( test_unsigned_6c() );
     
     constexpr bool test_unsigned_9d()
       {
