@@ -19,7 +19,21 @@ constexpr number &lt;-> string convertions with full support of unterminated str
 ### integral_to_string
 
 ```C++
-    //exmple use without buffer allocation, there are functions splited into size calculatio and final conversion or direct to any string
+    //non constexpr returning string
+    using traits = strconv::integral_format_traits;
+    {
+    constexpr int64_t value{ -0x1ffeb3ef1ffeb3ll };
+    constexpr auto expected{ "  -0x1ffeb3ef1ffeb3   "sv };
+    auto result = strconv::integral_to_string<traits{ .precision = 22,
+                                                   .format = format_e::hexadecimal,
+                                                   .char_case = char_case_e::lowercase,
+                                                   .sign = prepend_sign_e::only_negative,
+                                                   .alignment = alignment_e::middle
+                                                  }>( value );
+                                                  
+    BOOST_TEST( expected == result );
+    }
+    //exmple constexpr use without buffer allocation
     constexpr bool test_unsigned_6c()
       {
       constexpr int64_t value{ -0x1ffeb3ef1ffeb3ll };
