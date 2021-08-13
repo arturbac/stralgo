@@ -107,15 +107,17 @@ namespace strconv
     }
   
   ///\brief converts itnergral signed or unsigned type to string using specified formating traits
-  template<typename char_type = char, integral_format_traits traits = integral_format_traits{}, typename value_type,
-    typename string_type = strconcept::string_by_char_type_t<char_type>,
-    typename = std::enable_if_t<std::is_integral_v<value_type>
+  template<integral_format_traits traits = integral_format_traits{},
+           typename char_type = char, 
+           typename string_type = strconcept::string_by_char_type_t<char_type>,
+           typename value_type,
+           typename = std::enable_if_t<std::is_integral_v<value_type>
                              && strconcept::is_char_type_v<char_type>>
           >
   [[nodiscard]]
   auto integral_to_string( value_type value ) noexcept
     {
-    return detail::integral_to_string_<char_type,traits,value_type,string_type>(value);
+    return detail::integral_to_string_<traits,char_type,string_type>(value);
     }
   
   ///\brief converts itnergral signed or unsigned type to string using specified formating traits

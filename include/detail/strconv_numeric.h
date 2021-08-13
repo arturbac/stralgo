@@ -265,7 +265,7 @@ namespace strconv::detail
     estimate_info_t<value_type> result{};
     result.size_div_info = calculate_size_div_info<base>(value);
     result.uvalue = value;
-    
+
     if constexpr ( traits.precision != 0 )
       if( result.size_div_info.size_ == 0 )
         {
@@ -289,7 +289,7 @@ namespace strconv::detail
       if constexpr (traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty() )
         result.output_prefix_size = base_conv_type::output_prefix.size();
       }
-      
+    
     return result;
     }
 
@@ -396,7 +396,6 @@ namespace strconv::detail
            typename output_iterator, typename unsinged_value_type,
            typename = std::enable_if_t<strconcept::is_writable_iterator_v<output_iterator>>
     >
-  [[nodiscard]]
   constexpr output_iterator integral_to_string_(  estimate_info_t<unsinged_value_type> const & est_info,
                                                  output_iterator oit ) noexcept
     {
@@ -417,20 +416,20 @@ namespace strconv::detail
     }
 
   //--------------------------------------------------------------------------------------------------------
-  template<typename char_type = char, integral_format_traits traits, typename value_type,
+  template<integral_format_traits traits, typename char_type = char,
      typename string_type = strconcept::string_by_char_type_t<char_type>,
+     typename value_type,
      typename = std::enable_if_t<std::is_integral_v<value_type> 
                               && strconcept::is_char_type_v<char_type>>
           >
   [[nodiscard]]
   auto integral_to_string_( value_type value ) noexcept
     {
-//     using base_conv_type = base_conv_by_format_t<traits.format>;
-    constexpr auto est_info { estimate_integral_to_str_<traits>(value) };
-    
-    std::array<char_type,est_info.size()> result; //base_conv_type::integral_to_string_max_size
-    auto oit { std::begin(result) };
-    return string_type{ oit, integral_to_string_<traits>(value, oit) };
+    auto est_info { estimate_integral_to_str_<traits>(value) };
+    string_type result;
+    result.resize(std::max<std::size_t>(est_info.size(),traits.precision));
+    integral_to_string_<traits>(est_info, result.data());
+    return result;
     }
   //--------------------------------------------------------------------------------------------------------
   inline constexpr uint32_t default_decimal_places = 6;
@@ -468,7 +467,7 @@ namespace strconv::detail
     //store fraction
     for(size_t dpl{decimal_places}; dpl !=0 ; --dpl)
       {
-      float_type next_fraction{value * 10};
+      float_type next_fraction{value * base_10_t::base};
       unsigned ufraction { static_cast<unsigned>( next_fraction ) };
       *it_beg = value_to_hex_( static_cast<uint8_t>( ufraction ) );
       ++it_beg;

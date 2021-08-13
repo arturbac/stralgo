@@ -1,4 +1,8 @@
 #include <strconv_numeric.h>
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MAIN
+
+#include <boost/test/unit_test.hpp>
 
 using namespace std::literals::string_view_literals;
 
@@ -91,16 +95,18 @@ namespace calculate_size_div_info_test
     static_assert( strconv::detail::calculate_size_div_info<16>(0xffffu).divisor_ == 0x1000 );
     
   }
+  
+using traits = strconv::integral_format_traits;
+using strconv::format_e;
+using strconv::char_case_e;
+using strconv::prepend_sign_e;
+using strconv::padd_with_e;
+using strconv::include_prefix_e;
+using strconv::alignment_e;
+
 namespace integral_to_string_test
 {
-  using traits = strconv::integral_format_traits;
-  using strconv::format_e;
-  using strconv::char_case_e;
-  using strconv::prepend_sign_e;
-  using strconv::padd_with_e;
-  using strconv::include_prefix_e;
-  using strconv::alignment_e;
-  
+
   inline constexpr auto hex_lower = traits{ .format = format_e::hexadecimal,
                                             .char_case = char_case_e::lowercase };
                                             
@@ -706,3 +712,42 @@ namespace integral_to_string_test
     static_assert( test_unsigned_9d() );
   //--------------------------------------------------------------------------------------------------------
 }
+struct strconv_fixture_t {};
+
+BOOST_FIXTURE_TEST_SUITE(strconv_fixture, strconv_fixture_t )
+//----------------------------------------------------------------------------------------------------------------------
+BOOST_AUTO_TEST_CASE(strconv_integral_to_string)
+{
+  using traits = strconv::integral_format_traits;
+    {
+    constexpr int64_t value{ -0x1ffeb3ef1ffeb3ll };
+    constexpr auto expected{ "  -0x1ffeb3ef1ffeb3   "sv };
+    auto result = strconv::integral_to_string<traits{ .precision = 22,
+                                                   .format = format_e::hexadecimal,
+                                                   .char_case = char_case_e::lowercase,
+                                                   .sign = prepend_sign_e::only_negative,
+                                                   .alignment = alignment_e::middle
+                                                  }>( value );
+                                                  
+    BOOST_TEST( expected == result );
+    }
+    {
+    constexpr unsigned value{ 0 };
+    constexpr std::string_view expected{ "0" };
+    auto result = strconv::integral_to_string( value );
+    BOOST_TEST( expected == result );
+    }
+    {
+      constexpr unsigned value{ 0b1010011 };
+      constexpr std::string_view expected{ " 0b1010011" };
+      auto result = strconv::integral_to_string<traits{ .precision = 10, 
+                                                     .format = format_e::binary,
+                                                     .include_prefix = include_prefix_e::with_prefix}
+                                            >( value );
+    BOOST_TEST( expected == result );
+    }
+}
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+BOOST_AUTO_TEST_SUITE_END()
+
