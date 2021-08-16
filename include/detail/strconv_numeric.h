@@ -439,9 +439,9 @@ namespace strconv::detail
   template<typename value_type>
   struct float_estimate_info_t
     {
-    static_assert( std::is_unsigned_v<value_type> );
+    static_assert( std::is_floating_point_v<value_type> );
     
-    size_div_info_t<value_type> size_div_info;
+    size_div_info_t<uint64_t> size_div_info;
     value_type fraction;
     uint64_t uvalue;
     unsigned output_prefix_size{};
@@ -453,16 +453,15 @@ namespace strconv::detail
     constexpr std::size_t size() const { return std::max<std::size_t>(number_size(),precision); }
     };
     
-  template<float_format_traits traits, typename output_iterator, typename float_type,
-          typename = std::enable_if_t<std::is_floating_point_v<float_type> 
-                                   && strconcept::is_writable_iterator_v<output_iterator>>
+  template<float_format_traits traits, typename float_type,
+          typename = std::enable_if_t<std::is_floating_point_v<float_type>>
           >
   [[nodiscard]]
   constexpr auto estimate_float_to_string_( float_type value ) noexcept
     {
     using base_conv_type = base_conv_by_format_t<traits.format>;
     
-    float_estimate_info_t<float_type> result;
+    float_estimate_info_t<float_type> result{};
     result.precision = traits.precision;
     
     if( value >= float_type{0} )
@@ -521,89 +520,40 @@ namespace strconv::detail
                                    && strconcept::is_writable_iterator_v<output_iterator>>
           >
   [[nodiscard]]
-  constexpr output_iterator float_to_string_( float_type value, output_iterator oit ) noexcept
+  constexpr output_iterator float_to_string_( float_estimate_info_t<float_type> const & est_info, output_iterator oit ) noexcept
     {
     using base_conv_type = base_conv_by_format_t<traits.format>;
-    using unsigned_type = uint64_t;
     using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
     auto projection = char_case_projection<char_type,traits.char_case>();
-    
-    unsigned_type uvalue;
-    
-    std::optional<char_type> sign;
-    
-    if( value >= float_type{0} )
-      {
-      uvalue = static_cast<unsigned_type>( value );
-      if constexpr ( traits.sign == prepend_sign_e::always ) 
-        sign = '+';
-      }
-    else
-      {
-      sign = '-';
-      value = -value;
-      uvalue = static_cast<unsigned_type>( value );
-      }
-      
-    //store unsigned then fraction
-    auto size_div_info = calculate_size_div_info<base_conv_type::base>(uvalue);
-    if constexpr ( traits.precision != 0 )
-      if( size_div_info.size_ == 0 )
-        {
-        size_div_info.size_ = 1;
-        size_div_info.divisor_ = 1;
-        }
         
-    if(sign)
+    if(est_info.sign)
       {
-      *oit = *sign;
+      *oit = std::invoke(projection, *est_info.sign);
       ++oit;
-      }
-
-    value = value - static_cast<float_type>(uvalue);
-    
-    //calculate real decimal places
-    unsigned decimal_places = traits.decimal_places;
-    
-    if constexpr( traits.trailing_zeros == trailing_zeros_e::skip )
-      {
-      auto tmp_value{ value };
-      for( ; decimal_places !=0 && tmp_value != float_type{0}; --decimal_places)
-        {
-        float_type next_fraction{tmp_value * base_conv_type::base};
-        unsigned ufraction { static_cast<unsigned>( next_fraction ) };
-        tmp_value = next_fraction - static_cast<float_type>(ufraction);
-        }
-      decimal_places = traits.decimal_places - decimal_places;
-      }
-    else 
-      {
-      if( size_div_info.size_ == 0 && value == float_type{0})
-        decimal_places = 0;
       }
       
     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
-      if( size_div_info.size_ != 0 )
+      if( est_info.size_div_info.size_ != 0 )
         oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
     
-    oit = unsigned_to_str_transform_<base_conv_type>(uvalue, projection, size_div_info, oit);
+    oit = unsigned_to_str_transform_<base_conv_type>(est_info.uvalue, projection, est_info.size_div_info, oit);
 
-
-    if(decimal_places != 0 )
+    if(est_info.decimal_places != 0 )
       {
-      *oit = char_type('.');
+      *oit = std::invoke(projection, char_type('.'));
       ++oit;
-      }
-    //store fraction
-    for(uint32_t dpl{decimal_places}; dpl !=0 ; --dpl)
-      {
-      float_type next_fraction{value * base_conv_type::base};
-      unsigned ufraction { static_cast<unsigned>( next_fraction ) };
-      *oit = value_to_hex_( static_cast<uint8_t>( ufraction ) );
-      ++oit;
-      value = next_fraction - static_cast<float_type>(ufraction);
-      }
       
+      auto fraction { est_info.fraction };
+      //store fraction
+      for(uint32_t dpl{est_info.decimal_places}; dpl !=0 ; --dpl)
+        {
+        float_type next_fraction{fraction * base_conv_type::base};
+        unsigned ufraction { static_cast<unsigned>( next_fraction ) };
+        *oit = value_to_hex_( static_cast<uint8_t>( ufraction ) );
+        ++oit;
+        fraction = next_fraction - static_cast<float_type>(ufraction);
+        }
+      }
     return oit;
     }
     

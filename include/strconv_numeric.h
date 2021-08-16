@@ -139,7 +139,8 @@ namespace strconv
   [[nodiscard]]
   constexpr output_iterator float_to_string( float_type value, output_iterator oit ) noexcept
     {
-    return detail::float_to_string_<traits>(value,oit);
+    auto est_info{ detail::estimate_float_to_string_<traits>(value) };
+    return detail::float_to_string_<traits>(est_info,oit);
     }
     
   ///\brief converts floating point type to string
@@ -152,6 +153,7 @@ namespace strconv
   [[nodiscard]]
   auto float_to_string( value_type value ) noexcept
     {
+    
     return detail::float_to_string_<traits, char_type,string_type>(value);
     }
     
