@@ -1,5 +1,7 @@
 #pragma once
 #include <strconcept.h>
+#include <functional>
+#include <numeric>
 
 namespace stralgo::detail
 {

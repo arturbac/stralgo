@@ -2,6 +2,9 @@
 
 #include <stralgo.h>
 #include <strconv_numeric.h>
+#include <cmath>
+#include <optional>
+
 namespace strconv::detail
 {
 
