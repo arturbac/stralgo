@@ -22,7 +22,7 @@ namespace from_hex_ascii_test
     uint8_t res[7]{};
     strconv::from_hex_ascii( std::begin(input), std::end(input),  std::begin(res) );
     constexpr std::array<uint8_t,7> expected { {0xff,0x1a,0x34,0xb5,0xf3,0x00,0x27} };
-    return ranges::equal( expected, res );
+    return stralgo::detail::equal( expected.begin(), expected.end(), &res[0] );
     }
     
   static_assert( test_1() );
@@ -823,6 +823,45 @@ namespace float_to_string_test
       return expected == result;
       }
     static_assert( test_float_0c() );
+    
+    constexpr bool test_float_0d()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.0 };
+      constexpr std::string_view expected{ "+0x0.0000" };
+      auto oit = strconv::float_to_string<traits{
+                                                .precision = 1,
+                                                .decimal_places = 4,
+                                                .format = format_e::hexadecimal,
+                                                .sign = prepend_sign_e::always,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_0d() );
+    
+    constexpr bool test_float_0e()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.0 };
+      constexpr std::string_view expected{ "+0.0000" };
+      auto oit = strconv::float_to_string<traits{
+                                                .precision = 1,
+                                                .decimal_places = 4,
+                                                .format = format_e::hexadecimal,
+                                                .sign = prepend_sign_e::always,
+                                                .include_prefix = include_prefix_e::no_prefix,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_0e() );
     //----------------------------------------------------------------------------------------------------------------------
     
     constexpr bool test_float_1()
