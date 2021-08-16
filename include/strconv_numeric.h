@@ -130,9 +130,21 @@ namespace strconv
     { return detail::integral_to_string_<char_type,traits,value_type,string_type>(value); }
   
   //--------------------------------------------------------------------------------------------------------
+  template<float_format_traits traits = float_format_traits{},
+          typename output_iterator,
+          typename float_type,
+          typename = std::enable_if_t<std::is_floating_point_v<float_type> 
+                                   && strconcept::is_writable_iterator_v<output_iterator>>
+          >
+  [[nodiscard]]
+  constexpr output_iterator float_to_string( float_type value, output_iterator oit ) noexcept
+    {
+    return detail::float_to_string_<traits>(value,oit);
+    }
+    
   ///\brief converts floating point type to string
-  template<typename char_type = char, uint32_t decimal_places = detail::default_decimal_places,
-            trailing_zeros_e trailing = trailing_zeros_e::skip,
+  template<float_format_traits traits = float_format_traits{},
+            typename char_type = char,
             typename string_type = strconcept::string_by_char_type_t<char_type>,
             typename value_type,
             typename = std::enable_if_t<std::is_floating_point_v<value_type>
@@ -140,11 +152,11 @@ namespace strconv
   [[nodiscard]]
   auto float_to_string( value_type value ) noexcept
     {
-    return detail::float_to_string_<char_type,decimal_places,trailing,string_type>(value);
+    return detail::float_to_string_<traits, char_type,string_type>(value);
     }
     
-  template<typename char_type = char, uint32_t decimal_places = detail::default_decimal_places,
-            trailing_zeros_e trailing = trailing_zeros_e::skip,
+  template<float_format_traits traits = float_format_traits{},
+            typename char_type = char,
             typename string_type = strconcept::string_by_char_type_t<char_type>,
             typename value_type,
             typename = std::enable_if_t<std::is_floating_point_v<value_type>
@@ -152,7 +164,7 @@ namespace strconv
   [[nodiscard]]
   auto f2str( value_type value ) noexcept
     {
-    return detail::float_to_string_<char_type,decimal_places,trailing,string_type>(value);
+    return detail::float_to_string_<traits,char_type,string_type>(value);
     }
 
   //--------------------------------------------------------------------------------------------------------

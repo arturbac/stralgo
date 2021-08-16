@@ -182,13 +182,14 @@ int main(int , char **)
       .char_case = strconv::char_case_e::uppercase
     }>(3);
 
-  using traits = strconv::integral_format_traits;
+  using traits = strconv::float_format_traits;
   using strconv::format_e;
   using strconv::char_case_e;
   using strconv::prepend_sign_e;
   using strconv::padd_with_e;
   using strconv::include_prefix_e;
   using strconv::alignment_e;
+  using strconv::trailing_zeros_e;
   
   constexpr auto hex_lower = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::lowercase };
   constexpr auto hex_upper = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::uppercase };
@@ -198,16 +199,17 @@ int main(int , char **)
       char buffer_[128]{};
       auto itbeg{ &buffer_[0] };
       
-      constexpr unsigned value{ 0x1ffeb3e };
-      constexpr std::string_view expected{ "+0X1FFEB3E  " };
-      auto oit = strconv::integral_to_string<traits{ .precision = 12, 
-                                                     .format = format_e::hexadecimal,
-                                                     .char_case = char_case_e::uppercase,
-                                                     .padd_with = padd_with_e::space,
-                                                     .sign = prepend_sign_e::always,
-                                                     .alignment = alignment_e::left
-                                                      }>( value, itbeg );
+      constexpr double value{ 0 };
+      constexpr std::string_view expected{ "0x0.0000" };
+      auto oit = strconv::float_to_string<traits{ 
+                                                .precision = 0,
+                                                .decimal_places = 4,
+                                                .format = format_e::hexadecimal,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
       std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+
+      std::cout << result << std::endl;
       }
   auto view1 = v::int2str(124);
   

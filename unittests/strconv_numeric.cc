@@ -748,6 +748,149 @@ BOOST_AUTO_TEST_CASE(strconv_integral_to_string)
     }
 }
 //----------------------------------------------------------------------------------------------------------------------
+using strconv::trailing_zeros_e;
+
+namespace float_to_string_test
+  {
+  using traits = strconv::float_format_traits;
+  
+    //----------------------------------------------------------------------------------------------------------------------
+    constexpr bool test_float_0()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.0 };
+      constexpr std::string_view expected{ "0" };
+      auto oit = strconv::float_to_string<traits{
+                                                .decimal_places = 4,
+                                                .trailing_zeros = trailing_zeros_e::skip
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_0() );
+    
+    constexpr bool test_float_0a()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.0 };
+      constexpr std::string_view expected{ "" };
+      auto oit = strconv::float_to_string<traits{
+                                                .precision = 0,
+                                                .decimal_places = 4,
+                                                .trailing_zeros = trailing_zeros_e::skip
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_0a() );
+    
+    constexpr bool test_float_0b()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.0 };
+      constexpr std::string_view expected{ "0x0.0000" };
+      auto oit = strconv::float_to_string<traits{
+                                                .precision = 1,
+                                                .decimal_places = 4,
+                                                .format = format_e::hexadecimal,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_0b() );
+    
+    constexpr bool test_float_0c()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.0 };
+      constexpr std::string_view expected{ "" };
+      auto oit = strconv::float_to_string<traits{
+                                                .precision = 0,
+                                                .decimal_places = 4,
+                                                .format = format_e::hexadecimal,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_0c() );
+    //----------------------------------------------------------------------------------------------------------------------
+    
+    constexpr bool test_float_1()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 2.5 };
+      constexpr std::string_view expected{ "2.5" };
+      auto oit = strconv::float_to_string<traits{
+                                                .decimal_places = 4,
+                                                .trailing_zeros = trailing_zeros_e::skip
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_1() );
+    
+    constexpr bool test_float_1a()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 2.5 };
+      constexpr std::string_view expected{ "2.5000" };
+      auto oit = strconv::float_to_string<traits{
+                                                .decimal_places = 4,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_1a() );
+    //----------------------------------------------------------------------------------------------------------------------
+    
+    constexpr bool test_float_2()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.5 };
+      constexpr std::string_view expected{ "0.5" };
+      auto oit = strconv::float_to_string<traits{
+                                                .decimal_places = 4,
+                                                .trailing_zeros = trailing_zeros_e::skip
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_2() );
+    
+    constexpr bool test_float_2a()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.5 };
+      constexpr std::string_view expected{ "0.500" };
+      auto oit = strconv::float_to_string<traits{
+                                                .decimal_places = 3,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_2a() );
+    //----------------------------------------------------------------------------------------------------------------------
+  }
 //----------------------------------------------------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE_END()
 
