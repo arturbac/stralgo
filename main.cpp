@@ -193,20 +193,31 @@ int main(int , char **)
   
   constexpr auto hex_lower = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::lowercase };
   constexpr auto hex_upper = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::uppercase };
-  
+  {
+      constexpr double value{ 0.0 };
+      //constexpr std::string_view expected{ "0x0.0000" };
+      auto est_info = strconv::detail::estimate_float_to_string_<traits{
+                                                .precision = 1,
+                                                .decimal_places = 4,
+                                                .format = format_e::hexadecimal,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value);
+  std::cout << est_info.size() << std::endl;
+  }
       {
 
       char buffer_[128]{};
       auto itbeg{ &buffer_[0] };
       
-      constexpr double value{ 0 };
-      constexpr std::string_view expected{ "0x0.0000" };
-      auto oit = strconv::float_to_string<traits{ 
-                                                .precision = 0,
+     constexpr double value{ 0.5 };
+      constexpr std::string_view expected{ "       0.5" };
+      auto oit = strconv::float_to_string<traits{
+                                                .precision = 10,
                                                 .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                .alignment = alignment_e::left,
+                                                .trailing_zeros = trailing_zeros_e::skip
                                                 }>( value, itbeg );
+                                                
       std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
 
       std::cout << result << std::endl;
@@ -240,5 +251,6 @@ int main(int , char **)
 //   auto v{ ranges::join_view(v1,v2);
 //   std::string res{ strconv::compose('T', " tr "sv, 1235, ':', 345.5)};
 //   cout << res;
+//   std::to_string(45.4);
   return 0;
   }

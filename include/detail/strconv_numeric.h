@@ -452,8 +452,10 @@ namespace strconv::detail
     unsigned decimal_places{};
     std::optional<char> sign;
     
-    constexpr std::size_t number_size() const { return (sign ? 1u : 0u) +  output_prefix_size + size_div_info.size_; }
-    constexpr std::size_t size() const { return std::max<std::size_t>(number_size(),precision); }
+    constexpr std::size_t number_size() const
+       { return (sign ? 1u : 0u) + (decimal_places != 0 ? 1u :0u) +  output_prefix_size + size_div_info.size_ + decimal_places; }
+    constexpr std::size_t size() const
+       { return std::max<std::size_t>(number_size(),precision); }
     };
     
   template<float_format_traits traits, typename float_type,
@@ -527,8 +529,25 @@ namespace strconv::detail
     {
     using base_conv_type = base_conv_by_format_t<traits.format>;
     using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
+    using iter_diff_type = strconcept::iterator_difference_type<output_iterator>;
     auto projection = char_case_projection<char_type,traits.char_case>();
         
+    const auto estimated_number_size { est_info.number_size() };
+    
+    if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::left )
+      {
+      if( estimated_number_size < traits.precision )
+        {
+        iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+        iter_diff_type left_fill;
+        if constexpr( traits.alignment == alignment_e::right )
+          left_fill = fill_len;
+        else
+          left_fill = fill_len>>1;
+        oit = stralgo::detail::fill( oit, std::next(oit, left_fill), ' ');
+        }
+      }
+      
     if(est_info.sign)
       {
       *oit = std::invoke(projection, *est_info.sign);
@@ -539,6 +558,15 @@ namespace strconv::detail
       if( est_info.size_div_info.size_ != 0 )
         oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
     
+    if constexpr ( traits.padd_with == padd_with_e::zeros )
+      {
+      if( estimated_number_size < traits.precision )
+        {
+        iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+        oit = stralgo::detail::fill( oit, std::next(oit,fill_len), '0');
+        }
+      }
+        
     oit = unsigned_to_str_transform_<base_conv_type>(est_info.uvalue, projection, est_info.size_div_info, oit);
 
     if(est_info.decimal_places != 0 )
@@ -557,6 +585,19 @@ namespace strconv::detail
         fraction = next_fraction - static_cast<float_type>(ufraction);
         }
       }
+      
+    if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::right )
+      if( estimated_number_size < traits.precision )
+        {
+        iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+        iter_diff_type right_fill;
+        if constexpr( traits.alignment == alignment_e::left )
+          right_fill = fill_len;
+        else
+          right_fill = fill_len -(fill_len>>1);
+        oit = stralgo::detail::fill( oit, std::next(oit, right_fill), ' ');
+        }
+          
     return oit;
     }
     
@@ -569,8 +610,9 @@ namespace strconv::detail
   [[nodiscard]]
   auto float_to_string_( value_type value ) noexcept
     {
-    std::array<char_type,22 + traits.decimal_places + 1> result;
-    auto oit { std::begin(result) };
-    return string_type{ oit, detail::float_to_string_<traits>(value, oit)};
+    auto est_info{ detail::estimate_float_to_string_<traits>(value) };
+    string_type result;
+    result.resize(est_info.size());
+    return detail::float_to_string_<traits>(est_info, std::data(result));
     }
 }

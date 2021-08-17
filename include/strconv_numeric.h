@@ -130,6 +130,24 @@ namespace strconv
     { return detail::integral_to_string_<char_type,traits,value_type,string_type>(value); }
   
   //--------------------------------------------------------------------------------------------------------
+  
+  template<float_format_traits traits, typename float_type,
+          typename = std::enable_if_t<std::is_floating_point_v<float_type>>
+          >
+  [[nodiscard]]
+  constexpr auto estimate_float_to_string( float_type value ) noexcept
+    { return detail::estimate_float_to_string_<traits>(value); }
+  
+  template<float_format_traits traits, typename output_iterator, typename float_type,
+          typename = std::enable_if_t<std::is_floating_point_v<float_type> 
+                                   && strconcept::is_writable_iterator_v<output_iterator>>
+          >
+  [[nodiscard]]
+  constexpr output_iterator float_to_string( detail::float_estimate_info_t<float_type> const & est_info, output_iterator oit ) noexcept
+    {
+    return detail::float_to_string_<traits>(est_info,oit);
+    }
+    
   template<float_format_traits traits = float_format_traits{},
           typename output_iterator,
           typename float_type,
