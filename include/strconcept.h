@@ -82,6 +82,17 @@ namespace strconcept
   inline constexpr bool is_random_access_iterator_v = 
       std::is_convertible_v<iterator_category_t<iterator>, std::random_access_iterator_tag>;
 
+  template <typename iter, typename = void>
+  struct iterator_trait 
+    : std::iterator_traits<iter> {};
+    
+  template <typename iter>
+  struct iterator_trait<iter, std::void_t<typename iter::container_type>> 
+    : std::iterator_traits<typename iter::container_type::iterator> {};
+
+  template <typename iterator>
+  using iterator_value_type_t = typename iterator_trait<iterator>::value_type;
+  
   template< class T >
   using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
 

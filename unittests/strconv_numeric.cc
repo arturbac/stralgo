@@ -6,6 +6,22 @@
 
 using namespace std::literals::string_view_literals;
 
+namespace strconcept_tests
+  {
+  constexpr bool test_0()
+    {
+    using type = std::vector<uint32_t>;
+    return std::is_same_v<uint32_t, strconcept::iterator_value_type_t<type::iterator>>;
+    }
+    static_assert(test_0());
+    
+//   namespace test_1
+//     {
+//     using type = std::back_insert_iterator<std::vector<uint32_t>>;
+//     static_assert( std::is_same_v<uint32_t, strconcept::iterator_value_type_t<type::iterator>>);
+//     }
+//     
+  }
 
 namespace strconv_value_to_hex
   {
@@ -778,64 +794,7 @@ namespace estimate_float_to_string_test
       }
     static_assert( test_estimate_float_0a() );
     
-    constexpr bool test_estimate_float_0b()
-      {
-      constexpr double value{ 0.0 };
-      //constexpr std::string_view expected{ "0x0.0000" };
-      auto est_info = strconv::detail::estimate_float_to_string_<traits{
-                                                .precision = 1,
-                                                .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .trailing_zeros = trailing_zeros_e::preserve
-                                                }>( value);
-      return est_info.size() == 8;
-      }
-    static_assert( test_estimate_float_0b() );
-    
-    constexpr bool test_estimate_float_0c()
-      {
-      constexpr double value{ 0.0 };
 
-      auto est_info = strconv::detail::estimate_float_to_string_<traits{
-                                                .precision = 0,
-                                                .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .trailing_zeros = trailing_zeros_e::preserve
-                                                }>( value);
-      return est_info.size() == 0;
-      }
-    static_assert( test_estimate_float_0c() );
-    
-    constexpr bool test_estimate_float_0d()
-      {
-      constexpr double value{ 0.0 };
-      //constexpr std::string_view expected{ "+0x0.0000" };
-      auto est_info = strconv::detail::estimate_float_to_string_<traits{
-                                                .precision = 1,
-                                                .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .sign = prepend_sign_e::always,
-                                                .trailing_zeros = trailing_zeros_e::preserve
-                                                }>( value);
-      return est_info.size() == 9;
-      }
-    static_assert( test_estimate_float_0d() );
-    
-    constexpr bool test_estimate_float_0e()
-      {
-      constexpr double value{ 0.0 };
-      //constexpr std::string_view expected{ "+0.0000" };
-      auto est_info = strconv::detail::estimate_float_to_string_<traits{
-                                                .precision = 1,
-                                                .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .sign = prepend_sign_e::always,
-                                                .include_prefix = include_prefix_e::no_prefix,
-                                                .trailing_zeros = trailing_zeros_e::preserve
-                                                }>( value);
-      return est_info.size() == 7;
-      }
-    static_assert( test_estimate_float_0e() );
   //----------------------------------------------------------------------------------------------------------------------
     constexpr bool test_estimate_float_1()
       {
@@ -923,61 +882,6 @@ namespace float_to_string_test
       }
     static_assert( test_float_0a() );
     
-    constexpr bool test_float_0b()
-      {
-      char buffer_[integral_to_string_max_size]{};
-      auto itbeg{ &buffer_[0] };
-      
-      constexpr double value{ 0.0 };
-      constexpr std::string_view expected{ "0x0.0000" };
-      auto oit = strconv::float_to_string<traits{
-                                                .precision = 1,
-                                                .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .trailing_zeros = trailing_zeros_e::preserve
-                                                }>( value, itbeg );
-      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
-      return expected == result;
-      }
-    static_assert( test_float_0b() );
-    
-    constexpr bool test_float_0c()
-      {
-      char buffer_[integral_to_string_max_size]{};
-      auto itbeg{ &buffer_[0] };
-      
-      constexpr double value{ 0.0 };
-      constexpr std::string_view expected{ "" };
-      auto oit = strconv::float_to_string<traits{
-                                                .precision = 0,
-                                                .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .trailing_zeros = trailing_zeros_e::preserve
-                                                }>( value, itbeg );
-      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
-      return expected == result;
-      }
-    static_assert( test_float_0c() );
-    
-    constexpr bool test_float_0d()
-      {
-      char buffer_[integral_to_string_max_size]{};
-      auto itbeg{ &buffer_[0] };
-      
-      constexpr double value{ 0.0 };
-      constexpr std::string_view expected{ "+0x0.0000" };
-      auto oit = strconv::float_to_string<traits{
-                                                .precision = 1,
-                                                .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
-                                                .sign = prepend_sign_e::always,
-                                                .trailing_zeros = trailing_zeros_e::preserve
-                                                }>( value, itbeg );
-      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
-      return expected == result;
-      }
-    static_assert( test_float_0d() );
-    
     constexpr bool test_float_0e()
       {
       char buffer_[integral_to_string_max_size]{};
@@ -988,7 +892,6 @@ namespace float_to_string_test
       auto oit = strconv::float_to_string<traits{
                                                 .precision = 1,
                                                 .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
                                                 .sign = prepend_sign_e::always,
                                                 .include_prefix = include_prefix_e::no_prefix,
                                                 .trailing_zeros = trailing_zeros_e::preserve
@@ -1213,6 +1116,126 @@ namespace float_to_string_test
     //----------------------------------------------------------------------------------------------------------------------
     
     
+  }
+  
+namespace string_to_integral_test
+  {
+  using strconv::string_to_integral;
+  using namespace std::string_view_literals;
+  using strconv::input_format_e;
+  
+  template<typename integral_type,
+           input_format_e input_format = input_format_e::undetermined,
+           typename expected_type>
+  constexpr auto test( std::string_view source, expected_type expected, int end_it_offset )
+    {
+    auto [result,end_it] = string_to_integral<integral_type,input_format>(source);
+    return std::next(std::begin(source),end_it_offset) == end_it
+      && static_cast<integral_type>(expected) == result;
+    }
+  //format undetermined
+  static_assert( test<uint8_t>({}, 0u, 0 ) );
+  static_assert( test<uint8_t>("-"sv,0u,0) );
+  static_assert( test<uint8_t>("+"sv,0u,1) );
+  static_assert( test<uint8_t>("0x"sv,0u,2) );
+  static_assert( test<uint8_t>("+0x"sv,0u,3) );
+  
+  static_assert( test<int8_t>({},0,0) );
+  static_assert( test<int8_t>("-"sv,0,1) );
+  static_assert( test<int8_t>("+"sv,0,1) );
+  static_assert( test<int8_t>("0x"sv,0,2) );
+  static_assert( test<int8_t>("+0x"sv,0,3) );
+  
+  static_assert( test<uint8_t>("-1"sv,0u,0) );
+  static_assert( test<uint8_t>("255"sv,255u,3) );
+  static_assert( test<uint8_t>("0xff"sv,255u,4) );
+ 
+  static_assert( test<uint8_t>(" \t0xff 0xfe"sv,255u,6) );
+  static_assert( test<uint8_t,input_format_e::hexadecimal>(" \t0xff 0xfe"sv,255u,6) );
+  
+  static_assert( test<int8_t>("-1"sv,-1,2) );
+  static_assert( test<int8_t>("0x1f"sv, 0x1f,4) );
+  static_assert( test<int8_t>("+0x1f"sv, 0x1f,5) );
+  static_assert( test<int8_t>("-0x1f"sv,-0x1f,5) );
+  static_assert( test<int8_t>("0x7f"sv, 0x7f,4) );
+  
+  static_assert( test<uint16_t>("-1"sv,0u,0) );
+  static_assert( test<uint16_t>("255"sv,255u,3) );
+  static_assert( test<uint16_t>("0xff"sv,255u,4) );
+  static_assert( test<uint16_t>("0xFfFf"sv,0xffffu,6) );
+  
+  static_assert( test<int16_t>("-1"sv,-1,2) );
+  static_assert( test<int16_t>("32767"sv,0x7fff,5) );
+  static_assert( test<int16_t>("0x7fff"sv,0x7fff,6) );
+  static_assert( test<int16_t>("-0x7fff"sv,-0x7fff,7) );
+
+  static_assert( test<uint32_t>("0"sv,0u,1) );
+  static_assert( test<uint32_t>("+0"sv,0u,2) );
+  static_assert( test<uint32_t>("-0"sv,0u,0) );
+  static_assert( test<uint32_t>("-1"sv,0u,0) );
+  static_assert( test<uint32_t>("\t  \t-124566554 "sv,0u,0) );
+  static_assert( test<uint32_t>("\t  \t124566554 "sv,124566554u,13) );
+  static_assert( test<uint32_t>("\t  \t+124566554 "sv,124566554u,14) );
+  static_assert( test<uint32_t>("\t  \t-124566554XSCD"sv,0u,0) );
+  static_assert( test<uint32_t>("\t  \t-124566554 123432"sv,0u,0) );
+  static_assert( test<uint32_t>("\t  \t+124566554XSCD"sv,124566554u,14) );
+  static_assert( test<uint32_t>("\t  \t+124566554 123432"sv,124566554u,14) );
+  
+  static_assert( test<int32_t>("0"sv,0,1) );
+  static_assert( test<int32_t>("+0"sv,0,2) );
+  static_assert( test<int32_t>("-0"sv,0,2) );
+  static_assert( test<int32_t>(" -0"sv,0,3) );
+  static_assert( test<int32_t>("    -0"sv,0,6) );
+  static_assert( test<int32_t>("   +0"sv,0,5) );
+  static_assert( test<int32_t>( {},0,0) );
+  static_assert( test<int32_t>("1"sv,1,1) );
+  static_assert( test<int32_t>("12"sv,12,2) );
+  static_assert( test<int32_t>("124566554"sv,124566554,9) );
+  static_assert( test<int32_t>("+124566554"sv,124566554,10) );
+  static_assert( test<int32_t>("-124566554"sv,-124566554,10) );
+  static_assert( test<int32_t>("\t  \t-124566554"sv,-124566554,14) );
+  static_assert( test<int32_t>("\t  \t+124566554"sv,124566554,14) );
+  static_assert( test<int32_t>("\t  \t-124566554a"sv,-124566554,14) );
+  static_assert( test<int32_t>("\t  \t+124566554a"sv,124566554,14) );
+  static_assert( test<int32_t>("\t  \t-124566554 "sv,-124566554,14) );
+  static_assert( test<int32_t>("\t  \t+124566554 "sv,124566554,14) );
+  static_assert( test<int32_t>("\t  \t-124566554XSCD"sv,-124566554,14) );
+  static_assert( test<int32_t>("\t  \t+124566554XSCD"sv,124566554,14) );
+  static_assert( test<int32_t>("\t  \t-124566554 123432"sv,-124566554,14) );
+  static_assert( test<int32_t>("\t  \t+124566554 123432"sv,124566554,14) );
+  
+  static_assert( test<int64_t>("+0xFF"sv,0xff,5) );
+  static_assert( test<int64_t>("-0xFF3423"sv,-0xff3423,9) );
+  static_assert( test<int64_t>("\t \t 0xFF3423 342fsdv"sv,0xff3423,12) );
+  static_assert( test<int64_t>("\t \t 0x1aF3423R342fsdv"sv,0x1af3423,13) );
+  
+  static_assert( test<int64_t>("0xFF"sv,0xffu,4) );
+  static_assert( test<int64_t>("0xFF3423"sv,0xff3423u,8) );
+  static_assert( test<int64_t>("\t \t 0xFF3423 342fsdv"sv,0xff3423,12) );
+  static_assert( test<int64_t>("\t \t +0xFF3423 342fsdv"sv,0xff3423,13) );
+  static_assert( test<int64_t>("\t \t -0x1aF3423R342fsdv"sv,-0x1af3423,14) );
+  static_assert( test<int64_t>("\t \t 0XFf3423 342fsdv"sv,0xff3423,12) );
+  static_assert( test<int64_t>("\t \t +0XFF3423 342fsdv"sv,0xff3423,13) );
+  static_assert( test<int64_t>( "\t \t -0X1aF3423R342fsdv"sv,-0x1af3423,14) );
+  static_assert( test<int64_t>("\t \t +0x7fffffffffffffff"sv,  0x7fffffffffffffffll,23) );
+  static_assert( test<int64_t>("\t \t -0x7fffffffffffffff"sv,  -0x7fffffffffffffffll,23) );
+  
+  static_assert( test<uint64_t>("\t \t 0xffffffffffffffff"sv,  0xffffffffffffffffull,22) );
+  static_assert( test<uint64_t>("\t \t +0xffffffffffffffff"sv,  0xffffffffffffffffull,23) );
+  
+  //explicitly specified format decimal
+  static_assert( test<uint32_t,input_format_e::decimal>("\t  \t124566554 "sv,124566554u,13) );
+  static_assert( test<uint32_t,input_format_e::decimal>("\t  \t124566554fa "sv,124566554u,13) );
+  static_assert( test<uint32_t,input_format_e::decimal>("\t  \t124566554 54 "sv,124566554u,13) );
+  
+  //explicitly specified format hexadecimal
+  static_assert( test<int64_t,input_format_e::hexadecimal>("+0xFF"sv,0xff,5) );
+  static_assert( test<int64_t,input_format_e::hexadecimal>("-0xFF3423"sv,-0xff3423,9) );
+  static_assert( test<int64_t,input_format_e::hexadecimal>("\t \t 0xFF3423 342fsdv"sv,0xff3423,12) );
+  
+  static_assert( test<int64_t,input_format_e::hexadecimal>("+FF"sv,0xff,3) );
+  static_assert( test<int64_t,input_format_e::hexadecimal>("-FF3423"sv,-0xff3423,7) );
+  static_assert( test<int64_t,input_format_e::hexadecimal>("\t \t FF3423 342fsdv"sv,0xff3423,10) );
   }
 //----------------------------------------------------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE_END()

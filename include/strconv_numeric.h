@@ -130,7 +130,7 @@ namespace strconv
     { return detail::integral_to_string_<char_type,traits,value_type,string_type>(value); }
   
   //--------------------------------------------------------------------------------------------------------
-  
+  ///\brief estimates requires space for given value and formating traits, first pass of convertion, est_info.size() may be used to obtaion requires storage size
   template<float_format_traits traits, typename float_type,
           typename = std::enable_if_t<std::is_floating_point_v<float_type>>
           >
@@ -138,6 +138,7 @@ namespace strconv
   constexpr auto estimate_float_to_string( float_type value ) noexcept
     { return detail::estimate_float_to_string_<traits>(value); }
   
+  ///\brief converts number into string using precalculated info, final pass
   template<float_format_traits traits, typename output_iterator, typename float_type,
           typename = std::enable_if_t<std::is_floating_point_v<float_type> 
                                    && strconcept::is_writable_iterator_v<output_iterator>>
@@ -171,10 +172,10 @@ namespace strconv
   [[nodiscard]]
   auto float_to_string( value_type value ) noexcept
     {
-    
     return detail::float_to_string_<traits, char_type,string_type>(value);
     }
-    
+  
+  ///\brief converts floating point type to string, alias
   template<float_format_traits traits = float_format_traits{},
             typename char_type = char,
             typename string_type = strconcept::string_by_char_type_t<char_type>,
@@ -188,118 +189,28 @@ namespace strconv
     }
 
   //--------------------------------------------------------------------------------------------------------
-  namespace detail
+  ///\brief integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
+  ///\return pair of decoded integral value and iterator to source view pass the last parsed character
+  template<typename integral_type,
+           input_format_e input_format = input_format_e::undetermined,
+           typename string_view_type,
+           typename = std::enable_if_t< std::is_integral_v<integral_type> &&
+                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  constexpr auto string_to_integral( string_view_type str_number ) 
     {
-
-    template<typename integral_type, typename base_conv_t, typename iterator>
-    constexpr integral_type trimed_string_to_unsigned_integral( iterator beg, iterator end) 
-      {
-      using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
-      
-      integral_type total{};
-      auto it{ beg };
-
-      while( it != end )
-        {
-        char_type c { *it };
-        if(base_conv_t::is_number(c))
-          {
-          total = base_conv_t::base * total + base_conv_t:: template convert<integral_type>(c);
-          ++it;
-          }
-        else
-          break;
-        }
-      return total;
-      }
-
-    template<typename char_type>
-    constexpr bool is_hex_prefix( char_type c0, char_type c1 )
-      {
-      return c0 == char_type('0') && ( c1 == char_type('x') || c1 == char_type('X') );
-      }
-
+     return detail::string_to_integral_<integral_type,input_format>(str_number);
     }
+
   //--------------------------------------------------------------------------------------------------------
-  ///\brief unsigned integral convertion from string supports untrimed strings of decimal [+]d[n] and hexadecimal [+]0xh[n] numbers
-  template<typename integral_type, typename string_view_type,
-    std::enable_if_t< std::is_unsigned_v<integral_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>, bool> = true>
-  constexpr integral_type string_to_integral( string_view_type str_number ) 
-    {
-    using char_type = strconcept::string_view_value_type<string_view_type>;
-    auto snumber{ stralgo::trim_left(str_number) };
-    
-    auto it{ std::begin(snumber) };
-    integral_type total{};
-    if( it != std::end( snumber ) )
-      {
-      char_type c { *it };
-      if (c != char_type('-') )
-        {
-        if ( c == char_type('+'))
-          ++it;
-        
-        auto next_it{ it+1 };
-        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
-          {
-          it += 2;
-          return detail::trimed_string_to_unsigned_integral<
-                    integral_type, detail::base_16_t>( it, std::end( snumber ) );
-          }
-        else
-          return detail::trimed_string_to_unsigned_integral<
-                    integral_type, detail::base_10_t>( it, std::end( snumber ) );
-        }
-      }
-    return total;
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief signed integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
-  template<typename integral_type, typename string_view_type,
-    std::enable_if_t< std::is_signed_v<integral_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>, bool> = true>
-  constexpr integral_type string_to_integral( string_view_type str_number ) 
-    {
-    using char_type = strconcept::string_view_value_type<string_view_type>;
-    using unsigned_itegral_type = strconcept::make_unsigned_t<integral_type>;
-    
-    auto snumber{ stralgo::trim_left(str_number) };
-    integral_type total{};
-    char_type sign{};
-    auto it{ std::begin(snumber) };
-    if( it != std::end( snumber ) )
-      {
-      char_type c { *it };
-      sign = c;          // save sign indication if '-', then negative, otherwise positive 
-      if (c == char_type('-') || c == char_type('+'))
-        ++it;
-      auto next_it{ it+1 };
-      if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
-        {
-        it += 2;
-        total = static_cast<integral_type>(
-              detail::trimed_string_to_unsigned_integral<
-                  unsigned_itegral_type, detail::base_16_t>( it, std::end( snumber ) ));
-        }
-      else
-        total =  static_cast<integral_type>(
-            detail::trimed_string_to_unsigned_integral<
-                unsigned_itegral_type, detail::base_10_t>( it, std::end( snumber ) ));
-      }
-    if (sign == '-')
-      return -total;
-    else
-      return total;
-    }
-  //--------------------------------------------------------------------------------------------------------
-  //alias
-  template<typename integral_type, typename string_view_type,
-    std::enable_if_t< std::is_integral_v<integral_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>, bool> = true>
-  constexpr integral_type str2int( string_view_type str_number ) 
-    { return string_to_integral<integral_type>(str_number); }
+  ///\brief integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
+  ///\return pair of decoded integral value and iterator pass the last parsed character
+  template<typename integral_type,
+           input_format_e input_format = input_format_e::undetermined,
+           typename string_view_type,
+           typename = std::enable_if_t< std::is_integral_v<integral_type> &&
+                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  constexpr auto str2int( string_view_type str_number ) 
+    { return detail::string_to_integral_<integral_type,input_format>(str_number); }
       
   //--------------------------------------------------------------------------------------------------------
   namespace detail

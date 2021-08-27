@@ -11,6 +11,8 @@ namespace strconv
     
   enum struct format_e : uint8_t { decimal, hexadecimal, binary };
     
+  enum struct input_format_e : uint8_t { undetermined, decimal, hexadecimal };
+  
   enum struct padd_with_e : bool { space, zeros };
     
   enum struct prepend_sign_e : bool { only_negative, always };
@@ -48,9 +50,7 @@ namespace strconv
     uint16_t precision              { 1 };
     
     uint16_t decimal_places { detail::default_decimal_places };
-    
-    ///\brief output format encoding of digit numbers
-    format_e format                 { format_e::decimal };
+
     ///\brief char case whenusing hexadecimal format
     char_case_e char_case           { char_case_e::lowercase };
     ///\brief pad value with zeros or space when precision is higher than value representation

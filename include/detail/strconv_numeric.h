@@ -464,7 +464,7 @@ namespace strconv::detail
   [[nodiscard]]
   constexpr auto estimate_float_to_string_( float_type value ) noexcept
     {
-    using base_conv_type = base_conv_by_format_t<traits.format>;
+    using base_conv_type = base_conv_by_format_t<format_e::decimal>;
     
     float_estimate_info_t<float_type> result{};
     result.precision = traits.precision;
@@ -527,7 +527,7 @@ namespace strconv::detail
   [[nodiscard]]
   constexpr output_iterator float_to_string_( float_estimate_info_t<float_type> const & est_info, output_iterator oit ) noexcept
     {
-    using base_conv_type = base_conv_by_format_t<traits.format>;
+    using base_conv_type = base_conv_by_format_t<format_e::decimal>;
     using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
     using iter_diff_type = strconcept::iterator_difference_type<output_iterator>;
     auto projection = char_case_projection<char_type,traits.char_case>();
@@ -614,5 +614,150 @@ namespace strconv::detail
     string_type result;
     result.resize(est_info.size());
     return detail::float_to_string_<traits>(est_info, std::data(result));
+    }
+    
+  //--------------------------------------------------------------------------------------------------------
+  
+  template<typename integral_type, typename base_conv_t, typename iterator>
+  constexpr auto trimed_string_to_unsigned_integral( iterator beg, iterator end) 
+    {
+    using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
+    
+    integral_type total{};
+    auto it{ beg };
+
+    while( it != end )
+      {
+      char_type c { *it };
+      if(base_conv_t::is_number(c))
+        {
+        total = base_conv_t::base * total + base_conv_t:: template convert<integral_type>(c);
+        ++it;
+        }
+      else
+        break;
+      }
+    return std::make_pair(total,it);
+    }
+
+  template<typename char_type>
+  constexpr bool is_hex_prefix( char_type c0, char_type c1 )
+    {
+    return c0 == char_type('0') && ( c1 == char_type('x') || c1 == char_type('X') );
+    }
+
+  //--------------------------------------------------------------------------------------------------------
+  template<typename integral_type,
+           input_format_e input_format,
+           typename string_view_type,
+           typename = std::enable_if_t< std::is_unsigned_v<integral_type> &&
+                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  constexpr auto string_to_integral_( string_view_type str_number ) 
+    {
+    using char_type = strconcept::string_view_value_type<string_view_type>;
+    auto snumber{ stralgo::trim_left(str_number) };
+    
+    if( !snumber.empty() )
+      {
+      auto it{ std::begin(snumber) };
+      char_type c { *it };
+      if (c != char_type('-') )
+        {
+        if ( c == char_type('+'))
+          ++it;
+        
+        if constexpr (input_format == input_format_e::undetermined)
+          {
+          //if contains hex preffix assume hexadecimal
+          auto next_it{ it+1 };
+          if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+            {
+            it += 2;
+            return detail::trimed_string_to_unsigned_integral<
+                      integral_type, detail::base_16_t>( it, std::end( snumber ) );
+            }
+          else
+            return detail::trimed_string_to_unsigned_integral<
+                      integral_type, detail::base_10_t>( it, std::end( snumber ) );
+          }
+        else if constexpr( input_format == input_format_e::hexadecimal )
+          {
+          //skip hex prefix if exists
+          auto next_it{ it+1 };
+          if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+            it += 2;
+
+          return detail::trimed_string_to_unsigned_integral<
+                      integral_type, detail::base_16_t>( it, std::end( snumber ) );
+          }
+        else 
+          {
+          return detail::trimed_string_to_unsigned_integral<
+                      integral_type, detail::base_10_t>( it, std::end( snumber ) );
+          }
+        }
+      }
+    //for a case when number is negative return begin of untrimed value
+    return std::make_pair(integral_type{}, std::begin(str_number));
+    }
+    
+  //--------------------------------------------------------------------------------------------------------
+  ///\brief signed integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
+  template<typename integral_type,
+           input_format_e input_format,
+           typename string_view_type,
+    std::enable_if_t< std::is_signed_v<integral_type> &&
+                      strconcept::is_convertible_to_string_view_v<string_view_type>, bool> = true>
+  constexpr auto string_to_integral_( string_view_type str_number ) 
+    {
+    using char_type = strconcept::string_view_value_type<string_view_type>;
+    using unsigned_itegral_type = strconcept::make_unsigned_t<integral_type>;
+    
+    auto snumber{ stralgo::trim_left(str_number) };
+    integral_type total{};
+    char_type sign{};
+    auto it{ std::begin(snumber) };
+    if( it != std::end( snumber ) )
+      {
+      char_type c { *it };
+      sign = c;          // save sign indication if '-', then negative, otherwise positive 
+      if (c == char_type('-') || c == char_type('+'))
+        ++it;
+      
+      if constexpr (input_format == input_format_e::undetermined)
+        {
+        auto next_it{ it+1 };
+        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+          {
+          it += 2;
+          std::tie(total,it) = 
+                detail::trimed_string_to_unsigned_integral<
+                    unsigned_itegral_type, detail::base_16_t>( it, std::end( snumber ) );
+          }
+        else
+          std::tie(total,it) = 
+              detail::trimed_string_to_unsigned_integral<
+                  unsigned_itegral_type, detail::base_10_t>( it, std::end( snumber ) );
+        }
+      else if constexpr( input_format == input_format_e::hexadecimal )
+        {
+        //skip hex prefix if exists
+        auto next_it{ it+1 };
+        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+          it += 2;
+
+        std::tie(total,it) = detail::trimed_string_to_unsigned_integral<
+                    unsigned_itegral_type, detail::base_16_t>( it, std::end( snumber ) );
+        }
+      else 
+        {
+        std::tie(total,it) = detail::trimed_string_to_unsigned_integral<
+                    unsigned_itegral_type, detail::base_10_t>( it, std::end( snumber ) );
+        }
+      }
+    if (sign == '-')
+      return std::make_pair(static_cast<integral_type>(-total),it);
+    else
+      return std::make_pair(total,it);
     }
 }
