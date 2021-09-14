@@ -173,9 +173,16 @@ constexpr double bar(double x)
   return x;
   }
 
-
+// template<typename char_type, typename ... args_type >
+// auto preprocess( args_type const & ... args )
+//   { return std::make_tuple(strconv::detail::preconv<char_type>(args) ...);}
+  
 int main(int , char **) 
   {
+  auto res{ strconv::detail::compose_preprocess<char>('a',"sv"sv, 127.3f, 125)};
+  
+  auto strres{ strconv::compose<char>('a'," sv "sv, 127.3f, ' ', 125) };
+  
   bar<strconv::integral_format_traits{
       .precision = 10,
       .format = strconv::format_e::hexadecimal,
@@ -191,15 +198,15 @@ int main(int , char **)
   using strconv::alignment_e;
   using strconv::trailing_zeros_e;
   
-  constexpr auto hex_lower = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::lowercase };
-  constexpr auto hex_upper = traits{ .format = format_e::hexadecimal, .char_case = char_case_e::uppercase };
+  constexpr auto hex_lower = traits{  .char_case = char_case_e::lowercase };
+  constexpr auto hex_upper = traits{ .char_case = char_case_e::uppercase };
   {
       constexpr double value{ 0.0 };
       //constexpr std::string_view expected{ "0x0.0000" };
       auto est_info = strconv::detail::estimate_float_to_string_<traits{
                                                 .precision = 1,
                                                 .decimal_places = 4,
-                                                .format = format_e::hexadecimal,
+             
                                                 .trailing_zeros = trailing_zeros_e::preserve
                                                 }>( value);
   std::cout << est_info.size() << std::endl;

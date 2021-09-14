@@ -760,4 +760,359 @@ namespace strconv::detail
     else
       return std::make_pair(total,it);
     }
+    
+  //--------------------------------------------------------------------------------------------------------
+  template<typename float_type, typename base_conv_t, typename iterator>
+  constexpr float_type trimed_string_to_float( iterator beg, iterator end) 
+    {
+    using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
+    
+    float_type total{};
+    float_type fraction{};
+    constexpr float_type ibase { float_type(1) / base_conv_t::base };
+    
+    auto it{ beg };
+
+    for( ;it != end; ++it )
+      {
+      char_type c { *it };
+      if(base_conv_t::is_number(c))
+        total = base_conv_t::base * total + base_conv_t:: template convert<float_type>(c);
+      else
+        break;
+      }
+    if( it != end && *it == char_type('.'))
+      {
+      ++it;
+      float_type divider{ ibase };
+      for(;it != end; ++it )
+        {
+        char_type c { *it };
+        if(base_conv_t::is_number(c))
+          fraction = fraction + base_conv_t:: template convert<float_type>(c) * divider;
+        else
+          break;
+        divider = divider * ibase;
+        }
+      }
+    return total + fraction;
+    }
+    
+  //--------------------------------------------------------------------------------------------------------
+  template<typename float_type, typename string_view_type,
+    typename = std::enable_if_t< std::is_floating_point_v<float_type> &&
+                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  constexpr float_type string_to_float_( string_view_type str_number ) 
+    {
+    using char_type = strconcept::string_view_value_type<string_view_type>;
+    
+    auto snumber{ stralgo::trim_left(str_number) };
+    float_type total{};
+    char_type sign{};
+    auto it{ std::begin(snumber) };
+    if( it != std::end( snumber ) )
+      {
+      char_type c { *it };
+      sign = c;          // save sign indication if '-', then negative, otherwise positive 
+      if (c == char_type('-') || c == char_type('+'))
+        ++it;
+      auto next_it{ it+1 };
+      if( next_it != std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+        {
+        it += 2;
+        total = detail::trimed_string_to_float<float_type, detail::base_16_t>( it, std::end( snumber ));
+        }
+      else
+        total = detail::trimed_string_to_float<float_type, detail::base_10_t>( it, std::end( snumber ));
+      }
+    if (sign == '-')
+      return -total;
+    else
+      return total;
+    }
+    
+  //--------------------------------------------------------------------------------------------------------
+  //compose
+  //--------------------------------------------------------------------------------------------------------
+//   template<typename T, typename = void>
+//   struct conv_info_t {};
+//   
+//   template<typename maybe_char_type>
+//   struct conv_info_t<maybe_char_type, std::enable_if_t<strconcept::is_char_type_v<maybe_char_type>>> 
+//     {
+//     std::size_t view_size() const noexcept { return 1; }
+//     };
+//   
+  //preconvertion char type
+  template<typename char_type>
+  struct view_preconv_char_t
+    {
+    char_type value_;
+    constexpr std::size_t view_size() const noexcept { return 1; }
+    
+    template<typename iterator>
+    constexpr iterator transform( iterator it ) const
+      {
+      *it = value_;
+      ++it;
+      return it;
+      }
+    };
+    
+  template<typename char_type, typename maybe_char_type,
+  std::enable_if_t<strconcept::is_char_type_v<maybe_char_type>,bool> = true
+        >
+  constexpr auto preconv( maybe_char_type value )
+    {
+    return view_preconv_char_t<char_type>{ static_cast<char_type>(value) };
+    }
+      
+  //--------------------------------------------------------------------------------------------------------
+  ///preconv string_view
+  template<typename char_type>
+  struct view_preconv_string_view_t
+    {
+    std::basic_string_view<char_type> view_;
+    
+    constexpr std::size_t view_size() const noexcept { return view_.size(); }
+    
+    template<typename iterator>
+    constexpr iterator transform( iterator it ) const
+      {
+      it = std::copy(std::begin(view_),std::end(view_), it);
+      return it;
+      }
+    };
+    
+  template<typename char_type, typename string_view_type,
+  std::enable_if_t<std::is_convertible_v<string_view_type, std::basic_string_view<char_type>> &&
+    !strconcept::is_char_type_v<string_view_type> &&
+    !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
+    !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>
+        ,bool> = true >
+  constexpr auto preconv( string_view_type value )
+    {
+    return view_preconv_string_view_t<char_type>{ static_cast<std::basic_string_view<char_type>>(value) };
+    }
+      
+  //--------------------------------------------------------------------------------------------------------
+  //preconv integral
+  template< typename char_type, typename integral_type, integral_format_traits traits = integral_format_traits{}>
+  struct view_preconv_integral_t
+    {
+    using unsigned_integral_type = std::make_unsigned_t<integral_type>;
+    estimate_info_t<unsigned_integral_type> est_info_;
+
+    constexpr view_preconv_integral_t( integral_type value ) 
+        : est_info_{ detail::estimate_integral_to_str_<traits>(value) }
+      {}
+    
+    constexpr std::size_t view_size() const noexcept { return est_info_.size(); }
+    
+    template<typename iterator>
+    constexpr iterator transform( iterator oit ) const
+      {
+      return integral_to_string_<traits>(est_info_, oit);
+      }
+    };
+    
+    //
+  template<typename char_type, typename integral_type,
+    std::enable_if_t<std::is_integral_v<integral_type> 
+                 && !strconcept::is_char_type_v<integral_type>,bool> = true >
+  constexpr auto preconv( integral_type value )
+    {
+    return view_preconv_integral_t<char_type,integral_type>{ value };
+    }
+    
+  //--------------------------------------------------------------------------------------------------------
+  //preconv floating point
+  template<typename char_type, typename float_type, float_format_traits traits = float_format_traits{} >
+  struct view_preconv_float_t
+    {
+    float_estimate_info_t<float_type> est_info_;
+
+    constexpr view_preconv_float_t( float_type value ) 
+        : est_info_{ detail::estimate_float_to_string_<traits>(value) }
+      {}
+      
+    constexpr std::size_t view_size() const noexcept { return est_info_.size(); }
+    
+    template<typename iterator>
+    constexpr iterator transform( iterator oit ) const
+      {
+      return detail::float_to_string_<traits>(est_info_, oit );
+      }
+    };
+    
+  template<typename char_type, typename float_type,
+    std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
+  constexpr auto preconv( float_type value )
+    {
+    return view_preconv_float_t<char_type,float_type>{ value };
+    }
+    
+  //--------------------------------------------------------------------------------------------------------
+  // main composing
+  template<typename char_type, typename ... args_type >
+  constexpr auto compose_preprocess( args_type const & ... args )
+    { return std::make_tuple(strconv::detail::preconv<char_type>(args) ...);}
+    
+  template<typename input_argument_type, typename ... args_type >
+  constexpr auto preprocessed_count_size(input_argument_type const & preparg, args_type const & ... args) noexcept
+    {
+    if constexpr (sizeof...(args_type) != 0)
+      return preparg.view_size() + preprocessed_count_size(args...);
+    else
+      return preparg.view_size();
+    }
+    
+  template<typename char_type, typename iterator, typename input_argument_type, typename ... args_type>
+  constexpr iterator preprocessed_transform_views( iterator it, input_argument_type const & preparg, args_type const & ... args ) noexcept
+    {
+    it = preparg.transform(it);
+    if constexpr (sizeof...(args_type) != 0)
+      it = preprocessed_transform_views<char_type>(it, args ... );
+    return it;
+    }
+  
+  template<typename char_type = char, typename ... input_argument_type_n>
+  [[nodiscard]]
+  auto compose_(input_argument_type_n const & ... args) noexcept
+    {
+    auto preprocessed{ detail::compose_preprocess<char>(args ...) };
+    static_assert(sizeof...(input_argument_type_n) > 1);
+    using string_type = strconcept::string_by_char_type_t<char_type>;
+    using size_type = typename string_type::size_type;
+    
+    size_type aprox_size{ static_cast<size_type>(
+        std::apply( [](auto const&... tuple_args)
+          { return preprocessed_count_size(tuple_args ...); },
+                   preprocessed))};
+    string_type result;
+    result.resize(aprox_size);
+    char_type * buff{ result.data() };
+    auto new_end {std::apply( [buff](auto const & ... tuple_args)
+          { return preprocessed_transform_views<char_type>(buff, tuple_args ...); },
+          preprocessed)};
+    
+    auto new_size{ static_cast<size_type>(std::distance(result.data(),new_end)) };
+    assert(new_size==aprox_size);
+//     assert(new_size<=aprox_size);
+//     result.resize( new_size );
+    return result;
+    }
+    
+//   //------------------------------------------------------------------------
+//   // view size aproxymation not less than required
+//   template<typename char_type, typename maybe_char_type,
+//     std::enable_if_t<strconcept::is_char_type_v<maybe_char_type>, bool> = true>
+//   constexpr size_t view_size( maybe_char_type ) noexcept { return 1u; }
+//   
+//   template<typename char_type, typename maybe_integral_type,
+//     std::enable_if_t<std::is_integral_v<maybe_integral_type> &&
+//       !strconcept::is_char_type_v<maybe_integral_type> &&
+//       std::is_signed_v<maybe_integral_type>, bool> = true>
+//   constexpr size_t view_size( maybe_integral_type const & v) noexcept 
+//     { return static_cast<size_t>(1+std::log(std::max<maybe_integral_type>(1,std::abs(v)))); }
+// 
+//   template<typename char_type, typename maybe_integral_type,
+//     std::enable_if_t<std::is_integral_v<maybe_integral_type> &&
+//       !strconcept::is_char_type_v<maybe_integral_type> &&
+//       !std::is_signed_v<maybe_integral_type>, bool> = true>
+//   constexpr size_t view_size( maybe_integral_type const & v) noexcept 
+//     { return static_cast<size_t>(1+std::log(std::max<maybe_integral_type>(1,v))); }
+//     
+//   template<typename char_type, typename maybe_float_type,
+//     std::enable_if_t<std::is_floating_point_v<maybe_float_type>, bool> = true>
+//   constexpr size_t view_size( maybe_float_type const & v ) noexcept 
+//     { return static_cast<size_t>(1+std::log(std::max<maybe_float_type>(1,std::abs(v)))) + detail::default_decimal_places; }
+//   
+//   template<typename char_type, typename maybe_enum_type,
+//     std::enable_if_t<std::is_enum_v<maybe_enum_type>, bool> = true>
+//   constexpr size_t view_size( maybe_enum_type const & ) noexcept 
+//     { return detail::base_10_t::integral_to_string_max_size + detail::default_decimal_places; }
+//     
+//   template<typename char_type, typename string_view_type,
+//     std::enable_if_t< std::is_convertible_v<string_view_type, std::basic_string_view<char_type>> &&
+//       !strconcept::is_char_type_v<string_view_type> &&
+//       !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
+//       !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>
+//       , bool> = true>
+//   constexpr size_t view_size( string_view_type const & view ) noexcept
+//      { return std::size(view); }
+//   
+//   template<typename char_type, size_t size>
+//   constexpr size_t view_size( std::array<char_type,size> const & ) noexcept 
+//     { return size; }
+//     
+//   template<typename char_type, typename input_argument_type, typename ... args_type >
+//   constexpr auto count_size(input_argument_type const & viewl, args_type const & ... args) noexcept
+//     {
+//     if constexpr (sizeof...(args_type) != 0)
+//       return view_size<char_type>(viewl) + count_size<char_type>(args...);
+//     else
+//       return view_size<char_type>(viewl);
+//     }
+//     
+//   //type convertion to any form of view
+//   template<typename char_type, typename maybe_enum_type,
+//     std::enable_if_t<std::is_enum_v<maybe_enum_type>, bool> = true>
+//   auto convert_argument( maybe_enum_type const & view ) noexcept
+//     {
+//     using underlying_type = std::underlying_type_t<maybe_enum_type>;
+//     return integral_to_string<char_type>(static_cast<underlying_type>(view));
+//     }
+//     
+//   template<typename char_type, typename maybe_integral_type,
+//     std::enable_if_t<std::is_integral_v<maybe_integral_type> &&
+//       !strconcept::is_char_type_v<maybe_integral_type>, bool> = true>
+//   auto convert_argument( maybe_integral_type const & view ) noexcept
+//     {
+//     return integral_to_string<char_type>(view);
+//     }
+//     
+//   template<typename char_type, typename maybe_float_type,
+//     std::enable_if_t<std::is_floating_point_v<maybe_float_type>, bool> = true>
+//   auto convert_argument( maybe_float_type const & view ) noexcept
+//     {
+//     return float_to_string<char_type>(view);
+//     }
+//     
+//   template<typename char_type,  typename string_view_type,
+//     std::enable_if_t< std::is_convertible_v<string_view_type, std::basic_string_view<char_type>> &&
+//       !strconcept::is_char_type_v<string_view_type> &&
+//       !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
+//       !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>
+//       , bool> = true>
+//   auto convert_argument( string_view_type const & view ) noexcept
+//     {
+//     return view;
+//     }
+//     
+//   template<typename char_type, size_t size>
+//   auto convert_argument( std::array<char_type,size> const & data ) noexcept
+//     {
+//     return std::basic_string_view<char_type>{ data.data(), size }; 
+//     }
+//     
+//   template<typename char_type, typename iterator, typename string_view_type, typename ... args_type>
+//   iterator copy_views( iterator it, string_view_type const & view_or_char_value, args_type const & ... args ) noexcept
+//     {
+//     if constexpr (strconcept::is_char_type_v<string_view_type>)
+//       {
+//       *it = view_or_char_value;
+//       ++it;
+//       if constexpr (sizeof...(args_type) != 0)
+//         it = copy_views<char_type>(it, args ... );
+//       }
+//     else
+//       {
+//       auto temporary_transformed{ convert_argument<char_type>(view_or_char_value) };
+//       it = std::copy(std::begin(temporary_transformed),std::end(temporary_transformed), it);
+//       if constexpr (sizeof...(args_type) != 0)
+//         it = copy_views<char_type>(it, args ... );
+//       }
+//     return it;
+//     }
 }
