@@ -241,6 +241,8 @@ namespace strconv
     {
     return detail::compose_(args ...);
     }
+    
+  using detail::fmt;
 //   template<typename char_type = char,
 //            typename input_argument_type, typename ... input_argument_type_n,
 //     std::enable_if_t<

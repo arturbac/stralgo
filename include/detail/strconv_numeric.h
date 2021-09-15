@@ -897,7 +897,7 @@ namespace strconv::detail
       
   //--------------------------------------------------------------------------------------------------------
   //preconv integral
-  template< typename char_type, typename integral_type, integral_format_traits traits = integral_format_traits{}>
+  template<typename integral_type, integral_format_traits traits = integral_format_traits{}>
   struct view_preconv_integral_t
     {
     using unsigned_integral_type = std::make_unsigned_t<integral_type>;
@@ -916,18 +916,32 @@ namespace strconv::detail
       }
     };
     
+  template<integral_format_traits traits, typename integral_type,
+    std::enable_if_t<std::is_integral_v<integral_type> 
+                 && !strconcept::is_char_type_v<integral_type>,bool> = true>
+  constexpr auto fmt( integral_type value )
+    {
+    return view_preconv_integral_t<integral_type,traits>{ value };
+    }
     //
   template<typename char_type, typename integral_type,
     std::enable_if_t<std::is_integral_v<integral_type> 
                  && !strconcept::is_char_type_v<integral_type>,bool> = true >
   constexpr auto preconv( integral_type value )
     {
-    return view_preconv_integral_t<char_type,integral_type>{ value };
+    return view_preconv_integral_t<integral_type>{ value };
     }
     
+  template<typename char_type, typename integral_type, integral_format_traits traits,
+    std::enable_if_t<std::is_integral_v<integral_type> 
+                 && !strconcept::is_char_type_v<integral_type>,bool> = true >
+  constexpr auto preconv( view_preconv_integral_t<integral_type,traits> value )
+    {
+    return value;
+    }
   //--------------------------------------------------------------------------------------------------------
   //preconv floating point
-  template<typename char_type, typename float_type, float_format_traits traits = float_format_traits{} >
+  template<typename float_type, float_format_traits traits = float_format_traits{} >
   struct view_preconv_float_t
     {
     float_estimate_info_t<float_type> est_info_;
@@ -945,11 +959,25 @@ namespace strconv::detail
       }
     };
     
+  template<float_format_traits traits, typename float_type,
+    std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
+  constexpr auto fmt( float_type value )
+    {
+    return view_preconv_float_t<float_type,traits>{ value };
+    }
+    
   template<typename char_type, typename float_type,
     std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
   constexpr auto preconv( float_type value )
     {
-    return view_preconv_float_t<char_type,float_type>{ value };
+    return view_preconv_float_t<float_type>{ value };
+    }
+    
+  template<typename char_type, typename float_type, float_format_traits traits,
+    std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
+  constexpr auto preconv( view_preconv_float_t<float_type,traits> value )
+    {
+    return value;
     }
     
   //--------------------------------------------------------------------------------------------------------

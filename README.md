@@ -19,6 +19,32 @@ constexpr number &lt;-> string convertions with full support of unterminated str
 ### integral_to_string
 
 ```C++
+    {
+    //main feature compose with constexpr formating traits
+    strconv::compose<char>(
+      " sv "sv,
+      127.3f,
+      ',',
+      125,
+      '[',
+      strconv::fmt<strconv::integral_format_traits{
+              .precision = 10,
+              .format = format_e::hexadecimal,
+              .char_case = char_case_e::lowercase,
+              .alignment = alignment_e::middle
+              }>(456),
+      "] ["sv,
+      strconv::fmt<strconv::float_format_traits{
+                                                .precision = 10,
+                                                .decimal_places = 2,
+                                                .alignment = alignment_e::left,
+                                                .trailing_zeros = trailing_zeros_e::skip
+                                                }>(10.46713),
+      ']'
+    ) };
+    
+    constexpr auto expected{ "127.300003,125[  0x1c8   ] [10.46     ]"sv };
+    }
     //non constexpr returning string
     using traits = strconv::integral_format_traits;
     {

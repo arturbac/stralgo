@@ -181,14 +181,6 @@ int main(int , char **)
   {
   auto res{ strconv::detail::compose_preprocess<char>('a',"sv"sv, 127.3f, 125)};
   
-  auto strres{ strconv::compose<char>('a'," sv "sv, 127.3f, ' ', 125) };
-  
-  bar<strconv::integral_format_traits{
-      .precision = 10,
-      .format = strconv::format_e::hexadecimal,
-      .char_case = strconv::char_case_e::uppercase
-    }>(3);
-
   using traits = strconv::float_format_traits;
   using strconv::format_e;
   using strconv::char_case_e;
@@ -197,6 +189,37 @@ int main(int , char **)
   using strconv::include_prefix_e;
   using strconv::alignment_e;
   using strconv::trailing_zeros_e;
+  
+  auto strres{ 
+    strconv::compose<char>(
+      " sv "sv,
+      127.3f,
+      ',',
+      125,
+      '[',
+      strconv::fmt<strconv::integral_format_traits{
+              .precision = 10,
+              .format = format_e::hexadecimal,
+              .char_case = char_case_e::lowercase,
+              .alignment = alignment_e::middle
+              }>(456),
+      "] ["sv,
+      strconv::fmt<strconv::float_format_traits{
+                                                .precision = 10,
+                                                .decimal_places = 2,
+                                                .alignment = alignment_e::left,
+                                                .trailing_zeros = trailing_zeros_e::skip
+                                                }>(10.46713),
+      ']'
+    ) };
+  std::cout << strres << std::endl;
+  bar<strconv::integral_format_traits{
+      .precision = 10,
+      .format = strconv::format_e::hexadecimal,
+      .char_case = strconv::char_case_e::uppercase
+    }>(3);
+
+
   
   constexpr auto hex_lower = traits{  .char_case = char_case_e::lowercase };
   constexpr auto hex_upper = traits{ .char_case = char_case_e::uppercase };
