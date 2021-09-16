@@ -892,6 +892,11 @@ namespace strconv::detail
     return view_preconv_string_view_t<char_type>{ static_cast<std::basic_string_view<char_type>>(value) };
     }
       
+  template<typename char_type, size_t size>
+  constexpr auto compose_preconv( std::array<char_type,size> const & data ) noexcept
+    {
+    return compose_preconv<char_type>(std::basic_string_view<char_type>{ data.data(), size });
+    }
   //--------------------------------------------------------------------------------------------------------
   //preconv integral
   template<typename integral_type, integral_format_traits traits = integral_format_traits{}>
@@ -935,6 +940,14 @@ namespace strconv::detail
   constexpr auto compose_preconv( view_preconv_integral_t<integral_type,traits> value )
     {
     return value;
+    }
+    
+  template<typename char_type, typename maybe_enum_type,
+    std::enable_if_t<std::is_enum_v<maybe_enum_type>,bool> = true >
+  constexpr auto compose_preconv( maybe_enum_type value )
+    {
+    using underlying_type = std::underlying_type_t<maybe_enum_type>;
+    return compose_preconv<char_type>( static_cast<underlying_type>(value));
     }
   //--------------------------------------------------------------------------------------------------------
   //preconv floating point
