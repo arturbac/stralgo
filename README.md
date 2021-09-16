@@ -15,36 +15,49 @@ constexpr number &lt;-> string convertions with full support of unterminated str
 * header only except some of unit tests
 
 ## examples
-
-### integral_to_string
-
+### main feature compose with constexpr formating except final allocation
 ```C++
     {
     //main feature compose with constexpr formating traits
-    strconv::compose<char>(
-      " sv "sv,
-      127.3f,
-      ',',
-      125,
-      '[',
-      strconv::fmt<strconv::integral_format_traits{
-              .precision = 10,
-              .format = format_e::hexadecimal,
-              .char_case = char_case_e::lowercase,
-              .alignment = alignment_e::middle
-              }>(456),
-      "] ["sv,
-      strconv::fmt<strconv::float_format_traits{
-                                                .precision = 10,
-                                                .decimal_places = 2,
-                                                .alignment = alignment_e::left,
-                                                .trailing_zeros = trailing_zeros_e::skip
-                                                }>(10.46713),
-      ']'
-    ) };
-    
-    constexpr auto expected{ "127.300003,125[  0x1c8   ] [10.46     ]"sv };
+  using namespace strconv;
+  
+  auto strres{ 
+   compose<char>(
+    " some view "sv,
+    127.3f, //default formatted floating point 
+    ',', ///single char
+    125, //default formatted integral number
+    '[',
+    fmt<integral_format_traits{
+            .precision = 10, //minimum number of characters
+            .format = format_e::hexadecimal, //output format encoding of digit numbers
+            .char_case = char_case_e::lowercase, //char case whenusing hexadecimal format
+            .padd_with = padd_with_e::space, //pad value with zeros or space when precision is higher than value representation
+            .sign = prepend_sign_e::only_negative, //prepend sign to result string
+            .include_prefix = include_prefix_e::with_prefix, //include prefix when defined for format ex: for hexadecimal 0x
+            .alignment = alignment_e::middle //alignment when padding with space
+            }>(456), //custom formatted integral number with traits like in integral_to_string
+    "] ["sv,
+    fmt<strconv::float_format_traits{
+                                      .precision = 10,
+                                      .decimal_places = 2,
+                                      .alignment = alignment_e::left,
+                                      .trailing_zeros = trailing_zeros_e::skip
+                                      }>(10.46713), //custom formatted floating point number with traits like in float_to_string
+    ']'
+  ) };
+  
+  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ]"sv };
     }
+    
+    ```
+    
+### integral_to_string
+
+Converting and formating integral numbers.
+Building block of compose that can be use separatly
+
+```C++
     //non constexpr returning string
     using traits = strconv::integral_format_traits;
     {
@@ -78,4 +91,55 @@ constexpr number &lt;-> string convertions with full support of unterminated str
       }
     static_assert( test_unsigned_9d() );
     
+    ```
+### string_to_integral
+
+Converting string represetation of integral numbers.
+Returns converted number value and iterator pass the end of source string view where conversion stopped
+Example as constexpr test function
+
+```C++
+  using strconv::string_to_integral;
+  using namespace std::string_view_literals;
+  using strconv::input_format_e;
+  
+  template<typename integral_type,
+           input_format_e input_format = input_format_e::undetermined,
+           typename expected_type>
+  constexpr auto test( std::string_view source, expected_type expected, int end_it_offset )
+    {
+    auto [result,end_it] = string_to_integral<integral_type,input_format>(source);
+    return std::next(std::begin(source),end_it_offset) == end_it
+      && static_cast<integral_type>(expected) == result;
+    }
+    
+  //format determined at function based on prefix
+  static_assert( test<uint16_t>("255"sv,255u,3) );
+  static_assert( test<uint8_t>(" \t0xff 0xfe"sv,255u,6) );
+  static_assert( test<int64_t>("\t \t -0x1aF3423R342fsdv"sv,-0x1af3423,14) );
+  
+  //format explicitly specified, prefix is not required
+  static_assert( test<uint8_t,input_format_e::hexadecimal>(" \t0xff 0xfe"sv,255u,6) );
+  static_assert( test<uint8_t,input_format_e::hexadecimal>(" \tff 0xfe"sv,255u,4) );
+    ```
+    
+### string_to_float
+
+Converting string represetation of float numbers.
+
+```C++
+  using strconv::string_to_float;
+  using namespace std::string_view_literals;
+  
+  template<typename float_type, typename expected_type>
+  constexpr auto test( std::string_view source, expected_type expected, int end_it_offset )
+    {
+    auto [result,end_it] = string_to_float<float_type>(source);
+    return std::next(std::begin(source),end_it_offset) == end_it
+      && static_cast<float_type>(expected) == result;
+    }
+    
+  static_assert( test<double>("10.1333"sv, 10.1333, 7 ) );
+  static_assert( test<double>("+10.1333"sv, 10.1333, 8 ) );
+  static_assert( test<double>("-10.1333"sv, -10.1333, 8 ) );
     ```

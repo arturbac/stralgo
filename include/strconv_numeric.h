@@ -214,26 +214,28 @@ namespace strconv
       
   //--------------------------------------------------------------------------------------------------------
   ///\brief signed float convertion from string supports untrimed strings of decimal notation [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
+  ///\return pair of value with pass the end iterator to source string view
   template<typename float_type, typename string_view_type,
     typename = std::enable_if_t< std::is_floating_point_v<float_type> &&
                       strconcept::is_convertible_to_string_view_v<string_view_type>>>
-  constexpr float_type string_to_float( string_view_type str_number ) 
+  constexpr auto string_to_float( string_view_type str_number ) 
     {
-    detail::string_to_float_( str_number );
+    return detail::string_to_float_<float_type>( str_number );
     }
   //--------------------------------------------------------------------------------------------------------
   //alias
   template<typename float_type, typename string_view_type,
-    std::enable_if_t< std::is_floating_point_v<float_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>, bool> = true>
-  constexpr float_type str2f( string_view_type str_number ) 
-    { return string_to_float<float_type>(str_number); }
+    typename = std::enable_if_t< std::is_floating_point_v<float_type> &&
+                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  constexpr auto str2f( string_view_type str_number ) 
+    {
+    return detail::string_to_float_<float_type>(str_number);
+    }
+    
   //--------------------------------------------------------------------------------------------------------
   //compose
   //--------------------------------------------------------------------------------------------------------
 
-
-    
   ///\brief composes a string from multiple arguments, arguments other that char/string are first converted into string representation
   template<typename char_type = char, typename ... input_argument_type_n>
   [[nodiscard]]
@@ -243,30 +245,6 @@ namespace strconv
     }
     
   using detail::fmt;
-//   template<typename char_type = char,
-//            typename input_argument_type, typename ... input_argument_type_n,
-//     std::enable_if_t<
-//       strconcept::is_char_type_v<input_argument_type> ||
-//       (std::is_convertible_v<input_argument_type, std::basic_string_view<char_type>> && 
-//             (!std::is_array_v< strconcept::remove_cvref_t<input_argument_type>> && !std::is_pointer_v< strconcept::remove_cvref_t<input_argument_type>>)) ||
-//       std::is_integral_v<input_argument_type> ||
-//       std::is_floating_point_v<input_argument_type>
-//       , bool> = true>
-//   [[nodiscard]]
-//   auto compose( input_argument_type const & view, input_argument_type_n const & ... args ) noexcept
-//     {
-//     static_assert(sizeof...(input_argument_type_n) != 0);
-//     using string_type = strconcept::string_by_char_type_t<char_type>;
-//     using size_type = typename string_type::size_type;
-//     size_type aprox_size{ static_cast<size_type>(detail::count_size<char_type>(view,args...))};
-//     string_type result;
-//     result.resize(aprox_size);
-//     char_type * buff{ result.data() };
-//     auto new_end { detail::copy_views<char_type>( buff, view, args ... ) };
-//     auto new_size{ static_cast<size_type>(std::distance(result.data(),new_end)) };
-//     assert(new_size<=aprox_size);
-//     result.resize( new_size );
-//     return result;
-//     }
+
 }
 

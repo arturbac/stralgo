@@ -1141,6 +1141,7 @@ namespace string_to_integral_test
   static_assert( test<uint8_t>("+0x"sv,0u,3) );
   
   static_assert( test<int8_t>({},0,0) );
+  static_assert( test<int8_t>(""sv,0,0) );
   static_assert( test<int8_t>("-"sv,0,1) );
   static_assert( test<int8_t>("+"sv,0,1) );
   static_assert( test<int8_t>("0x"sv,0,2) );
@@ -1152,6 +1153,7 @@ namespace string_to_integral_test
  
   static_assert( test<uint8_t>(" \t0xff 0xfe"sv,255u,6) );
   static_assert( test<uint8_t,input_format_e::hexadecimal>(" \t0xff 0xfe"sv,255u,6) );
+  static_assert( test<uint8_t,input_format_e::hexadecimal>(" \tff 0xfe"sv,255u,4) );
   
   static_assert( test<int8_t>("-1"sv,-1,2) );
   static_assert( test<int8_t>("0x1f"sv, 0x1f,4) );
@@ -1237,6 +1239,70 @@ namespace string_to_integral_test
   static_assert( test<int64_t,input_format_e::hexadecimal>("-FF3423"sv,-0xff3423,7) );
   static_assert( test<int64_t,input_format_e::hexadecimal>("\t \t FF3423 342fsdv"sv,0xff3423,10) );
   }
+namespace string_to_float_test
+  {
+  using strconv::string_to_float;
+  using namespace std::string_view_literals;
+  
+  template<typename float_type, typename expected_type>
+  constexpr auto test( std::string_view source, expected_type expected, int end_it_offset )
+    {
+    auto [result,end_it] = string_to_float<float_type>(source);
+    return std::next(std::begin(source),end_it_offset) == end_it
+      && static_cast<float_type>(expected) == result;
+    }
+
+  static_assert( test<float>({}, 0.f, 0 ) );
+ 
+  static_assert( test<float>(""sv, 0.f, 0 ) );
+  static_assert( test<double>(""sv, 0., 0 ) );
+  
+  static_assert( test<float>("0"sv, 0.f, 1 ) );
+  static_assert( test<double>("0"sv, 0., 1 ) );
+  
+  static_assert( test<float>("0."sv, 0.f, 2 ) );
+  static_assert( test<double>("0."sv, 0., 2 ) );
+  
+  static_assert( test<float>("0.1"sv, 0.1f, 3 ) );
+  static_assert( test<double>("0.1"sv, 0.1, 3 ) );
+  
+  static_assert( test<float>("0.1333"sv, 0.1333f, 6 ) );
+  static_assert( test<double>("0.1333"sv, 0.1333, 6 ) );
+  
+  static_assert( test<double>("10.1333"sv, 10.1333, 7 ) );
+  static_assert( test<double>("+10.1333"sv, 10.1333, 8 ) );
+  static_assert( test<double>("-10.1333"sv, -10.1333, 8 ) );
+  static_assert( test<double>("-110.1333"sv, -110.1333, 9 ) );
+  }
 //----------------------------------------------------------------------------------------------------------------------
+BOOST_AUTO_TEST_CASE(strconv_compose)
+{
+  auto strres{ 
+  strconv::compose<char>(
+    " some view "sv,
+    127.3f, //default formatted floating point 
+    ',', ///single char
+    125, //default formatted integral number
+    '[',
+    strconv::fmt<strconv::integral_format_traits{
+            .precision = 10,
+            .format = format_e::hexadecimal,
+            .char_case = char_case_e::lowercase,
+            .alignment = alignment_e::middle
+            }>(456), //custom formatted integral number with traits like in integral_to_string
+    "] ["sv,
+    strconv::fmt<strconv::float_format_traits{
+                                              .precision = 10,
+                                              .decimal_places = 2,
+                                              .alignment = alignment_e::left,
+                                              .trailing_zeros = trailing_zeros_e::skip
+                                              }>(10.46713), //custom formatted floating point number with traits like in float_to_string
+    ']'
+  ) };
+  
+  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ]"sv };
+  
+  BOOST_TEST( expected == strres );
+}
 BOOST_AUTO_TEST_SUITE_END()
 

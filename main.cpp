@@ -172,13 +172,24 @@ constexpr double bar(double x)
     return x+ 1;
   return x;
   }
+  
+using strconv::string_to_float;
+using namespace std::string_view_literals;
 
-// template<typename char_type, typename ... args_type >
-// auto preprocess( args_type const & ... args )
-//   { return std::make_tuple(strconv::detail::preconv<char_type>(args) ...);}
+template<typename float_type, typename expected_type>
+constexpr auto test( std::string_view source, expected_type expected, int end_it_offset )
+  {
+  auto [result,end_it] = string_to_float<float_type>(source);
+  auto expit =std::next(std::begin(source),end_it_offset);
+  return  expit == end_it
+    && static_cast<float_type>(expected) == result;
+  }
   
 int main(int , char **) 
   {
+  auto tres = test<float>(""sv, 0.f, 0 );
+  
+    
   auto res{ strconv::detail::compose_preprocess<char>('a',"sv"sv, 127.3f, 125)};
   
   using traits = strconv::float_format_traits;
