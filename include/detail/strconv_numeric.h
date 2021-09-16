@@ -859,7 +859,7 @@ namespace strconv::detail
   template<typename char_type, typename maybe_char_type,
   std::enable_if_t<strconcept::is_char_type_v<maybe_char_type>,bool> = true
         >
-  constexpr auto preconv( maybe_char_type value )
+  constexpr auto compose_preconv( maybe_char_type value )
     {
     return view_preconv_char_t<char_type>{ static_cast<char_type>(value) };
     }
@@ -887,7 +887,7 @@ namespace strconv::detail
     !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
     !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>
         ,bool> = true >
-  constexpr auto preconv( string_view_type value )
+  constexpr auto compose_preconv( string_view_type value )
     {
     return view_preconv_string_view_t<char_type>{ static_cast<std::basic_string_view<char_type>>(value) };
     }
@@ -924,7 +924,7 @@ namespace strconv::detail
   template<typename char_type, typename integral_type,
     std::enable_if_t<std::is_integral_v<integral_type> 
                  && !strconcept::is_char_type_v<integral_type>,bool> = true >
-  constexpr auto preconv( integral_type value )
+  constexpr auto compose_preconv( integral_type value )
     {
     return view_preconv_integral_t<integral_type>{ value };
     }
@@ -932,7 +932,7 @@ namespace strconv::detail
   template<typename char_type, typename integral_type, integral_format_traits traits,
     std::enable_if_t<std::is_integral_v<integral_type> 
                  && !strconcept::is_char_type_v<integral_type>,bool> = true >
-  constexpr auto preconv( view_preconv_integral_t<integral_type,traits> value )
+  constexpr auto compose_preconv( view_preconv_integral_t<integral_type,traits> value )
     {
     return value;
     }
@@ -965,14 +965,14 @@ namespace strconv::detail
     
   template<typename char_type, typename float_type,
     std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
-  constexpr auto preconv( float_type value )
+  constexpr auto compose_preconv( float_type value )
     {
     return view_preconv_float_t<float_type>{ value };
     }
     
   template<typename char_type, typename float_type, float_format_traits traits,
     std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
-  constexpr auto preconv( view_preconv_float_t<float_type,traits> value )
+  constexpr auto compose_preconv( view_preconv_float_t<float_type,traits> value )
     {
     return value;
     }
@@ -981,7 +981,7 @@ namespace strconv::detail
   // main composing
   template<typename char_type, typename ... args_type >
   constexpr auto compose_preprocess( args_type const & ... args )
-    { return std::make_tuple(strconv::detail::preconv<char_type>(args) ...);}
+    { return std::make_tuple(compose_preconv<char_type>(args) ...);}
     
   template<typename input_argument_type, typename ... args_type >
   constexpr auto preprocessed_count_size(input_argument_type const & preparg, args_type const & ... args) noexcept
