@@ -655,7 +655,13 @@ namespace strconv::detail
   constexpr auto string_to_integral_( string_view_type str_number ) 
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
-    auto snumber{ stralgo::trim_left(str_number) };
+    using view_type = std::basic_string_view<char_type>;
+    view_type view_str_number{ static_cast<view_type>(str_number) };
+    
+    auto snumber{ stralgo::trim_left(view_str_number) };
+
+    auto ret_it{ std::begin(view_str_number) };
+    integral_type result{};
     
     if( !snumber.empty() )
       {
@@ -673,11 +679,11 @@ namespace strconv::detail
           if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
             {
             it += 2;
-            return detail::trimed_string_to_unsigned_integral<
+            std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_16_t>( it, std::end( snumber ) );
             }
           else
-            return detail::trimed_string_to_unsigned_integral<
+            std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_10_t>( it, std::end( snumber ) );
           }
         else if constexpr( input_format == input_format_e::hexadecimal )
@@ -687,18 +693,18 @@ namespace strconv::detail
           if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
             it += 2;
 
-          return detail::trimed_string_to_unsigned_integral<
+          std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_16_t>( it, std::end( snumber ) );
           }
         else 
           {
-          return detail::trimed_string_to_unsigned_integral<
+          std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_10_t>( it, std::end( snumber ) );
           }
         }
       }
     //for a case when number is negative return begin of untrimed value
-    return std::make_pair(integral_type{}, std::begin(str_number));
+    return std::make_pair(result, std::next( std::begin(str_number), std::distance(std::begin(view_str_number), ret_it)) );
     }
     
   //--------------------------------------------------------------------------------------------------------
@@ -711,14 +717,21 @@ namespace strconv::detail
   constexpr auto string_to_integral_( string_view_type str_number ) 
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
+    using view_type = std::basic_string_view<char_type>;
     using unsigned_itegral_type = strconcept::make_unsigned_t<integral_type>;
     
-    auto snumber{ stralgo::trim_left(str_number) };
+    view_type view_str_number{ static_cast<view_type>(str_number) };
+    auto snumber{ stralgo::trim_left(view_str_number) };
+    
+    auto ret_it{ std::begin(view_str_number) };
     integral_type total{};
     char_type sign{};
-    auto it{ std::begin(snumber) };
-    if( it != std::end( snumber ) )
+    
+    
+    if( !snumber.empty() )
       {
+      auto it{ std::begin(snumber) };
+    
       char_type c { *it };
       sign = c;          // save sign indication if '-', then negative, otherwise positive 
       if (c == char_type('-') || c == char_type('+'))
@@ -754,13 +767,13 @@ namespace strconv::detail
         std::tie(total,it) = detail::trimed_string_to_unsigned_integral<
                     unsigned_itegral_type, detail::base_10_t>( it, std::end( snumber ) );
         }
+        
       if (sign == '-')
-        return std::make_pair(static_cast<integral_type>(-total),it);
-      else
-        return std::make_pair(total,it);
+        total = static_cast<integral_type>(-total);
+      ret_it = it;
       }
-    else //nothing to convert return begin iterator
-      return std::make_pair(total, std::begin(str_number));
+    //nothing to convert return begin iterator
+    return std::make_pair(total, std::next( std::begin(str_number), std::distance(std::begin(view_str_number), ret_it)) );
     }
     
   //--------------------------------------------------------------------------------------------------------

@@ -1239,6 +1239,16 @@ namespace string_to_integral_test
   static_assert( test<int64_t,input_format_e::hexadecimal>("-FF3423"sv,-0xff3423,7) );
   static_assert( test<int64_t,input_format_e::hexadecimal>("\t \t FF3423 342fsdv"sv,0xff3423,10) );
   }
+  
+BOOST_AUTO_TEST_CASE(strconv_string_to_integral_test)
+{
+  //Test comile string/string_view iterators on return
+  using namespace string_to_integral_test;
+  std::string source{ "\t \t 0xFF3423 342fsdv"sv };
+  auto [result,end_it] = string_to_integral<uint16_t>(source);
+  auto [result2,end_it2] = string_to_integral<int16_t>(source);
+}
+
 namespace string_to_float_test
   {
   using strconv::string_to_float;
