@@ -900,7 +900,7 @@ namespace strconv::detail
     !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
     !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>
         ,bool> = true >
-  constexpr auto compose_preconv( string_view_type value )
+  constexpr auto compose_preconv( string_view_type const & value )
     {
     return view_preconv_string_view_t<char_type>{ static_cast<std::basic_string_view<char_type>>(value) };
     }

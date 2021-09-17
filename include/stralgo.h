@@ -206,7 +206,7 @@ namespace stralgo
   //--------------------------------------------------------------------------------------------------------
   ///\brief merges many strings views or chars into one with single string buffer allocation
   template<typename ... string_view_or_char_n,
-    typename string_type = strconcept::string_by_char_type_t<typename strconcept::unpack_first<string_view_or_char_n ...>::type>,
+    typename string_type = strconcept::string_by_char_type_t<strconcept::char_type_from_view_t<typename strconcept::unpack_first<string_view_or_char_n ...>::type> >,
     typename = std::enable_if_t<detail::merge_concepts_<string_view_or_char_n...>>
     >
   [[nodiscard]]
