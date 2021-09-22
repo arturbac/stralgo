@@ -445,8 +445,8 @@ namespace strconv::detail
     static_assert( std::is_floating_point_v<value_type> );
     
     size_div_info_t<uint64_t> size_div_info;
-    value_type fraction;
     uint64_t uvalue;
+    value_type fraction;
     unsigned output_prefix_size{};
     unsigned precision{};
     unsigned decimal_places{};
@@ -513,9 +513,9 @@ namespace strconv::detail
       }
     result.decimal_places = decimal_places;
     
-    if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
-      if( result.size_div_info.size_ != 0 )
-        result.output_prefix_size = base_conv_type::output_prefix.size();
+//     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
+//       if( result.size_div_info.size_ != 0 )
+//         result.output_prefix_size = base_conv_type::output_prefix.size();
       
     return result;
     }
@@ -530,7 +530,7 @@ namespace strconv::detail
     using base_conv_type = base_conv_by_format_t<format_e::decimal>;
     using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
     using iter_diff_type = strconcept::iterator_difference_type<output_iterator>;
-    auto projection = char_case_projection<char_type,traits.char_case>();
+    auto projection = char_case_projection<char_type,char_case_e::lowercase>();
         
     const auto estimated_number_size { est_info.number_size() };
     
@@ -554,9 +554,9 @@ namespace strconv::detail
       ++oit;
       }
       
-    if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
-      if( est_info.size_div_info.size_ != 0 )
-        oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
+//     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
+//       if( est_info.size_div_info.size_ != 0 )
+//         oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
     
     if constexpr ( traits.padd_with == padd_with_e::zeros )
       {

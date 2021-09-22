@@ -893,7 +893,6 @@ namespace float_to_string_test
                                                 .precision = 1,
                                                 .decimal_places = 4,
                                                 .sign = prepend_sign_e::always,
-                                                .include_prefix = include_prefix_e::no_prefix,
                                                 .trailing_zeros = trailing_zeros_e::preserve
                                                 }>( value, itbeg );
       std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
@@ -1304,6 +1303,8 @@ BOOST_AUTO_TEST_CASE(strconv_compose)
     strconv::fmt<strconv::float_format_traits{
                                               .precision = 10,
                                               .decimal_places = 2,
+                                              .padd_with = padd_with_e::space,
+                                              .sign = prepend_sign_e::only_negative,
                                               .alignment = alignment_e::left,
                                               .trailing_zeros = trailing_zeros_e::skip
                                               }>(10.46713), //custom formatted floating point number with traits like in float_to_string

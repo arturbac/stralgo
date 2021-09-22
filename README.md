@@ -1,34 +1,41 @@
 # stralgo
-constexpr number &lt;-> string convertions with full support of unterminated string views
+constexpr number &lt;-> string composition, formating and convertions with full support of unterminated string views
+Thru years of participating in projects, string formating like vnprintf had always a downsides
+* there was no coherence between formating string and arguments, that was source of errors
+* string composition was always done at runtime even if some operations and arguments was known and could be known at compile time
+* all that operations required null terminated C strings
+* formating information for ex in vsnprintf could be easly shared/reused
 
 ## features
 
-* minimum c++17 compiler required (in development at this point constexpr unit tests require c++20)
+This code solves thise problems
+* foramting information is attached to arguments and prevents mismatching formating with number type errors at compile time
+* every convertion, composing, formatting is constexpr except allocations
 * full suport for std::string_view with not null terminated strings
+* formating traits can be declared constexpr constant and reused
+* minimum c++20 compiler required (in development at this point constexpr unit tests require c++20 and std::is_constant_evaluated() )
 * fully constexpr string to number and number to string convetions for functions that doesn't allocate (using output interators)
 * extensive number formating with traits
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
-
 
 ## installation
 
 * header only except some of unit tests
 
 ## examples
-### main feature compose with constexpr formating except final allocation
+### strconv::compose
 ```C++
     {
-    //main feature compose with constexpr formating traits
-  using namespace strconv;
+    //main feature compose with constexpr formating except final allocation
   
-  auto strres{ 
-   compose<char>(
+  std::string strres{ 
+   strconv::compose<char>(
     " some view "sv,
-    127.3f, //default formatted floating point 
+    127.3f, //default formatted floating point see float_format_traits{}
     ',', ///single char
-    125, //default formatted integral number
+    125, //default formatted integral number see integral_format_traits{}
     '[',
-    fmt<integral_format_traits{
+    strconv::fmt<integral_format_traits{
             .precision = 10, //minimum number of characters
             .format = format_e::hexadecimal, //output format encoding of digit numbers
             .char_case = char_case_e::lowercase, //char case whenusing hexadecimal format
@@ -38,11 +45,11 @@ constexpr number &lt;-> string convertions with full support of unterminated str
             .alignment = alignment_e::middle //alignment when padding with space
             }>(456), //custom formatted integral number with traits like in integral_to_string
     "] ["sv,
-    fmt<strconv::float_format_traits{
+    strconv::fmt<strconv::float_format_traits{
                                       .precision = 10,
                                       .decimal_places = 2,
-                                      .alignment = alignment_e::left,
-                                      .trailing_zeros = trailing_zeros_e::skip
+                                      .alignment = strconv::alignment_e::left,
+                                      .trailing_zeros = strconv::trailing_zeros_e::skip
                                       }>(10.46713), //custom formatted floating point number with traits like in float_to_string
     ']'
   ) };
@@ -51,8 +58,9 @@ constexpr number &lt;-> string convertions with full support of unterminated str
     }
     
     ```
-    
-### integral_to_string
+### stralgo::merge
+
+### strconv::integral_to_string
 
 Converting and formating integral numbers.
 Building block of compose that can be use separatly
@@ -92,7 +100,7 @@ Building block of compose that can be use separatly
     static_assert( test_unsigned_9d() );
     
     ```
-### string_to_integral
+### strconv::string_to_integral
 
 Converting string represetation of integral numbers.
 Returns converted number value and iterator pass the end of source string view where conversion stopped
@@ -123,7 +131,7 @@ Example as constexpr test function
   static_assert( test<uint8_t,input_format_e::hexadecimal>(" \tff 0xfe"sv,255u,4) );
     ```
     
-### string_to_float
+### strconv::string_to_float
 
 Converting string represetation of float numbers.
 
@@ -143,3 +151,5 @@ Converting string represetation of float numbers.
   static_assert( test<double>("+10.1333"sv, 10.1333, 8 ) );
   static_assert( test<double>("-10.1333"sv, -10.1333, 8 ) );
     ```
+
+### strconv::float_to_integral

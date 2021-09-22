@@ -51,14 +51,11 @@ namespace strconv
     
     uint16_t decimal_places { detail::default_decimal_places };
 
-    ///\brief char case whenusing hexadecimal format
-    char_case_e char_case           { char_case_e::lowercase };
     ///\brief pad value with zeros or space when precision is higher than value representation
     padd_with_e padd_with           { padd_with_e::space };
     ///\brief prepend sign to result string
     prepend_sign_e sign             { prepend_sign_e::only_negative };
-    ///\brief include prefix when defined for format ex: for hexadecimal 0x
-    include_prefix_e include_prefix { include_prefix_e::with_prefix };
+
     ///\brief alignment when padding with space
     alignment_e alignment           { alignment_e::right };
     
