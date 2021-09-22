@@ -3,6 +3,7 @@
 #define BOOST_TEST_MAIN
 
 #include <boost/test/unit_test.hpp>
+#include <ctime>
 
 using namespace std::literals::string_view_literals;
 
@@ -1286,6 +1287,18 @@ namespace string_to_float_test
 //----------------------------------------------------------------------------------------------------------------------
 BOOST_AUTO_TEST_CASE(strconv_compose)
 {
+  {
+  using strconv::integral_format_traits;
+  using strconv::fmt;
+  
+  constexpr integral_format_traits ptrfmt 
+    {
+    .precision = 6,
+    .format = format_e::hexadecimal,
+    .char_case = char_case_e::uppercase,
+    .padd_with = padd_with_e::zeros
+    };
+    
   auto strres{ 
   strconv::compose<char>(
     " some view "sv,
@@ -1293,14 +1306,14 @@ BOOST_AUTO_TEST_CASE(strconv_compose)
     ',', ///single char
     125, //default formatted integral number
     '[',
-    strconv::fmt<strconv::integral_format_traits{
+    fmt<integral_format_traits{
             .precision = 10,
             .format = format_e::hexadecimal,
             .char_case = char_case_e::lowercase,
             .alignment = alignment_e::middle
             }>(456), //custom formatted integral number with traits like in integral_to_string
     "] ["sv,
-    strconv::fmt<strconv::float_format_traits{
+    fmt<strconv::float_format_traits{
                                               .precision = 10,
                                               .decimal_places = 2,
                                               .padd_with = padd_with_e::space,
@@ -1308,12 +1321,48 @@ BOOST_AUTO_TEST_CASE(strconv_compose)
                                               .alignment = alignment_e::left,
                                               .trailing_zeros = trailing_zeros_e::skip
                                               }>(10.46713), //custom formatted floating point number with traits like in float_to_string
-    ']'
+    "] "sv,
+    fmt<ptrfmt>(0x1ff56ef001), ' ', //reuse custom constexpr formatting
+    fmt<ptrfmt>(0x0)
   ) };
   
-  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ]"sv };
+  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ] 0X1FF56EF001 0X0000"sv };
   
   BOOST_TEST( expected == strres );
+  }
+  {
+  auto strres{strconv::compose( "output_filename"sv, 
+                   '_', strconv::fmt<strconv::integral_format_traits{
+                       .precision = 4,
+                       .padd_with = padd_with_e::zeros
+                    }>(2), 
+                   '_', strconv::fmt<strconv::integral_format_traits{
+                     .precision = 11,
+                     .format = format_e::hexadecimal,
+                     .char_case = char_case_e::lowercase,
+                     .padd_with = padd_with_e::zeros,
+                     .include_prefix = include_prefix_e::with_prefix
+                      }>(0x1ffeb3e), ".c"sv )};
+  constexpr auto expected{ "output_filename_0002_0x001ffeb3e.c"sv };
+  BOOST_TEST( expected == strres );
+  }
+  {
+  std::tm tm_value{
+    .tm_sec = 3,
+    .tm_min = 1,
+    .tm_hour = 5,
+    .tm_yday = 125
+  };
+  using strconv::fmt;
+  constexpr strconv::integral_format_traits _22dec
+    {
+    .precision = 2,
+    .padd_with = strconv::padd_with_e::zeros
+    };
+  auto strres { strconv::compose( tm_value.tm_yday," days "sv , fmt<_22dec>(tm_value.tm_hour), ':', fmt<_22dec>(tm_value.tm_min), ':', fmt<_22dec>(tm_value.tm_sec) ) };
+  constexpr auto expected{ "125 days 05:01:03"sv };
+  BOOST_TEST( expected == strres );
+  }
 }
 BOOST_AUTO_TEST_SUITE_END()
 

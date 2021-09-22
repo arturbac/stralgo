@@ -5,6 +5,7 @@ Thru years of participating in projects, string formating like vnprintf had alwa
 * string composition was always done at runtime even if some operations and arguments was known and could be known at compile time
 * all that C library functions require null terminated C strings
 * formating information for ex in vsnprintf could not be easly shared/reused.
+* working on pointers to chars often causes a lot of redudant strlen and dangling pointer errors
 
 ## features
 
@@ -17,6 +18,7 @@ This code solves thise problems
 * fully constexpr string to number and number to string convetions for functions that doesn't allocate (using output interators)
 * extensive number formating with traits
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
+* compose, merge doesn't allow using directly pointers to chars and char tables (usable only with std::basic_string_view), to dissallow working with pointers
 
 ## installation
 
@@ -27,8 +29,23 @@ This code solves thise problems
 ```C++
     {
     //main feature compose with constexpr formating except final allocation
-  
-  std::string strres{ 
+  using strconv::integral_format_traits;
+  using strconv::format_e;
+  using strconv::char_case_e;
+  using strconv::prepend_sign_e;
+  using strconv::padd_with_e;
+  using strconv::include_prefix_e;
+  using strconv::alignment_e;
+
+  constexpr integral_format_traits ptrfmt //reusable formating traits
+    {
+    .precision = 6,
+    .format = format_e::hexadecimal,
+    .char_case = char_case_e::uppercase,
+    .padd_with = padd_with_e::zeros
+    };
+    
+  auto strres { 
    strconv::compose<char>(
     " some view "sv,
     127.3f, //default formatted floating point see float_format_traits{}
@@ -51,10 +68,12 @@ This code solves thise problems
                                       .alignment = strconv::alignment_e::left,
                                       .trailing_zeros = strconv::trailing_zeros_e::skip
                                       }>(10.46713), //custom formatted floating point number with traits like in float_to_string
-    ']'
+    "] "sv,
+    fmt<ptrfmt>(0x1ff56ef001), ' ', //reuse custom constexpr formatting
+    fmt<ptrfmt>(0x0)
   ) };
   
-  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ]"sv };
+  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ] 0X1FF56EF001 0X0000"sv };
     }
     
     ```
