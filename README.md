@@ -1,10 +1,10 @@
 # stralgo
 constexpr number &lt;-> string composition, formating and convertions with full support of unterminated string views
 Thru years of participating in projects, string formating like vnprintf had always a downsides
-* there was no coherence between formating string and arguments, that was source of errors
+* there was no consistency between formating string and arguments, that was source of errors detected at runtime.
 * string composition was always done at runtime even if some operations and arguments was known and could be known at compile time
-* all that operations required null terminated C strings
-* formating information for ex in vsnprintf could be easly shared/reused
+* all that C library functions require null terminated C strings
+* formating information for ex in vsnprintf could not be easly shared/reused.
 
 ## features
 
@@ -20,7 +20,7 @@ This code solves thise problems
 
 ## installation
 
-* header only except some of unit tests
+* header only, except some of unit tests
 
 ## examples
 ### strconv::compose
