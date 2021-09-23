@@ -1,7 +1,8 @@
 # stralgo
 constexpr number &lt;-> string composition, formating and convertions with full support of unterminated string views
-Thru years of participating in big projects, using string formating like vnprintf had always a drawbacks
+I started my jurney with C++ in the 2004 with compilers like embedded visual c++ 4, gcc 2.95. Thru years of participation in big projects i have had to fix many errors that source was in string formating like vnprintf.
 
+The source of problems i've many time found was:
 * there was no consistency between formating string and arguments, that was source of errors detected at runtime.
 * string composition was always done at runtime even if some operations and arguments were known and could be used at compile time
 * all that C library functions require null terminated C strings
@@ -25,6 +26,10 @@ This code solves thise problems:
 ## installation
 
 * header only, except some of unit tests
+
+## c++ compilers
+At this point of early development I work with clang 12.
+I'm planing cheking and porting to gcc and msvc in near future.
 
 ## examples
 ### strconv::compose
@@ -216,3 +221,10 @@ Example using output iterator
       }
     static_assert( test_float_4a() );
 ```
+## Feedback
+
+If you think you have found a bug, please file an issue via issue submission [form](https://github.com/arturbac/stralgo/issues). Include the relevant information to reproduce the bug for example as static_assert( expression ), if it is important also the compiler version and target architecture. Feature requests and contributions can be filed as issues or pull requests.
+
+## License
+
+This library is available to anybody free of charge, under the terms of MIT License (see LICENSE.md).
