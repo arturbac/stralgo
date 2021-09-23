@@ -1307,8 +1307,8 @@ BOOST_AUTO_TEST_CASE(strconv_compose)
     125, //default formatted integral number
     '[',
     fmt<integral_format_traits{
-            .precision = 10,
-            .format = format_e::hexadecimal,
+            .precision = 15,
+            .format = format_e::binary,
             .char_case = char_case_e::lowercase,
             .alignment = alignment_e::middle
             }>(456), //custom formatted integral number with traits like in integral_to_string
@@ -1326,7 +1326,7 @@ BOOST_AUTO_TEST_CASE(strconv_compose)
     fmt<ptrfmt>(0x0)
   ) };
   
-  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ] 0X1FF56EF001 0X0000"sv };
+  constexpr auto expected{ " some view 127.300003,125[  0b111001000  ] [10.46     ] 0X1FF56EF001 0X0000"sv };
   
   BOOST_TEST( expected == strres );
   }

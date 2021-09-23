@@ -1,22 +1,24 @@
 # stralgo
 constexpr number &lt;-> string composition, formating and convertions with full support of unterminated string views
-Thru years of participating in projects, string formating like vnprintf had always a downsides
+Thru years of participating in big projects, using string formating like vnprintf had always a drawbacks
+
 * there was no consistency between formating string and arguments, that was source of errors detected at runtime.
-* string composition was always done at runtime even if some operations and arguments was known and could be known at compile time
+* string composition was always done at runtime even if some operations and arguments were known and could be used at compile time
 * all that C library functions require null terminated C strings
-* formating information for ex in vsnprintf could not be easly shared/reused.
-* working on pointers to chars often causes a lot of redudant strlen and dangling pointer errors
+* formating information for example in vsnprintf could not be easly shared/reused across project.
+* working on pointers to null terminated strings often causes a lot of redudant strlen and dangling pointer errors
 
 ## features
 
-This code solves thise problems
-* foramting information is attached to arguments and prevents mismatching formating with number type errors at compile time
+This code solves thise problems:
+
+* foramting information is attached to arguments and prevents mismatching formating with argument type errors at compile time
 * every convertion, composing, formatting is constexpr except allocations
 * full suport for std::string_view with not null terminated strings
-* formating traits can be declared constexpr constant and reused
-* minimum c++20 compiler required (in development at this point constexpr unit tests require c++20 and std::is_constant_evaluated() )
+* formating traits can be declared constexpr constant and reused consistently across project
+* minimum c++20 compiler required (in development at this point constexpr unit tests require c++20 and std::is_constant_evaluated() required for float size calculation)
 * fully constexpr string to number and number to string convetions for functions that doesn't allocate (using output interators)
-* extensive number formating with traits
+* extensive number formating with constexpr traits
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
 * compose, merge doesn't allow using directly pointers to chars and char tables (usable only with std::basic_string_view), to dissallow working with pointers
 
@@ -39,10 +41,10 @@ This code solves thise problems
 
   constexpr integral_format_traits ptrfmt //reusable formating traits
     {
-    .precision = 6,
+    .precision = 6, //minimum precision/size of output text
     .format = format_e::hexadecimal,
     .char_case = char_case_e::uppercase,
-    .padd_with = padd_with_e::zeros
+    .padd_with = padd_with_e::zeros //fill space with zeros
     };
     
   auto strres { 
@@ -53,8 +55,8 @@ This code solves thise problems
     125, //default formatted integral number see integral_format_traits{}
     '[',
     strconv::fmt<integral_format_traits{
-            .precision = 10, //minimum number of characters
-            .format = format_e::hexadecimal, //output format encoding of digit numbers
+            .precision = 15, //minimum number of characters
+            .format = format_e::binary, //output format encoding of digit numbers
             .char_case = char_case_e::lowercase, //char case whenusing hexadecimal format
             .padd_with = padd_with_e::space, //pad value with zeros or space when precision is higher than value representation
             .sign = prepend_sign_e::only_negative, //prepend sign to result string
@@ -73,16 +75,30 @@ This code solves thise problems
     fmt<ptrfmt>(0x0)
   ) };
   
-  constexpr auto expected{ " some view 127.300003,125[  0x1c8   ] [10.46     ] 0X1FF56EF001 0X0000"sv };
+  constexpr auto expected{ " some view 127.300003,125[  0b111001000  ] [10.46     ] 0X1FF56EF001 0X0000"sv };
     }
     
     ```
 ### stralgo::merge
 
+  merge doeas same as compose except that it i simpler form limited to views and chars
+  
+```C++
+  string_view t1a {"orem ipsum dolor sit amet, consectetur adipiscing elit. "sv}, t2a { }, t3a {"Vestibulum"sv }; char t4a{' '}; string_view t5a{"rutrum leo libero"};
+  auto resa{ stralgo::merge('L',t1a,t2a,t3a,t4a,t5a)};
+  
+  constexpr string_view expected{"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum rutrum leo libero"};
+  
+```
+    
 ### strconv::integral_to_string
 
 Converting and formating integral numbers.
 Building block of compose that can be use separatly
+
+There are 2 variants available
+* one returning string
+* second cosntexpr storing result at output iterator returning iterator pass the end last stored char
 
 ```C++
     //non constexpr returning string
@@ -135,7 +151,9 @@ Example as constexpr test function
            typename expected_type>
   constexpr auto test( std::string_view source, expected_type expected, int end_it_offset )
     {
+    
     auto [result,end_it] = string_to_integral<integral_type,input_format>(source);
+    
     return std::next(std::begin(source),end_it_offset) == end_it
       && static_cast<integral_type>(expected) == result;
     }
@@ -171,4 +189,30 @@ Converting string represetation of float numbers.
   static_assert( test<double>("-10.1333"sv, -10.1333, 8 ) );
     ```
 
-### strconv::float_to_integral
+### strconv::float_to_string
+
+Converts floating point number into string representation
+There are 2 variants available
+* one returning string
+* second cosntexpr storing result at output iterator returning iterator pass the end last stored char
+
+Example using output iterator
+```C++
+    constexpr bool test_float_4a()
+      {
+      char buffer_[integral_to_string_max_size]{};
+      auto itbeg{ &buffer_[0] };
+      
+      constexpr double value{ 0.5 };
+      constexpr std::string_view expected{ "00000.5000" };
+      auto oit = strconv::float_to_string<traits{
+                                                .precision = 10,
+                                                .decimal_places = 4,
+                                                .padd_with = padd_with_e::zeros,
+                                                .trailing_zeros = trailing_zeros_e::preserve
+                                                }>( value, itbeg );
+      std::string_view result{ itbeg, static_cast<std::string_view::size_type>(oit-itbeg) };
+      return expected == result;
+      }
+    static_assert( test_float_4a() );
+```
