@@ -1,5 +1,5 @@
 # stralgo
-constexpr number &lt;-> string composition, formating and convertions with full support of unterminated string views
+constexpr number &lt;-> string composition, formating and convertions with full support of unterminated string views.
 I started my jurney with C++ in the 2004 with compilers like embedded visual c++ 4, gcc 2.95. Thru years of participation in big projects i have had to fix many errors that source was in string formating like vnprintf.
 
 The source of problems i've many time found was:
