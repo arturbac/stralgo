@@ -14,9 +14,9 @@ add_library(stralgo STATIC
 set_target_properties(stralgo PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(stralgo PUBLIC include )
 
-add_executable(main main.cpp)
-target_link_libraries( main PRIVATE stralgo )
+#add_executable(main main.cpp)
+#target_link_libraries( main PRIVATE stralgo )
 
-install(TARGETS stralgo RUNTIME DESTINATION bin)
+#install(TARGETS stralgo RUNTIME DESTINATION bin)
 
 add_subdirectory( unittests )
