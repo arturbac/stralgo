@@ -5,6 +5,23 @@
 
 namespace stralgo::detail
 {
+#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 12000) || (defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE > 10)
+  #define STRALGO_USE_STD_INVOKE
+#endif
+#if defined(STRALGO_USE_STD_INVOKE)
+  template<typename F, typename... Args>
+  constexpr auto invoke(F && f, Args &&... args) noexcept(std::is_nothrow_invocable_v<F, Args...>)
+    {
+    return std::invoke( std::forward<F>, std::forward<Args>(args)...);
+    }
+#else
+  template<typename F, typename... Args>
+  constexpr auto invoke(F && f, Args &&... args) noexcept(std::is_nothrow_invocable_v<F, Args...>)
+    {
+    return std::forward<F>(f)(std::forward<Args>(args)...);
+    }
+#endif
+
   template<typename possible_char_type,
     typename  = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
   [[nodiscard]]
@@ -138,7 +155,7 @@ namespace stralgo::detail
     constexpr auto transform(input_iterator first, input_iterator last, output_iterator result, unary_operation unary_op = {})
       {
       for (; first != last; ++first, ++result)
-        *result = std::invoke(unary_op, *first);
+        *result = detail::invoke(unary_op, *first);
       return result;
       }
       
@@ -149,7 +166,7 @@ namespace stralgo::detail
     constexpr auto fill(output_iterator first, output_iterator last, value_type value, unary_operation unary_op = {} )
       {
       for (; first != last; ++first)
-        *first = std::invoke(unary_op, value);
+        *first = detail::invoke(unary_op, value);
       return first;
       }
   //--------------------------------------------------------------------------------------------------------

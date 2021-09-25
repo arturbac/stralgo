@@ -234,14 +234,14 @@ namespace strconv::detail
       value_type decimal { value / size_div_info.divisor_ };
       value = static_cast<value_type>( value - decimal * size_div_info.divisor_);
       size_div_info.divisor_ /= base;
-      *oit = std::invoke( prj, value_to_hex_( static_cast<uint8_t>( decimal ) ));
+      *oit = stralgo::detail::invoke( prj, value_to_hex_( static_cast<uint8_t>( decimal ) ));
       ++oit;
       --size_div_info.size_;
       }
 
     return oit;
     }
-  
+  ;
   //--------------------------------------------------------------------------------------------------------
   ///\brief preprocessed info for output string calculation and future formating
   template<typename value_type>
@@ -335,7 +335,7 @@ namespace strconv::detail
         
       if(est_info.sign)
         {
-        *oit = std::invoke(projection, *est_info.sign);
+        *oit = stralgo::detail::invoke(projection, *est_info.sign);
         ++oit;
         }
 
@@ -550,7 +550,7 @@ namespace strconv::detail
       
     if(est_info.sign)
       {
-      *oit = std::invoke(projection, *est_info.sign);
+      *oit = stralgo::detail::invoke(projection, *est_info.sign);
       ++oit;
       }
       
@@ -571,7 +571,7 @@ namespace strconv::detail
 
     if(est_info.decimal_places != 0 )
       {
-      *oit = std::invoke(projection, char_type('.'));
+      *oit = stralgo::detail::invoke(projection, char_type('.'));
       ++oit;
       
       auto fraction { est_info.fraction };
@@ -617,12 +617,20 @@ namespace strconv::detail
     }
     
   //--------------------------------------------------------------------------------------------------------
-  
+  //workaround for LIBCPP < 12 and no constexpr on tuple
+  template<typename integral_type, typename iterator>
+  struct tstoui_result_t
+    {
+    integral_type result;
+    iterator ret_it;
+    };
+
   template<typename integral_type, typename base_conv_t, typename iterator>
   constexpr auto trimed_string_to_unsigned_integral( iterator beg, iterator end) 
     {
     using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
-    
+    using result_type = tstoui_result_t<integral_type,iterator>;
+
     integral_type total{};
     auto it{ beg };
 
@@ -637,7 +645,7 @@ namespace strconv::detail
       else
         break;
       }
-    return std::make_pair(total,it);
+    return result_type{ total, it };
     }
 
   template<typename char_type>
@@ -656,12 +664,18 @@ namespace strconv::detail
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
     using view_type = std::basic_string_view<char_type>;
+
+
     view_type view_str_number{ static_cast<view_type>(str_number) };
     
     auto snumber{ stralgo::trim_left(view_str_number) };
 
-    auto ret_it{ std::begin(view_str_number) };
-    integral_type result{};
+    using oit_type = decltype(std::begin(view_str_number));
+    using tstoui_result_type = tstoui_result_t<integral_type,oit_type>;
+
+    tstoui_result_type data{ {}, std::begin(view_str_number) };
+//     auto ret_it{ std::begin(view_str_number) };
+//     integral_type result{};
     
     if( !snumber.empty() )
       {
@@ -679,11 +693,11 @@ namespace strconv::detail
           if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
             {
             it += 2;
-            std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
+            data = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_16_t>( it, std::end( snumber ) );
             }
           else
-            std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
+            data = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_10_t>( it, std::end( snumber ) );
           }
         else if constexpr( input_format == input_format_e::hexadecimal )
@@ -693,18 +707,18 @@ namespace strconv::detail
           if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
             it += 2;
 
-          std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
+          data = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_16_t>( it, std::end( snumber ) );
           }
         else 
           {
-          std::tie(result,ret_it) = detail::trimed_string_to_unsigned_integral<
+          data = detail::trimed_string_to_unsigned_integral<
                       integral_type, detail::base_10_t>( it, std::end( snumber ) );
           }
         }
       }
     //for a case when number is negative return begin of untrimed value
-    return std::make_pair(result, std::next( std::begin(str_number), std::distance(std::begin(view_str_number), ret_it)) );
+    return std::make_pair( data.result, std::next( std::begin(str_number), std::distance(std::begin(view_str_number), data.ret_it)) );
     }
     
   //--------------------------------------------------------------------------------------------------------
@@ -722,61 +736,76 @@ namespace strconv::detail
     
     view_type view_str_number{ static_cast<view_type>(str_number) };
     auto snumber{ stralgo::trim_left(view_str_number) };
-    
+
     auto ret_it{ std::begin(view_str_number) };
     integral_type total{};
+
     char_type sign{};
-    
     
     if( !snumber.empty() )
       {
-      auto it{ std::begin(snumber) };
-    
-      char_type c { *it };
+//       auto it{ std::begin(snumber) };
+      using oit_type = decltype(std::begin(snumber));
+      using tstoui_result_type = tstoui_result_t<unsigned_itegral_type,oit_type>;
+      tstoui_result_type data{ {}, std::begin(snumber) };
+
+      char_type c { *data.ret_it };
       sign = c;          // save sign indication if '-', then negative, otherwise positive 
       if (c == char_type('-') || c == char_type('+'))
-        ++it;
+        ++data.ret_it;
       
       if constexpr (input_format == input_format_e::undetermined)
         {
-        auto next_it{ it+1 };
-        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+        auto next_it{ data.ret_it+1 };
+        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*data.ret_it, *next_it) )
           {
-          it += 2;
-          std::tie(total,it) = 
+          data.ret_it += 2;
+//           std::tie(total,it) =
+          data =
                 detail::trimed_string_to_unsigned_integral<
-                    unsigned_itegral_type, detail::base_16_t>( it, std::end( snumber ) );
+                    unsigned_itegral_type, detail::base_16_t>( data.ret_it, std::end( snumber ) );
           }
         else
-          std::tie(total,it) = 
+//           std::tie(total,it) =
+          data =
               detail::trimed_string_to_unsigned_integral<
-                  unsigned_itegral_type, detail::base_10_t>( it, std::end( snumber ) );
+                  unsigned_itegral_type, detail::base_10_t>( data.ret_it, std::end( snumber ) );
         }
       else if constexpr( input_format == input_format_e::hexadecimal )
         {
         //skip hex prefix if exists
-        auto next_it{ it+1 };
-        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
-          it += 2;
+        auto next_it{ data.ret_it+1 };
+        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*data.ret_it, *next_it) )
+          data.ret_it += 2;
 
-        std::tie(total,it) = detail::trimed_string_to_unsigned_integral<
-                    unsigned_itegral_type, detail::base_16_t>( it, std::end( snumber ) );
+//         std::tie(total,it)
+        data = detail::trimed_string_to_unsigned_integral<
+                    unsigned_itegral_type, detail::base_16_t>( data.ret_it, std::end( snumber ) );
         }
       else 
         {
-        std::tie(total,it) = detail::trimed_string_to_unsigned_integral<
-                    unsigned_itegral_type, detail::base_10_t>( it, std::end( snumber ) );
+//         std::tie(total,it)
+        data = detail::trimed_string_to_unsigned_integral<
+                    unsigned_itegral_type, detail::base_10_t>( data.ret_it, std::end( snumber ) );
         }
-        
+      total = data.result;
       if (sign == '-')
         total = static_cast<integral_type>(-total);
-      ret_it = it;
+      ret_it = data.ret_it;
       }
     //nothing to convert return begin iterator
     return std::make_pair(total, std::next( std::begin(str_number), std::distance(std::begin(view_str_number), ret_it)) );
     }
     
   //--------------------------------------------------------------------------------------------------------
+  //workaround for LIBCPP < 12 and no constexpr on tuple
+  template<typename float_type, typename iterator>
+  struct tstof_result_t
+    {
+    float_type result;
+    iterator ret_it;
+    };
+
   template<typename float_type, typename base_conv_t, typename iterator>
   constexpr auto trimed_string_to_float( iterator beg, iterator end) 
     {
@@ -810,7 +839,7 @@ namespace strconv::detail
         divider = divider * ibase;
         }
       }
-    return std::make_pair(total + fraction, it);
+    return tstof_result_t<float_type,iterator>{ total + fraction, it };
     }
     
   //--------------------------------------------------------------------------------------------------------
@@ -820,13 +849,19 @@ namespace strconv::detail
   constexpr auto string_to_float_( string_view_type str_number ) 
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
-    
-    auto snumber{ stralgo::trim_left(str_number) };
-    float_type total{};
-    char_type sign{};
-    auto it{ std::begin(snumber) };
-    if( it != std::end( snumber ) )
+    using view_type = std::basic_string_view<char_type>;
+
+    view_type view_str_number{ static_cast<view_type>(str_number) };
+    auto snumber{ stralgo::trim_left(view_str_number) };
+
+    if( !snumber.empty() )
       {
+      using oit_type = decltype(std::begin(snumber));
+      tstof_result_t<float_type,oit_type> result;
+
+      char_type sign{};
+      auto it{ std::begin(snumber) };
+
       char_type c { *it };
       sign = c;          // save sign indication if '-', then negative, otherwise positive 
       if (c == char_type('-') || c == char_type('+'))
@@ -835,18 +870,18 @@ namespace strconv::detail
       if( next_it != std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
         {
         it += 2;
-        std::tie(total,it) = detail::trimed_string_to_float<float_type, detail::base_16_t>( it, std::end( snumber ));
+        result = detail::trimed_string_to_float<float_type, detail::base_16_t>( it, std::end( snumber ));
         }
       else
-        std::tie(total,it) = detail::trimed_string_to_float<float_type, detail::base_10_t>( it, std::end( snumber ));
+        result = detail::trimed_string_to_float<float_type, detail::base_10_t>( it, std::end( snumber ));
       
+      auto oit = std::next( std::begin(str_number), std::distance(std::begin(view_str_number), result.ret_it));
       if (sign == '-')
-        return std::make_pair(-total,it);
-      else
-        return std::make_pair(total,it);
+        result.result = -result.result;
+      return std::make_pair(result.result, oit);
       }
     else //nothing to convert return begin iterator
-      return std::make_pair(total, std::begin(str_number));
+      return std::make_pair(float_type{}, std::begin(str_number));
     }
     
   //--------------------------------------------------------------------------------------------------------

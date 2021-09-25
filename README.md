@@ -29,7 +29,10 @@ This code solves thise problems:
 
 ## c++ compilers
 At this point of early development I work with clang 12.
-I'm planing cheking and porting to gcc and msvc in near future.
+I'm planing checking and porting to gcc and msvc in near future.
+
+* clang version 12.0.1 x86_64-portbld-freebsd13.0 with libcpp 11
+
 
 ## examples
 ### strconv::compose
