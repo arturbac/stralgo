@@ -12,7 +12,7 @@ namespace stralgo::detail
   template<typename F, typename... Args>
   constexpr auto invoke(F && f, Args &&... args) noexcept(std::is_nothrow_invocable_v<F, Args...>)
     {
-    return std::invoke( std::forward<F>, std::forward<Args>(args)...);
+    return std::invoke( std::forward<F>(f), std::forward<Args>(args)...);
     }
 #else
   template<typename F, typename... Args>
