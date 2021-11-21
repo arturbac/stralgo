@@ -155,7 +155,7 @@ namespace stralgo::detail
     constexpr auto transform(input_iterator first, input_iterator last, output_iterator result, unary_operation unary_op = {})
       {
       for (; first != last; ++first, ++result)
-        *result = detail::invoke(unary_op, *first);
+        *result = invoke(unary_op, *first);
       return result;
       }
       
@@ -166,7 +166,7 @@ namespace stralgo::detail
     constexpr auto fill(output_iterator first, output_iterator last, value_type value, unary_operation unary_op = {} )
       {
       for (; first != last; ++first)
-        *first = detail::invoke(unary_op, value);
+        *first = invoke(unary_op, value);
       return first;
       }
   //--------------------------------------------------------------------------------------------------------

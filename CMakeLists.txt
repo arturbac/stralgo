@@ -20,3 +20,4 @@ target_include_directories(stralgo PUBLIC include )
 #install(TARGETS stralgo RUNTIME DESTINATION bin)
 
 add_subdirectory( unittests )
+add_subdirectory(perf)

@@ -224,6 +224,39 @@ Example using output iterator
       }
     static_assert( test_float_4a() );
 ```
+## Prformance
+Performance comparision of compose vs snprintf for bellow test functions
+
+**Ryzen 9 - 5900X**
+compiler | function | stralgo | legacy
+---------|----------|---------|-------
+clang-13 | compose  | 14 ms   | 85 ms 
+
+full implementation performance comparision can be seen in perf/perf.cc
+
+```C++
+  //example compose test
+  strconv::compose<char>( 'T',
+                         data.example_string, ' ',
+                         data.emaple_float,
+                         ' ',
+                         strconv::fmt<strconv::integral_format_traits{
+                                 .precision = 11,
+                                 .format = format_e::hexadecimal,
+                                 .char_case = char_case_e::lowercase,
+                                 .padd_with = padd_with_e::zeros,
+                                 .include_prefix = include_prefix_e::with_prefix,
+                                        }>(data.example_int) );
+```
+```C++
+ //example snprintf test
+  char const * const fmt{ "T%s %f %11.11x" };
+  int sz = snprintf(nullptr,0,fmt, data.example_string.c_str(), data.emaple_float, data.example_int );
+  string result;
+  result.resize(static_cast<size_t>(sz+1));
+  sz = snprintf(result.data(), result.size(),fmt, data.example_string.c_str(), data.emaple_float, data.example_int );
+  result.resize(static_cast<size_t>(sz));
+```
 ## Feedback
 
 If you think you have found a bug, please file an issue via issue submission [form](https://github.com/arturbac/stralgo/issues). Include the relevant information to reproduce the bug for example as static_assert( expression ), if it is important also the compiler version and target architecture. Feature requests and contributions can be filed as issues or pull requests.
