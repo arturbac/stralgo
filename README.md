@@ -224,7 +224,7 @@ Example using output iterator
       }
     static_assert( test_float_4a() );
 ```
-## Prformance
+## Performance
 Performance comparision of compose vs snprintf for bellow test functions
 
 **Ryzen 9 - 5900X**
