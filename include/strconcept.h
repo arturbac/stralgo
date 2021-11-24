@@ -17,6 +17,27 @@ namespace strconcept
   template<typename iterator>
   using dereferenced_type = decltype(*std::declval<iterator>());
  
+  template<typename integral_type>
+  concept integral = std::is_integral_v<integral_type>;
+  
+  template<typename float_type>
+  concept floating_point = std::is_floating_point_v<float_type>;
+  
+  namespace detail 
+    {
+    template<typename T, typename U>
+    concept same_as = std::is_same_v<T, U>;
+    }
+   
+  template<typename T, typename U >
+  concept same_as = detail::same_as<T, U> && detail::same_as<U, T>;
+
+  template<typename from, typename to>
+  concept convertible = std::is_convertible_v<from,to>;
+  
+  template< typename maybe_uint8_t>
+  concept integral_uint8 = same_as<maybe_uint8_t,uint8_t>;
+  
   namespace detail
     {
     //solution for lack of <concepts> equality_comaprable_v with c++17
@@ -48,8 +69,11 @@ namespace strconcept
       static constexpr bool value = !std::is_same<void, decltype(test<T>(nullptr))>::value;
       };
     }
-  template<typename T>
-  inline constexpr bool indexable_v { detail::has_operator_index<T>::value };
+  template<typename value_type>
+  inline constexpr bool indexable_v { detail::has_operator_index<value_type>::value };
+  
+  template<typename value_type>
+  concept indexable = detail::has_operator_index<value_type>::value;
   
   template<typename iterator>
   using iterator_category_t = typename std::iterator_traits<iterator>::iterator_category;
@@ -57,31 +81,52 @@ namespace strconcept
   template<typename iterator>
   inline constexpr bool is_forward_iterator_v = 
       std::is_convertible_v<iterator_category_t<iterator>, std::forward_iterator_tag>;
-                            
+
+  template<typename iterator>
+  concept forward_iterator = convertible<iterator_category_t<iterator>, std::forward_iterator_tag>;
+  
   template<typename iterator>
   inline constexpr bool is_input_iterator_v = 
       std::is_convertible_v<iterator_category_t<iterator>, std::input_iterator_tag>;
 
   template<typename iterator>
+  concept input_iterator = convertible<iterator_category_t<iterator>, std::input_iterator_tag> ;
+
+  template<typename iterator>
   inline constexpr bool is_output_iterator_v = 
       std::is_convertible_v<iterator_category_t<iterator>, std::input_iterator_tag>;
-                            
+
+  template<typename iterator>
+  concept output_iterator = convertible<iterator_category_t<iterator>, std::input_iterator_tag>;
+  
   template<typename iterator>
   inline constexpr bool is_iterator_v = is_input_iterator_v<iterator> || is_output_iterator_v<iterator>;
 
+  template<typename iterator_type>
+  concept iterator = input_iterator<iterator_type> || output_iterator<iterator_type>;
+  
   template<typename iterator>
   inline constexpr bool is_writable_iterator_v = 
     (is_input_iterator_v<iterator> && !is_const<dereferenced_type<iterator>>)
     || is_output_iterator_v<iterator>;
 
   template<typename iterator>
+  concept writable_iterator =  (input_iterator<iterator> && !is_const<dereferenced_type<iterator>>) || output_iterator<iterator>;
+  
+  template<typename iterator>
   inline constexpr bool is_bidirectional_iterator_v = 
       std::is_convertible_v<iterator_category_t<iterator>, std::bidirectional_iterator_tag>;
 
   template<typename iterator>
+  concept bidirectional_iterator = convertible<iterator_category_t<iterator>, std::bidirectional_iterator_tag>;
+  
+  template<typename iterator>
   inline constexpr bool is_random_access_iterator_v = 
       std::is_convertible_v<iterator_category_t<iterator>, std::random_access_iterator_tag>;
 
+  template<typename iterator>
+  concept random_access_iterator = convertible<iterator_category_t<iterator>, std::random_access_iterator_tag>;
+  
   template <typename iter, typename = void>
   struct iterator_trait 
     : std::iterator_traits<iter> {};
@@ -109,6 +154,8 @@ namespace strconcept
                                       || std::is_same_v<remove_cvref_t<value_type>,char32_t>
                                       || std::is_same_v<remove_cvref_t<value_type>,wchar_t>;
                                       
+  template<typename value_type>
+  concept char_type = is_char_type_v<value_type>;
   
   template<typename string_view_type>
   ///\returns string or view char_type
@@ -119,6 +166,9 @@ namespace strconcept
   inline constexpr bool view_value_type_equals_v 
     = std::is_same_v<string_view_value_type<string_view_type>,string_view_value_type<string_view_type2>>;
 
+  template<typename string_view_type, typename string_view_type2>
+  concept view_value_type_equals = view_value_type_equals_v<string_view_type,string_view_type2>;
+  
   template<typename string_view_type>
   ///\returns aqurat string type based on view base char_type
   using string_by_value_type_t = std::basic_string<string_view_value_type<string_view_type>>;
@@ -131,8 +181,16 @@ namespace strconcept
   template<typename string_view_type>
   ///\returns true when string_view_type is convertible to basic_string_view
   inline constexpr bool is_convertible_to_string_view_v = 
-      std::is_convertible_v<string_view_type,std::basic_string_view<string_view_value_type<string_view_type>>
-                                                                               >;
+      !is_char_type_v<string_view_type>
+      && std::is_convertible_v<string_view_type,std::basic_string_view<string_view_value_type<string_view_type>>>
+      && is_char_type_v<string_view_value_type<string_view_type>>;
+
+  template<typename string_view_type>
+  concept convertible_to_string_view = 
+        !char_type<string_view_type>
+     && std::is_convertible_v<string_view_type,std::basic_string_view<string_view_value_type<string_view_type>>>
+     && is_char_type_v<string_view_value_type<string_view_type>>;
+  
   template<typename string_view_type>
   ///\returns true when string_view_type is convertible to single character
   inline constexpr bool is_convertible_to_char_type_v = std::is_convertible_v<string_view_type,

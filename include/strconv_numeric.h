@@ -41,18 +41,16 @@ namespace strconv
 
   //--------------------------------------------------------------------------------------------------------
   ///\returns char representation of single decimal value, value must be in range 0..15
-  template<char_case_e char_case = char_case_e::uppercase>
-  constexpr char value_to_hex( uint8_t value )
+  template<char_case_e char_case = char_case_e::uppercase, strconcept::integral_uint8 value_type>
+  constexpr char value_to_hex( value_type value )
     {
     return detail::value_to_hex_(value);
     }
   //--------------------------------------------------------------------------------------------------------
   ///\brief converts binary representation to hexadecimal representation
   template<char_case_e char_case = char_case_e::uppercase,
-           typename iterator, typename output_iterator,
-           typename = std::enable_if_t< strconcept::is_forward_iterator_v<iterator>
-                                     && strconcept::is_writable_iterator_v<output_iterator>>
-          >
+           strconcept::forward_iterator iterator,
+           strconcept::writable_iterator output_iterator>
   ///\warning \param outit must have double size capacity of source range
   constexpr output_iterator to_hex_ascii( iterator sbeg, iterator send, output_iterator outit )
     {
@@ -61,12 +59,9 @@ namespace strconv
   
   //--------------------------------------------------------------------------------------------------------
   template<char_case_e char_case = char_case_e::uppercase,
-           typename char_type,
+           strconcept::char_type char_type,
            typename string_type = strconcept::string_by_value_type_t<char_type>,
-           typename iterator, 
-           typename = std::enable_if_t<strconcept::is_char_type_v<char_type>
-                                    && strconcept::is_forward_iterator_v<iterator>>
-            >
+           strconcept::forward_iterator iterator>
   constexpr auto to_hex_ascii( iterator sbeg, iterator send )
     {
     return detail::to_hex_ascii_<char_type,char_case,string_type>(sbeg, send);
@@ -74,10 +69,7 @@ namespace strconv
 
   //--------------------------------------------------------------------------------------------------------
   ///\brief converts hexadecimal representation to binary representation
-  template<typename iterator, typename output_iterator,
-    typename = std::enable_if_t<strconcept::is_forward_iterator_v<iterator>
-                             && strconcept::is_writable_iterator_v<output_iterator>>
-          >
+  template<strconcept::forward_iterator iterator, strconcept::writable_iterator output_iterator>
   ///\warning \param outit must have half the size capacity of source range and soruce range must be multiple of 2
   constexpr output_iterator from_hex_ascii(iterator sbeg, iterator send, output_iterator outit)
     {
@@ -86,9 +78,7 @@ namespace strconv
     
   //--------------------------------------------------------------------------------------------------------
   ///\brief estimates size info for integral_to_string with output_iterator
-  template<integral_format_traits traits, typename value_type,
-           typename = std::enable_if_t<std::is_integral_v<value_type>>
-           >
+  template<integral_format_traits traits, strconcept::integral value_type>
   constexpr auto estimate_integral_to_str( value_type value )
     {
     return detail::estimate_integral_to_str_<traits>(value);
@@ -96,10 +86,8 @@ namespace strconv
     
   ///\brief converts itnergral signed or unsigned type to string using specified formating traits
   template<integral_format_traits traits = integral_format_traits{},
-           typename output_iterator, typename value_type,
-           typename = std::enable_if_t<std::is_integral_v<value_type> 
-                                    && strconcept::is_writable_iterator_v<output_iterator>>
-    >
+           strconcept::writable_iterator output_iterator,
+           strconcept::integral value_type>
   [[nodiscard]]
   constexpr output_iterator integral_to_string( value_type value, output_iterator oit ) noexcept
     {
@@ -108,11 +96,9 @@ namespace strconv
   
   ///\brief converts itnergral signed or unsigned type to string using specified formating traits
   template<integral_format_traits traits = integral_format_traits{},
-           typename char_type = char, 
+           strconcept::char_type char_type = char, 
            typename string_type = strconcept::string_by_char_type_t<char_type>,
-           typename value_type,
-           typename = std::enable_if_t<std::is_integral_v<value_type>
-                             && strconcept::is_char_type_v<char_type>>
+           strconcept::integral value_type
           >
   [[nodiscard]]
   auto integral_to_string( value_type value ) noexcept
@@ -122,29 +108,23 @@ namespace strconv
   
   ///\brief converts itnergral signed or unsigned type to string using specified formating traits
   template<integral_format_traits traits = integral_format_traits{},
-           typename char_type = char,
-           typename value_type,
-    typename string_type = strconcept::string_by_char_type_t<char_type>,
-    typename = std::enable_if_t<std::is_integral_v<value_type>
-                             && strconcept::is_char_type_v<char_type>>
-          >
+           strconcept::char_type char_type = char,
+           strconcept::integral value_type,
+    typename string_type = strconcept::string_by_char_type_t<char_type>>
   auto int2str( value_type value ) noexcept
     { return detail::integral_to_string_<traits,char_type,string_type>(value); }
   
   //--------------------------------------------------------------------------------------------------------
   ///\brief estimates requires space for given value and formating traits, first pass of convertion, est_info.size() may be used to obtaion requires storage size
-  template<float_format_traits traits, typename float_type,
-          typename = std::enable_if_t<std::is_floating_point_v<float_type>>
-          >
+  template<float_format_traits traits, strconcept::floating_point float_type>
   [[nodiscard]]
   constexpr auto estimate_float_to_string( float_type value ) noexcept
     { return detail::estimate_float_to_string_<traits>(value); }
   
   ///\brief converts number into string using precalculated info, final pass
-  template<float_format_traits traits, typename output_iterator, typename float_type,
-          typename = std::enable_if_t<std::is_floating_point_v<float_type> 
-                                   && strconcept::is_writable_iterator_v<output_iterator>>
-          >
+  template<float_format_traits traits,
+          strconcept::writable_iterator output_iterator,
+          strconcept::floating_point float_type>
   [[nodiscard]]
   constexpr output_iterator float_to_string( detail::float_estimate_info_t<float_type> const & est_info, output_iterator oit ) noexcept
     {
@@ -152,11 +132,8 @@ namespace strconv
     }
     
   template<float_format_traits traits = float_format_traits{},
-          typename output_iterator,
-          typename float_type,
-          typename = std::enable_if_t<std::is_floating_point_v<float_type> 
-                                   && strconcept::is_writable_iterator_v<output_iterator>>
-          >
+          strconcept::writable_iterator output_iterator,
+          strconcept::floating_point float_type>
   [[nodiscard]]
   constexpr output_iterator float_to_string( float_type value, output_iterator oit ) noexcept
     {
