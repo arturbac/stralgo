@@ -32,7 +32,7 @@ auto test( std::vector<test_type> data_fx, test_function fnobj )
   return perf(start,end);
   }
 
-template<typename test_function>
+template<typename test_function, std::size_t test_size = 100000>
 struct test_executor
   {
   auto operator()( string_view info )
@@ -40,7 +40,6 @@ struct test_executor
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> distrib(1, 256);
-    size_t test_size { 100000 };
 
     std::vector<typename test_function::test_data_record_t> data_fx;
     data_fx.reserve( test_size );
@@ -121,8 +120,58 @@ struct compose_test_t
     }
   };
   
+struct str_to_int_test_t
+  {
+  using test_data_record_t = string;
+  
+  auto issue_test_record( std::mt19937 & gen ) const noexcept
+    {
+    std::uniform_int_distribution<> intd(65538, 134096);
+    return strconv::int2str(intd(gen));
+    }
+    
+  int64_t stralgo_test( test_data_record_t const & data ) const noexcept
+    {
+    auto [value,it] = strconv::str2int<int64_t>(data);
+    return value;
+    }
+    
+  int64_t legacy_test( test_data_record_t const & data ) const noexcept
+    {
+    return std::stoll(data);
+    }
+  };
+  
+struct float_to_int_test_t
+  {
+  using test_data_record_t = string;
+  
+  auto issue_test_record( std::mt19937 & gen ) const noexcept
+    {
+    std::uniform_int_distribution<> intd(65538, 1384096);
+    auto value = static_cast<double>(intd(gen))/100.;
+    auto res = strconv::f2str( value );
+    assert(!res.empty());
+    if(res[0] == 'a')
+      res = strconv::f2str( value );
+    return res;
+    }
+    
+  double stralgo_test( test_data_record_t const & data ) const noexcept
+    {
+    auto [value,it] = strconv::str2f<double>(data);
+    return value;
+    }
+    
+  double legacy_test( test_data_record_t const & data ) const noexcept
+    {
+    return std::stod(data);
+    }
+  };
 int main(int argc, char **argv) 
 {
   cout << test_executor<compose_test_t>{}("compose") << endl;
+  cout << test_executor<str_to_int_test_t,1000000>{}("str2int") << endl;
+  cout << test_executor<float_to_int_test_t,1000000>{}("str2f") << endl;
   return EXIT_SUCCESS;
 }

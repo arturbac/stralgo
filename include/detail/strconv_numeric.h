@@ -7,9 +7,20 @@
 
 namespace strconv::detail
 {
-
-  template<char_case_e char_case = char_case_e::uppercase>
-  constexpr char value_to_hex_( uint8_t value )
+  template<strconcept::integral value_type>
+  constexpr uint8_t log2p1( value_type value ) noexcept
+    {
+    if( value != value_type{} )
+      {
+      constexpr auto Nd = std::numeric_limits<value_type>::digits;
+      return static_cast<uint8_t>(Nd - std::countl_zero( value ));
+      }
+    return {};
+    }
+    
+  template<char_case_e char_case = char_case_e::uppercase,
+           strconcept::integral_uint8 value_type>
+  constexpr char value_to_hex_( value_type value )
     {
     if( value < 10) 
       return static_cast<char>('0' + value);
@@ -23,11 +34,8 @@ namespace strconv::detail
     }
     
   template<char_case_e char_case = char_case_e::uppercase,
-           typename iterator,
-           typename output_iterator,
-           typename = std::enable_if_t< strconcept::is_forward_iterator_v<iterator>
-                                     && strconcept::is_writable_iterator_v<output_iterator>>
-          >
+           strconcept::forward_iterator iterator,
+           strconcept::writable_iterator output_iterator>
   ///\brief converts binary representation to hexadecimal representation
   ///\warning \param outit must have double size capacity of source range
   constexpr output_iterator to_hex_ascii_( iterator sbeg, iterator send, output_iterator outit )
@@ -38,8 +46,8 @@ namespace strconv::detail
     for(;sbeg != send; ++sbeg)
       {
       uint8_t const source_byte = static_cast<uint8_t>( *sbeg );
-      char c0 = value_to_hex_<char_case>( source_byte & 0xFu);
-      char c1 = value_to_hex_<char_case>( (source_byte>>4) & 0xFu);
+      char c0 = value_to_hex_<char_case>( static_cast<uint8_t>(source_byte & 0xFu) );
+      char c1 = value_to_hex_<char_case>( static_cast<uint8_t>((source_byte>>4) & 0xFu) );
       *outit++ = c1;
       *outit++ = c0;
       }
@@ -47,12 +55,9 @@ namespace strconv::detail
     }
   //--------------------------------------------------------------------------------------------------------
   template<char_case_e char_case = char_case_e::uppercase,
-           typename char_type = char,
+           strconcept::char_type char_type = char,
            typename string_type = strconcept::string_by_value_type_t<char_type>,
-           typename iterator, 
-           typename = std::enable_if_t<strconcept::is_char_type_v<char_type>
-                                    && strconcept::is_forward_iterator_v<iterator>>
-            >
+           strconcept::forward_iterator iterator>
   constexpr auto to_hex_ascii_( iterator sbeg, iterator send )
     {
     using size_type = typename string_type::size_type;
@@ -64,9 +69,7 @@ namespace strconv::detail
                                                     } );
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename integral_type, typename char_type,
-           typename = std::enable_if_t<strconcept::is_char_type_v<char_type>>
-          >
+  template<strconcept::integral integral_type, strconcept::char_type char_type>
   constexpr integral_type from_xdigit( char_type c )
     { 
     return static_cast<integral_type>( stralgo::isdigit(c) ? unsigned(c) - unsigned('0') 
@@ -77,10 +80,8 @@ namespace strconv::detail
     
   //--------------------------------------------------------------------------------------------------------
   
-  template<typename iterator, typename output_iterator,
-    typename = std::enable_if_t<strconcept::is_forward_iterator_v<iterator>
-                             && strconcept::is_writable_iterator_v<output_iterator>>
-          >
+  template<strconcept::forward_iterator iterator,
+           strconcept::writable_iterator output_iterator>
   ///\warning \param outit must have half the size capacity of source range and soruce range must be multiple of 2
   constexpr output_iterator from_hex_ascii_(iterator sbeg, iterator send, output_iterator outit)
     {
@@ -105,13 +106,13 @@ namespace strconv::detail
     static constexpr std::string_view output_prefix{"0b"};
     static constexpr unsigned integral_to_string_max_size = 70;
     
-    template<typename integral_type, typename char_type>
+    template<strconcept::integral integral_type, strconcept::char_type char_type>
     static constexpr integral_type convert( char_type c ) noexcept 
       {
       return static_cast<integral_type>( unsigned(c) - unsigned('0'));
       }
       
-    template<typename char_type>
+    template<strconcept::char_type char_type>
     static constexpr bool is_number( char_type c ) noexcept { return c== '0' || c == '1'; }
     };
     
@@ -121,13 +122,13 @@ namespace strconv::detail
     static constexpr std::string_view output_prefix{};
     static constexpr unsigned integral_to_string_max_size = 22;
     
-    template<typename integral_type, typename char_type>
+    template<strconcept::integral integral_type, strconcept::char_type char_type>
     static constexpr integral_type convert( char_type c ) noexcept 
       {
       return static_cast<integral_type>( unsigned(c) - unsigned('0'));
       }
       
-    template<typename char_type>
+    template<strconcept::char_type char_type>
     static constexpr bool is_number( char_type c ) noexcept { return stralgo::isdigit(c); }
     };
     
@@ -137,7 +138,7 @@ namespace strconv::detail
     static constexpr std::string_view output_prefix{"0x"};
     static constexpr unsigned integral_to_string_max_size = 12;
     
-    template<typename integral_type, typename char_type>
+    template<strconcept::integral integral_type, strconcept::char_type char_type>
     static constexpr integral_type convert( char_type c ) noexcept 
       {
       return detail::from_xdigit<integral_type>( c );
@@ -160,23 +161,23 @@ namespace strconv::detail
   using base_conv_by_format_t = typename base_conv_by_format<fmt>::type;
   
   //--------------------------------------------------------------------------------------------------------
-  template<typename output_char_type>
+  template<strconcept::char_type output_char_type>
   struct lower_projection
     {
-    template<typename char_type>
+    template<strconcept::char_type char_type>
     constexpr output_char_type operator()( char_type c )
       { return stralgo::to_lower(static_cast<output_char_type>(c)); }
     };
     
-  template<typename output_char_type>
+  template<strconcept::char_type output_char_type>
   struct upper_projection
     {
-    template<typename char_type>
+    template<strconcept::char_type char_type>
     constexpr output_char_type operator()( char_type c )
       { return stralgo::to_upper(static_cast<output_char_type>(c)); }
     };
     
-  template<typename output_char_type, char_case_e char_case>
+  template<strconcept::char_type output_char_type, char_case_e char_case>
   constexpr auto char_case_projection() 
     {
     if constexpr( char_case == char_case_e::lowercase)
@@ -185,19 +186,18 @@ namespace strconv::detail
       return upper_projection<output_char_type>{};
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename value_type>
+  template<strconcept::unsigned_integral value_type>
   struct size_div_info_t
     {
     value_type divisor_ {};
     unsigned size_ {};
     };
   ///\brief main calculation of required output size for unsigned integral
-  template<uint64_t base, typename value_type,
-           typename = std::enable_if_t<std::is_unsigned_v<value_type>>>
+  template<uint64_t base, strconcept::unsigned_integral value_type>
   constexpr auto calculate_size_div_info(value_type value)
     {
     size_div_info_t<value_type> result{};
-    if( std::is_constant_evaluated())
+//     if( std::is_constant_evaluated())
       {
       while(value != value_type{} )
         {
@@ -209,6 +209,7 @@ namespace strconv::detail
         value /= base;
         }
       }
+#if 0
     else
       {
       if(value != value_type{})
@@ -217,12 +218,15 @@ namespace strconv::detail
         result.divisor_ = static_cast<value_type>( std::pow(base, result.size_-1) );
         }
       }
-    
+#endif
     return result;
     }
     
   ///\brief pure convertion of unisgned integer to string at destination iterator
-  template<typename base_conv_type, typename projection, typename output_iterator, typename value_type>
+  template<typename base_conv_type,
+           typename projection,
+           strconcept::writable_iterator output_iterator,
+           strconcept::unsigned_integral value_type>
   constexpr output_iterator unsigned_to_str_transform_( value_type value, projection prj,
                                                         size_div_info_t<value_type> size_div_info,
                                                         output_iterator oit )
@@ -244,11 +248,9 @@ namespace strconv::detail
   ;
   //--------------------------------------------------------------------------------------------------------
   ///\brief preprocessed info for output string calculation and future formating
-  template<typename value_type>
+  template<strconcept::unsigned_integral value_type>
   struct estimate_info_t
     {
-    static_assert( std::is_unsigned_v<value_type> );
-    
     size_div_info_t<value_type> size_div_info;
     value_type uvalue;
     unsigned output_prefix_size{};
@@ -260,8 +262,8 @@ namespace strconv::detail
     };
     
   ///\brief calculate required output space for intergral to string convertion
-  template<integral_format_traits traits, typename value_type,
-           typename = std::enable_if_t<std::is_unsigned_v<value_type>>>
+  template<integral_format_traits traits,
+           strconcept::unsigned_integral value_type>
   constexpr auto estimate_unsigned_to_str_( value_type value, std::optional<char> sign = {})
     {
     using base_conv_type = detail::base_conv_by_format_t<traits.format>;
@@ -300,10 +302,8 @@ namespace strconv::detail
     }
 
   template<integral_format_traits traits,
-           typename value_type, typename output_iterator, 
-           typename = std::enable_if_t<std::is_unsigned_v<value_type>
-                                    && strconcept::is_writable_iterator_v<output_iterator>>
-           >
+           strconcept::unsigned_integral value_type,
+           strconcept::writable_iterator output_iterator>
   [[nodiscard]]
   constexpr output_iterator unsigned_to_str_( estimate_info_t<value_type> const & est_info, output_iterator oit ) noexcept
     {
@@ -369,8 +369,8 @@ namespace strconv::detail
     }
   
   //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits, typename value_type,
-           typename = std::enable_if_t<std::is_signed_v<value_type>>>
+  template<integral_format_traits traits,
+           strconcept::signed_integral value_type>
   constexpr auto estimate_signed_to_str_( value_type value )
     {
     using unsigned_type = std::make_unsigned_t<value_type>;
@@ -387,9 +387,8 @@ namespace strconv::detail
     }
     
   //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits, typename value_type,
-           typename = std::enable_if_t<std::is_integral_v<value_type>>
-           >
+  template<integral_format_traits traits,
+           strconcept::integral value_type>
   constexpr auto estimate_integral_to_str_( value_type value )
     {
     if constexpr (std::is_unsigned_v<value_type>)
@@ -399,10 +398,9 @@ namespace strconv::detail
     }
   //--------------------------------------------------------------------------------------------------------
   template<integral_format_traits traits,
-           typename output_iterator, typename unsinged_value_type,
-           typename = std::enable_if_t<strconcept::is_writable_iterator_v<output_iterator>>
-    >
-  constexpr output_iterator integral_to_string_(  estimate_info_t<unsinged_value_type> const & est_info,
+           strconcept::writable_iterator output_iterator,
+           strconcept::unsigned_integral unsinged_value_type>
+  constexpr output_iterator integral_to_string_( estimate_info_t<unsinged_value_type> const & est_info,
                                                  output_iterator oit ) noexcept
     {
     return unsigned_to_str_<traits>(est_info, oit);
@@ -410,10 +408,8 @@ namespace strconv::detail
     
   //--------------------------------------------------------------------------------------------------------
   template<integral_format_traits traits,
-           typename output_iterator, typename value_type,
-           typename = std::enable_if_t<std::is_integral_v<value_type> 
-                                    && strconcept::is_writable_iterator_v<output_iterator>>
-    >
+           strconcept::writable_iterator output_iterator,
+           strconcept::integral value_type>
   [[nodiscard]]
   constexpr output_iterator integral_to_string_( value_type value, output_iterator oit ) noexcept
     {
@@ -422,12 +418,10 @@ namespace strconv::detail
     }
 
   //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits, typename char_type = char,
-     typename string_type = strconcept::string_by_char_type_t<char_type>,
-     typename value_type,
-     typename = std::enable_if_t<std::is_integral_v<value_type> 
-                              && strconcept::is_char_type_v<char_type>>
-          >
+  template<integral_format_traits traits,
+           strconcept::char_type char_type = char,
+           typename string_type = strconcept::string_by_char_type_t<char_type>,
+           strconcept::integral value_type>
   [[nodiscard]]
   auto integral_to_string_( value_type value ) noexcept
     {
@@ -439,11 +433,9 @@ namespace strconv::detail
     }
   //--------------------------------------------------------------------------------------------------------
 //   
-  template<typename value_type>
+  template<strconcept::floating_point value_type>
   struct float_estimate_info_t
     {
-    static_assert( std::is_floating_point_v<value_type> );
-    
     size_div_info_t<uint64_t> size_div_info;
     uint64_t uvalue;
     value_type fraction;
@@ -458,9 +450,8 @@ namespace strconv::detail
        { return std::max<std::size_t>(number_size(),precision); }
     };
     
-  template<float_format_traits traits, typename float_type,
-          typename = std::enable_if_t<std::is_floating_point_v<float_type>>
-          >
+  template<float_format_traits traits,
+           strconcept::floating_point float_type>
   [[nodiscard]]
   constexpr auto estimate_float_to_string_( float_type value ) noexcept
     {
@@ -520,10 +511,9 @@ namespace strconv::detail
     return result;
     }
     
-  template<float_format_traits traits, typename output_iterator, typename float_type,
-          typename = std::enable_if_t<std::is_floating_point_v<float_type> 
-                                   && strconcept::is_writable_iterator_v<output_iterator>>
-          >
+  template<float_format_traits traits,
+           strconcept::writable_iterator output_iterator,
+           strconcept::floating_point float_type>
   [[nodiscard]]
   constexpr output_iterator float_to_string_( float_estimate_info_t<float_type> const & est_info, output_iterator oit ) noexcept
     {
@@ -602,30 +592,34 @@ namespace strconv::detail
     }
     
   //--------------------------------------------------------------------------------------------------------
-  template<float_format_traits traits, typename char_type = char,
+  template<float_format_traits traits,
+            strconcept::char_type char_type = char,
             typename string_type = strconcept::string_by_char_type_t<char_type>,
-            typename value_type,
-            typename = std::enable_if_t<std::is_floating_point_v<value_type>
-                                   && strconcept::is_char_type_v<char_type>>>
+            strconcept::floating_point value_type>
   [[nodiscard]]
   auto float_to_string_( value_type value ) noexcept
     {
     auto est_info{ detail::estimate_float_to_string_<traits>(value) };
     string_type result;
     result.resize(est_info.size());
-    return detail::float_to_string_<traits>(est_info, std::data(result));
+    auto oit = detail::float_to_string_<traits>(est_info, std::data(result));
+    result.resize( static_cast<size_t>(oit - std::data(result)) );
+    return result;
     }
     
   //--------------------------------------------------------------------------------------------------------
   //workaround for LIBCPP < 12 and no constexpr on tuple
-  template<typename integral_type, typename iterator>
+  template<strconcept::unsigned_integral integral_type,
+           strconcept::forward_iterator iterator>
   struct tstoui_result_t
     {
     integral_type result;
     iterator ret_it;
     };
 
-  template<typename integral_type, typename base_conv_t, typename iterator>
+  template<strconcept::unsigned_integral integral_type,
+           typename base_conv_t,
+           strconcept::forward_iterator iterator>
   constexpr auto trimed_string_to_unsigned_integral( iterator beg, iterator end) 
     {
     using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
@@ -648,18 +642,16 @@ namespace strconv::detail
     return result_type{ total, it };
     }
 
-  template<typename char_type>
+  template<strconcept::char_type char_type>
   constexpr bool is_hex_prefix( char_type c0, char_type c1 )
     {
     return c0 == char_type('0') && ( c1 == char_type('x') || c1 == char_type('X') );
     }
 
   //--------------------------------------------------------------------------------------------------------
-  template<typename integral_type,
+  template<strconcept::unsigned_integral integral_type,
            input_format_e input_format,
-           typename string_view_type,
-           typename = std::enable_if_t< std::is_unsigned_v<integral_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+           strconcept::convertible_to_string_view string_view_type>
   constexpr auto string_to_integral_( string_view_type str_number ) 
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
@@ -723,11 +715,9 @@ namespace strconv::detail
     
   //--------------------------------------------------------------------------------------------------------
   ///\brief signed integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
-  template<typename integral_type,
+  template<strconcept::signed_integral integral_type,
            input_format_e input_format,
-           typename string_view_type,
-    std::enable_if_t< std::is_signed_v<integral_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>, bool> = true>
+           strconcept::convertible_to_string_view string_view_type>
   constexpr auto string_to_integral_( string_view_type str_number ) 
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
@@ -744,7 +734,6 @@ namespace strconv::detail
     
     if( !snumber.empty() )
       {
-//       auto it{ std::begin(snumber) };
       using oit_type = decltype(std::begin(snumber));
       using tstoui_result_type = tstoui_result_t<unsigned_itegral_type,oit_type>;
       tstoui_result_type data{ {}, std::begin(snumber) };
@@ -760,13 +749,11 @@ namespace strconv::detail
         if( next_it < std::end( snumber ) && detail::is_hex_prefix(*data.ret_it, *next_it) )
           {
           data.ret_it += 2;
-//           std::tie(total,it) =
           data =
                 detail::trimed_string_to_unsigned_integral<
                     unsigned_itegral_type, detail::base_16_t>( data.ret_it, std::end( snumber ) );
           }
         else
-//           std::tie(total,it) =
           data =
               detail::trimed_string_to_unsigned_integral<
                   unsigned_itegral_type, detail::base_10_t>( data.ret_it, std::end( snumber ) );
@@ -778,17 +765,15 @@ namespace strconv::detail
         if( next_it < std::end( snumber ) && detail::is_hex_prefix(*data.ret_it, *next_it) )
           data.ret_it += 2;
 
-//         std::tie(total,it)
         data = detail::trimed_string_to_unsigned_integral<
                     unsigned_itegral_type, detail::base_16_t>( data.ret_it, std::end( snumber ) );
         }
       else 
         {
-//         std::tie(total,it)
         data = detail::trimed_string_to_unsigned_integral<
                     unsigned_itegral_type, detail::base_10_t>( data.ret_it, std::end( snumber ) );
         }
-      total = data.result;
+      total = static_cast<integral_type>(data.result);
       if (sign == '-')
         total = static_cast<integral_type>(-total);
       ret_it = data.ret_it;
@@ -799,14 +784,17 @@ namespace strconv::detail
     
   //--------------------------------------------------------------------------------------------------------
   //workaround for LIBCPP < 12 and no constexpr on tuple
-  template<typename float_type, typename iterator>
+  template<strconcept::floating_point float_type,
+           strconcept::forward_iterator iterator>
   struct tstof_result_t
     {
     float_type result;
     iterator ret_it;
     };
 
-  template<typename float_type, typename base_conv_t, typename iterator>
+  template<strconcept::floating_point float_type,
+           typename base_conv_t,
+           strconcept::forward_iterator iterator>
   constexpr auto trimed_string_to_float( iterator beg, iterator end) 
     {
     using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
@@ -821,7 +809,7 @@ namespace strconv::detail
       {
       char_type c { *it };
       if(base_conv_t::is_number(c))
-        total = base_conv_t::base * total + base_conv_t:: template convert<float_type>(c);
+        total = base_conv_t::base * total + static_cast<float_type>(base_conv_t:: template convert<int>(c));
       else
         break;
       }
@@ -833,7 +821,7 @@ namespace strconv::detail
         {
         char_type c { *it };
         if(base_conv_t::is_number(c))
-          fraction = fraction + base_conv_t:: template convert<float_type>(c) * divider;
+          fraction = fraction + static_cast<float_type>(base_conv_t:: template convert<int>(c)) * divider;
         else
           break;
         divider = divider * ibase;
@@ -843,9 +831,8 @@ namespace strconv::detail
     }
     
   //--------------------------------------------------------------------------------------------------------
-  template<typename float_type, typename string_view_type,
-    typename = std::enable_if_t< std::is_floating_point_v<float_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::floating_point float_type,
+           strconcept::convertible_to_string_view string_view_type>
   constexpr auto string_to_float_( string_view_type str_number ) 
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
@@ -889,13 +876,13 @@ namespace strconv::detail
   //--------------------------------------------------------------------------------------------------------
 
   //preconvertion char type
-  template<typename char_type>
+  template<strconcept::char_type char_type>
   struct view_preconv_char_t
     {
     char_type value_;
     constexpr std::size_t view_size() const noexcept { return 1; }
     
-    template<typename iterator>
+    template<strconcept::forward_iterator iterator>
     constexpr iterator transform( iterator it ) const
       {
       *it = value_;
@@ -904,24 +891,23 @@ namespace strconv::detail
       }
     };
     
-  template<typename char_type, typename maybe_char_type,
-  std::enable_if_t<strconcept::is_char_type_v<maybe_char_type>,bool> = true
-        >
+  template<strconcept::char_type char_type, strconcept::char_type maybe_char_type>
+    requires strconcept::same_as<char_type, maybe_char_type>
   constexpr auto compose_preconv( maybe_char_type value )
     {
-    return view_preconv_char_t<char_type>{ static_cast<char_type>(value) };
+    return view_preconv_char_t<char_type>{ value };
     }
       
   //--------------------------------------------------------------------------------------------------------
   ///preconv string_view
-  template<typename char_type>
+  template<strconcept::char_type char_type>
   struct view_preconv_string_view_t
     {
     std::basic_string_view<char_type> view_;
     
     constexpr std::size_t view_size() const noexcept { return view_.size(); }
     
-    template<typename iterator>
+    template<strconcept::forward_iterator iterator>
     constexpr iterator transform( iterator it ) const
       {
       it = std::copy(std::begin(view_),std::end(view_), it);
@@ -929,25 +915,26 @@ namespace strconv::detail
       }
     };
     
-  template<typename char_type, typename string_view_type,
-  std::enable_if_t<std::is_convertible_v<string_view_type, std::basic_string_view<char_type>> &&
+  template<strconcept::char_type char_type, strconcept::convertible_to_string_view string_view_type
+  /*,std::enable_if_t<std::is_convertible_v<string_view_type, std::basic_string_view<char_type>> &&
     !strconcept::is_char_type_v<string_view_type> &&
     !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
     !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>
-        ,bool> = true >
+        ,bool> = true */>
   constexpr auto compose_preconv( string_view_type const & value )
     {
     return view_preconv_string_view_t<char_type>{ static_cast<std::basic_string_view<char_type>>(value) };
     }
       
-  template<typename char_type, size_t size>
+  template<strconcept::char_type char_type, size_t size>
   constexpr auto compose_preconv( std::array<char_type,size> const & data ) noexcept
     {
     return compose_preconv<char_type>(std::basic_string_view<char_type>{ data.data(), size });
     }
   //--------------------------------------------------------------------------------------------------------
   //preconv integral
-  template<typename integral_type, integral_format_traits traits = integral_format_traits{}>
+  template<strconcept::integral integral_type, integral_format_traits traits = integral_format_traits{}>
+    requires ( !strconcept::char_type<integral_type> )
   struct view_preconv_integral_t
     {
     using unsigned_integral_type = std::make_unsigned_t<integral_type>;
@@ -959,38 +946,35 @@ namespace strconv::detail
     
     constexpr std::size_t view_size() const noexcept { return est_info_.size(); }
     
-    template<typename iterator>
+    template<strconcept::forward_iterator iterator>
     constexpr iterator transform( iterator oit ) const
       {
       return integral_to_string_<traits>(est_info_, oit);
       }
     };
     
-  template<integral_format_traits traits, typename integral_type,
-    std::enable_if_t<std::is_integral_v<integral_type> 
-                 && !strconcept::is_char_type_v<integral_type>,bool> = true>
+  template<integral_format_traits traits, strconcept::integral integral_type>
+    requires ( !strconcept::char_type<integral_type> )
   constexpr auto fmt( integral_type value )
     {
     return view_preconv_integral_t<integral_type,traits>{ value };
     }
     //
-  template<typename char_type, typename integral_type,
-    std::enable_if_t<std::is_integral_v<integral_type> 
-                 && !strconcept::is_char_type_v<integral_type>,bool> = true >
+  template<strconcept::char_type char_type, strconcept::integral integral_type>
+    requires ( !strconcept::char_type<integral_type> )
   constexpr auto compose_preconv( integral_type value )
     {
     return view_preconv_integral_t<integral_type>{ value };
     }
     
-  template<typename char_type, typename integral_type, integral_format_traits traits,
-    std::enable_if_t<std::is_integral_v<integral_type> 
-                 && !strconcept::is_char_type_v<integral_type>,bool> = true >
+  template<strconcept::char_type char_type, strconcept::integral integral_type, integral_format_traits traits>
+    requires ( !strconcept::char_type<integral_type> )
   constexpr auto compose_preconv( view_preconv_integral_t<integral_type,traits> value )
     {
     return value;
     }
     
-  template<typename char_type, typename maybe_enum_type,
+  template<strconcept::char_type char_type, typename maybe_enum_type,
     std::enable_if_t<std::is_enum_v<maybe_enum_type>,bool> = true >
   constexpr auto compose_preconv( maybe_enum_type value )
     {
@@ -999,7 +983,7 @@ namespace strconv::detail
     }
   //--------------------------------------------------------------------------------------------------------
   //preconv floating point
-  template<typename float_type, float_format_traits traits = float_format_traits{} >
+  template<strconcept::floating_point float_type, float_format_traits traits = float_format_traits{} >
   struct view_preconv_float_t
     {
     float_estimate_info_t<float_type> est_info_;
@@ -1010,29 +994,26 @@ namespace strconv::detail
       
     constexpr std::size_t view_size() const noexcept { return est_info_.size(); }
     
-    template<typename iterator>
+    template<strconcept::forward_iterator iterator>
     constexpr iterator transform( iterator oit ) const
       {
       return detail::float_to_string_<traits>(est_info_, oit );
       }
     };
     
-  template<float_format_traits traits, typename float_type,
-    std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
+  template<float_format_traits traits, strconcept::floating_point float_type>
   constexpr auto fmt( float_type value )
     {
     return view_preconv_float_t<float_type,traits>{ value };
     }
     
-  template<typename char_type, typename float_type,
-    std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
+  template<strconcept::char_type char_type, strconcept::floating_point float_type>
   constexpr auto compose_preconv( float_type value )
     {
     return view_preconv_float_t<float_type>{ value };
     }
     
-  template<typename char_type, typename float_type, float_format_traits traits,
-    std::enable_if_t<std::is_floating_point_v<float_type>,bool> = true>
+  template<strconcept::char_type char_type, strconcept::floating_point float_type, float_format_traits traits>
   constexpr auto compose_preconv( view_preconv_float_t<float_type,traits> value )
     {
     return value;
@@ -1040,7 +1021,7 @@ namespace strconv::detail
     
   //--------------------------------------------------------------------------------------------------------
   // main composing
-  template<typename char_type, typename ... args_type >
+  template<strconcept::char_type char_type, typename ... args_type >
   constexpr auto compose_preprocess( args_type const & ... args )
     { return std::make_tuple(compose_preconv<char_type>(args) ...);}
     
@@ -1053,7 +1034,7 @@ namespace strconv::detail
       return preparg.view_size();
     }
     
-  template<typename char_type, typename iterator, typename input_argument_type, typename ... args_type>
+  template<strconcept::char_type char_type, typename iterator, typename input_argument_type, typename ... args_type>
   constexpr iterator preprocessed_transform_views( iterator it, input_argument_type const & preparg, args_type const & ... args ) noexcept
     {
     it = preparg.transform(it);
@@ -1062,11 +1043,11 @@ namespace strconv::detail
     return it;
     }
   
-  template<typename char_type = char, typename ... input_argument_type_n>
+  template<strconcept::char_type char_type = char, typename ... input_argument_type_n>
   [[nodiscard]]
   auto compose_(input_argument_type_n const & ... args) noexcept
     {
-    auto preprocessed{ detail::compose_preprocess<char>(args ...) };
+    auto preprocessed{ detail::compose_preprocess<char_type>(args ...) };
     static_assert(sizeof...(input_argument_type_n) > 1);
     using string_type = strconcept::string_by_char_type_t<char_type>;
     using size_type = typename string_type::size_type;

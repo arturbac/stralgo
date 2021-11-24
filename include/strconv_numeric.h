@@ -143,11 +143,9 @@ namespace strconv
     
   ///\brief converts floating point type to string
   template<float_format_traits traits = float_format_traits{},
-            typename char_type = char,
+            strconcept::char_type char_type = char,
             typename string_type = strconcept::string_by_char_type_t<char_type>,
-            typename value_type,
-            typename = std::enable_if_t<std::is_floating_point_v<value_type>
-                                   && strconcept::is_char_type_v<char_type>>>
+            strconcept::floating_point value_type>
   [[nodiscard]]
   auto float_to_string( value_type value ) noexcept
     {
@@ -156,11 +154,9 @@ namespace strconv
   
   ///\brief converts floating point type to string, alias
   template<float_format_traits traits = float_format_traits{},
-            typename char_type = char,
+            strconcept::char_type char_type = char,
             typename string_type = strconcept::string_by_char_type_t<char_type>,
-            typename value_type,
-            typename = std::enable_if_t<std::is_floating_point_v<value_type>
-                                   && strconcept::is_char_type_v<char_type>>>
+            strconcept::floating_point value_type>
   [[nodiscard]]
   auto f2str( value_type value ) noexcept
     {
@@ -170,11 +166,9 @@ namespace strconv
   //--------------------------------------------------------------------------------------------------------
   ///\brief integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
   ///\return pair of decoded integral value and iterator to source view pass the last parsed character
-  template<typename integral_type,
+  template<strconcept::integral integral_type,
            input_format_e input_format = input_format_e::undetermined,
-           typename string_view_type,
-           typename = std::enable_if_t< std::is_integral_v<integral_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+           strconcept::convertible_to_string_view string_view_type>
   constexpr auto string_to_integral( string_view_type str_number ) 
     {
      return detail::string_to_integral_<integral_type,input_format>(str_number);
@@ -183,29 +177,25 @@ namespace strconv
   //--------------------------------------------------------------------------------------------------------
   ///\brief integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
   ///\return pair of decoded integral value and iterator pass the last parsed character
-  template<typename integral_type,
+  template<strconcept::integral integral_type,
            input_format_e input_format = input_format_e::undetermined,
-           typename string_view_type,
-           typename = std::enable_if_t< std::is_integral_v<integral_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+           strconcept::convertible_to_string_view string_view_type>
   constexpr auto str2int( string_view_type str_number ) 
     { return detail::string_to_integral_<integral_type,input_format>(str_number); }
       
   //--------------------------------------------------------------------------------------------------------
   ///\brief signed float convertion from string supports untrimed strings of decimal notation [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
   ///\return pair of value with pass the end iterator to source string view
-  template<typename float_type, typename string_view_type,
-    typename = std::enable_if_t< std::is_floating_point_v<float_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::floating_point float_type,
+           strconcept::convertible_to_string_view string_view_type>
   constexpr auto string_to_float( string_view_type str_number ) 
     {
     return detail::string_to_float_<float_type>( str_number );
     }
   //--------------------------------------------------------------------------------------------------------
   //alias
-  template<typename float_type, typename string_view_type,
-    typename = std::enable_if_t< std::is_floating_point_v<float_type> &&
-                      strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::floating_point float_type,
+           strconcept::convertible_to_string_view string_view_type>
   constexpr auto str2f( string_view_type str_number ) 
     {
     return detail::string_to_float_<float_type>(str_number);
@@ -216,7 +206,7 @@ namespace strconv
   //--------------------------------------------------------------------------------------------------------
 
   ///\brief composes a string from multiple arguments, arguments other that char/string are first converted into string representation
-  template<typename char_type = char, typename ... input_argument_type_n>
+  template<strconcept::char_type char_type = char, typename ... input_argument_type_n>
   [[nodiscard]]
   auto compose(input_argument_type_n const & ... args) noexcept
     {

@@ -26,9 +26,9 @@ namespace strconcept_tests
 
 namespace strconv_value_to_hex
   {
-  static_assert( strconv::value_to_hex(0) == '0' );
-  static_assert( strconv::value_to_hex(5) == '5' );
-  static_assert( strconv::value_to_hex(15) == 'F' );
+  static_assert( strconv::value_to_hex(uint8_t(0)) == '0' );
+  static_assert( strconv::value_to_hex(uint8_t(5)) == '5' );
+  static_assert( strconv::value_to_hex(uint8_t(15)) == 'F' );
   }
   
 namespace from_hex_ascii_test
@@ -112,7 +112,51 @@ namespace calculate_size_div_info_test
     static_assert( strconv::detail::calculate_size_div_info<16>(0xffffu).divisor_ == 0x1000 );
     
   }
+
+#pragma clang optimize off
+
+BOOST_AUTO_TEST_CASE( calc_size_div_info )
+{
+//   auto l10 = std::log(10);
+//   auto ll10 = std::log(std::max<unsigned>(1, 1000));
+//   auto res = static_cast<unsigned>(1 + std::log(std::max<unsigned>(1, 1000))/std::log(10) );
   
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(0u).size_ == 0 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(1u).size_ == 1 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(10u).size_ == 2 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(99u).size_ == 2 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(100u).size_ == 3 );
+    
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(0u).divisor_ == 0 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(1u).divisor_ == 1 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(10u).divisor_ == 10 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(99u).divisor_ == 10 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(100u).divisor_ == 100 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(1000u).divisor_ == 1000 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>(9999u).divisor_ == 1000 );
+    
+    BOOST_TEST( strconv::detail::calculate_size_div_info<10>( 18446744073709551610ull).divisor_ == 10000000000000000000ull );
+    //18446744073709551615ull
+    //10000000000000000000
+    
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0u).size_ == 0 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(1u).size_ == 1 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xfu).size_ == 1 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0x10u).size_ == 2 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xffu).size_ == 2 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xfffu).size_ == 3 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xffffu).size_ == 4 );
+    
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0u).divisor_ == 0 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(1u).divisor_ == 1 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xfu).divisor_ == 1 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0x10u).divisor_ == 0x10 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xffu).divisor_ == 0x10 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xfffu).divisor_ == 0x100 );
+    BOOST_TEST( strconv::detail::calculate_size_div_info<16>(0xffffu).divisor_ == 0x1000 );
+}
+#pragma clang optimize on
+
 using traits = strconv::integral_format_traits;
 using strconv::format_e;
 using strconv::char_case_e;
@@ -1118,6 +1162,8 @@ namespace float_to_string_test
     
   }
   
+
+  
 namespace string_to_integral_test
   {
   using strconv::string_to_integral;
@@ -1191,6 +1237,8 @@ namespace string_to_integral_test
   static_assert( test<int32_t>("   +0"sv,0,5) );
   static_assert( test<int32_t>( {},0,0) );
   static_assert( test<int32_t>("1"sv,1,1) );
+  static_assert( test<int32_t>("1000"sv,1000,4) );
+  static_assert( test<uint32_t>("1000"sv,1000u,4) );
   static_assert( test<int32_t>("12"sv,12,2) );
   static_assert( test<int32_t>("124566554"sv,124566554,9) );
   static_assert( test<int32_t>("+124566554"sv,124566554,10) );
@@ -1245,8 +1293,10 @@ BOOST_AUTO_TEST_CASE(strconv_string_to_integral_test)
   //Test comile string/string_view iterators on return
   using namespace string_to_integral_test;
   std::string source{ "\t \t 0xFF3423 342fsdv"sv };
-  auto [result,end_it] = string_to_integral<uint16_t>(source);
-  auto [result2,end_it2] = string_to_integral<int16_t>(source);
+  auto [result,end_it] = string_to_integral<uint32_t>(source);
+  BOOST_TEST(result == 0xFF3423);
+  auto [result2,end_it2] = string_to_integral<int32_t>(source);
+  BOOST_TEST(result2 == 0xFF3423);
 }
 
 namespace string_to_float_test
@@ -1283,7 +1333,20 @@ namespace string_to_float_test
   static_assert( test<double>("+10.1333"sv, 10.1333, 8 ) );
   static_assert( test<double>("-10.1333"sv, -10.1333, 8 ) );
   static_assert( test<double>("-110.1333"sv, -110.1333, 9 ) );
+  static_assert( test<double>("1000.36"sv, 1000.36, 7 ) );
   }
+BOOST_AUTO_TEST_CASE(strconv_string_to_float_test)
+{
+  using strconv::detail::log2p1;
+  auto lg = 3.32192809488736;//double(log2p1(10u)-1);
+  auto i = 1+unsigned(double(log2p1(1000u)-1)/lg);
+  i = 1+unsigned(double(log2p1(999u)-1)/lg);
+  
+  using namespace string_to_float_test;
+  auto [result,end_it] = strconv::string_to_float<double>("1000.08"sv);
+  BOOST_TEST( result == 1000.08);
+  
+}
 //----------------------------------------------------------------------------------------------------------------------
 BOOST_AUTO_TEST_CASE(strconv_compose)
 {

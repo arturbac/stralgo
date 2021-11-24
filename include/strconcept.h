@@ -20,6 +20,12 @@ namespace strconcept
   template<typename integral_type>
   concept integral = std::is_integral_v<integral_type>;
   
+  template<typename integral_type>
+  concept signed_integral = std::is_signed_v<integral_type>;
+  
+  template<typename integral_type>
+  concept unsigned_integral = std::is_unsigned_v<integral_type>;
+  
   template<typename float_type>
   concept floating_point = std::is_floating_point_v<float_type>;
   
