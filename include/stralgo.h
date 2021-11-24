@@ -65,12 +65,9 @@ namespace stralgo
   //--------------------------------------------------------------------------------------------------------
   ///\returns pos to the first occurrence in view of any of the characters that are part of one_of, or npos if there are no matches.
   ///\warning requires char_type of both views/strings to be same type
-  template<typename string_view_type, typename string_view_type2>
-    requires (
-           strconcept::convertible_to_string_view<string_view_type>
-        && strconcept::convertible_to_string_view<string_view_type2>
-        && strconcept::view_value_type_equals<string_view_type,string_view_type2>
-    )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   ///\param view and \param one_of any view_type or string_type
   [[nodiscard]]
   constexpr auto find_first_of( string_view_type const & view, string_view_type2 const & one_of )
@@ -80,8 +77,7 @@ namespace stralgo
 
   //--------------------------------------------------------------------------------------------------------
   ///\returns trimmed left view of \param view from values that match isspace
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto trim_left( string_view_type const & view) noexcept
     {
@@ -89,11 +85,9 @@ namespace stralgo
     }
     
   ///\returns trimmed left view \param view from values that match value
-  template<typename string_view_type, typename char_type>
-    requires ( 
-           strconcept::convertible_to_string_view<string_view_type>
-        && strconcept::char_type<char_type>
-        && strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type> )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::char_type char_type>
+    requires strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type> 
   [[nodiscard]]
   constexpr auto trim_left( string_view_type const & view, char_type value) noexcept
     {
@@ -101,12 +95,9 @@ namespace stralgo
     }
     
   ///\returns trimmed left view \param view from values that match any chars in any_of
-  template<typename string_view_type, typename string_view_type2>
-    requires(
-         strconcept::convertible_to_string_view<string_view_type>
-      && strconcept::convertible_to_string_view<string_view_type2>
-      && strconcept::view_value_type_equals<string_view_type,string_view_type2>
-      )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr auto trim_left( string_view_type const & view, string_view_type2 any_of) noexcept
     {
@@ -115,8 +106,7 @@ namespace stralgo
 
   //--------------------------------------------------------------------------------------------------------
   ///\returns trimmed right view of \param view from values that match isspace
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto trim_right( string_view_type const & view) noexcept
     {
@@ -124,11 +114,9 @@ namespace stralgo
     }
     
   ///\returns trimmed right view of \param view from values that match value
-  template<typename string_view_type, typename char_type>
-    requires ( 
-           strconcept::convertible_to_string_view<string_view_type>
-        && strconcept::char_type<char_type>
-        && strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type> )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::char_type char_type>
+    requires strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type>
   [[nodiscard]]
   constexpr auto trim_right( string_view_type const & view, char_type value) noexcept
     {
@@ -136,20 +124,16 @@ namespace stralgo
     }
     
   ///\returns trimmed right view of \param view from values that match any chars in any_of
-  template<typename string_view_type, typename string_view_type2>
-    requires(
-         strconcept::convertible_to_string_view<string_view_type>
-      && strconcept::convertible_to_string_view<string_view_type2>
-      && strconcept::view_value_type_equals<string_view_type,string_view_type2>
-      )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr auto trim_right( string_view_type const & view, string_view_type2 const & any_of) noexcept
     {
     return detail::trim_right_predicate( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto substr( string_view_type const & view,
                          typename string_view_type::size_type pos,
@@ -160,8 +144,7 @@ namespace stralgo
   
   //--------------------------------------------------------------------------------------------------------
     
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto left( string_view_type const & view, typename string_view_type::size_type count )
     {
@@ -170,8 +153,7 @@ namespace stralgo
   
   //--------------------------------------------------------------------------------------------------------
     
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto right( string_view_type const & view, typename string_view_type::size_type count )
     {
@@ -180,8 +162,7 @@ namespace stralgo
 
   //--------------------------------------------------------------------------------------------------------
   ///\returns trimmed view of \param view from values that match isspace
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto trim( string_view_type const & view) noexcept
     {
@@ -189,11 +170,9 @@ namespace stralgo
     }
     
   ///\returns trimmed view of \param view from values that match value
-  template<typename string_view_type, typename char_type>
-      requires ( 
-           strconcept::convertible_to_string_view<string_view_type>
-        && strconcept::char_type<char_type>
-        && strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type> )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::char_type char_type>
+      requires strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type>
   [[nodiscard]]
   constexpr auto trim( string_view_type const & view, char_type value) noexcept
     {
@@ -201,12 +180,9 @@ namespace stralgo
     }
     
   ///\returns trimmed view of \param view from values that match any chars in any_of
-  template<typename string_view_type, typename string_view_type2>
-    requires(
-         strconcept::convertible_to_string_view<string_view_type>
-      && strconcept::convertible_to_string_view<string_view_type2>
-      && strconcept::view_value_type_equals<string_view_type,string_view_type2>
-      )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr auto trim( string_view_type const & view, string_view_type2 const & any_of) noexcept
     {
@@ -217,9 +193,9 @@ namespace stralgo
   //--------------------------------------------------------------------------------------------------------
   ///\brief merges many strings views or chars into one with single string buffer allocation
   template<typename ... string_view_or_char_n,
-    typename string_type = strconcept::string_by_char_type_t<strconcept::char_type_from_view_t<typename strconcept::unpack_first<string_view_or_char_n ...>::type> >,
-    typename = std::enable_if_t<detail::merge_concepts_<string_view_or_char_n...>>
+    typename string_type = strconcept::string_by_char_type_t<strconcept::char_type_from_view_t<typename strconcept::unpack_first<string_view_or_char_n ...>::type> >
     >
+    requires detail::merge_concepts_<string_view_or_char_n...>
   [[nodiscard]]
   auto merge( string_view_or_char_n const & ... args ) noexcept
     {
@@ -228,34 +204,26 @@ namespace stralgo
     
   //--------------------------------------------------------------------------------------------------------
   ///\brief merges range of string view with one buffer allocation
-  template<typename fwd_iterator,
-  typename string_type = strconcept::string_by_value_type_t<strconcept::remove_cvref_t<decltype(*std::declval<fwd_iterator>())>>,
-    typename = std::enable_if_t<detail::merge_range_concepts_<fwd_iterator>>
-    >
+  template<detail::merge_range_concept fwd_iterator,
+  typename string_type = strconcept::string_by_value_type_t<strconcept::remove_cvref_t<decltype(*std::declval<fwd_iterator>())>>>
   [[nodiscard]]
   auto merge_range( fwd_iterator beg, fwd_iterator itend )
     {
     return detail::merge_range_<fwd_iterator,string_type>(beg,itend);
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename string_view_type2>
-    requires(
-         strconcept::convertible_to_string_view<string_view_type>
-      && strconcept::convertible_to_string_view<string_view_type2>
-      && strconcept::view_value_type_equals<string_view_type,string_view_type2>
-      )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr bool ends_with( string_view_type const & str, string_view_type2 const & other ) noexcept
     {
     return detail::ends_with_(str,other);
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename string_view_type2>
-    requires(
-         strconcept::convertible_to_string_view<string_view_type>
-      && strconcept::convertible_to_string_view<string_view_type2>
-      && strconcept::view_value_type_equals<string_view_type,string_view_type2>
-      )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr bool starts_with( string_view_type const & str, string_view_type2 const & other ) noexcept
     {
@@ -263,12 +231,9 @@ namespace stralgo
     }
 
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename string_view_type2>
-    requires(
-         strconcept::convertible_to_string_view<string_view_type>
-      && strconcept::convertible_to_string_view<string_view_type2>
-      && strconcept::view_value_type_equals<string_view_type,string_view_type2>
-      )
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr int compare_no_case( string_view_type const & s1, string_view_type2 const & s2 )
     {
@@ -279,8 +244,7 @@ namespace stralgo
     
   ///\returns true when string contains only number chars.
   ///\param str any string or view convertible to std::basic_string_view
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   constexpr bool is_number(string_view_type const & str)
     {
     return detail::is_number_(str);
@@ -290,8 +254,7 @@ namespace stralgo
     
   ///\returns true when string contains only number chars.
   ///\param str any string or view convertible to std::basic_string_view
-  template<typename string_view_type>
-    requires strconcept::convertible_to_string_view<string_view_type>
+  template<strconcept::convertible_to_string_view string_view_type>
   constexpr bool is_hexnumber(string_view_type const & str)
     {
     return detail::is_hexnumber(str);

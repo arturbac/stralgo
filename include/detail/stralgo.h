@@ -22,28 +22,25 @@ namespace stralgo::detail
     }
 #endif
 
-  template<typename possible_char_type,
-    typename  = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr bool isblank_( possible_char_type src )
+  constexpr bool isblank_( char_type src )
     {
     unsigned c{ static_cast<unsigned>(src) };
     return unsigned(' ') == c ||  unsigned('\t') == c;
     }
   
-  template<typename possible_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr bool isspace_( possible_char_type src )
+  constexpr bool isspace_( char_type src )
     {
     unsigned c{ static_cast<unsigned>(src) };
     return isblank_(src) || unsigned('\n') == c || unsigned('\r') == c || unsigned('\v') == c || unsigned('\f') == c;
     }
 
-  template<typename possible_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr bool isdigit_( possible_char_type src )
+  constexpr bool isdigit_( char_type src )
     {
     unsigned c{ static_cast<unsigned>(src) };
     return c >= 48u && c <= 57u;
@@ -52,28 +49,25 @@ namespace stralgo::detail
   inline constexpr unsigned lower_char_begin_ = 97u;
   inline constexpr unsigned upper_char_begin_ = 65u;
   
-  template<typename possible_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr bool islower_( possible_char_type src )
+  constexpr bool islower_( char_type src )
     {
     unsigned c{ static_cast<unsigned>(src) };
     return c >= lower_char_begin_ && c <= 122u;
     }
     
-  template<typename possible_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr bool isxdigit_( possible_char_type src )
+  constexpr bool isxdigit_( char_type src )
     {
     unsigned c{ static_cast<unsigned>(src) };
     return isdigit_(src) || (c >= upper_char_begin_ && c <= 70u) || (c >= lower_char_begin_ && c <= 102u);
     }
     
-  template<typename possible_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr bool isupper_( possible_char_type src )
+  constexpr bool isupper_( char_type src )
     {
     unsigned c{ static_cast<unsigned>(src) };
     return c >= upper_char_begin_ && c <= 90u;
@@ -81,31 +75,28 @@ namespace stralgo::detail
     
   //--------------------------------------------------------------------------------------------------------
   
-  template<typename possible_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr auto to_lower_( possible_char_type c )
+  constexpr auto to_lower_( char_type c )
     {
     if( isupper_(c) )
-      return static_cast<possible_char_type>( static_cast<unsigned>(c) - upper_char_begin_ + lower_char_begin_  );
+      return static_cast<char_type>( static_cast<unsigned>(c) - upper_char_begin_ + lower_char_begin_  );
     return c;
     }
 
   //--------------------------------------------------------------------------------------------------------
   
-  template<typename possible_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<possible_char_type>>>
+  template<strconcept::char_type char_type>
   [[nodiscard]]
-  constexpr auto to_upper_( possible_char_type c )
+  constexpr auto to_upper_( char_type c )
     {
     if( islower_(c) )
-      return static_cast<possible_char_type>( static_cast<unsigned>(c) - lower_char_begin_ + upper_char_begin_ );
+      return static_cast<char_type>( static_cast<unsigned>(c) - lower_char_begin_ + upper_char_begin_ );
     return c;
     }
   //--------------------------------------------------------------------------------------------------------
   ///\brief same as stl one except that it is available as constexpr with c++17
-  template <class forward_iterator, class predicate,
-    typename = std::enable_if_t<strconcept::is_forward_iterator_v<forward_iterator>>>
+  template<strconcept::forward_iterator forward_iterator, class predicate>
   [[nodiscard]]
   constexpr forward_iterator find_if(forward_iterator first, const forward_iterator last, predicate pred)
     {
@@ -117,10 +108,8 @@ namespace stralgo::detail
     }
     
   //--------------------------------------------------------------------------------------------------------
-  template <typename forward_iterator1, typename forward_iterator2,
-    typename = std::enable_if_t<strconcept::is_forward_iterator_v<forward_iterator1>
-                             && strconcept::is_forward_iterator_v<forward_iterator2>>
-    >
+  template<strconcept::forward_iterator forward_iterator1,
+           strconcept::forward_iterator forward_iterator2>
   [[nodiscard]]
   constexpr bool equal(forward_iterator1 first, const forward_iterator1 last, forward_iterator2 first2 )
     {
@@ -132,8 +121,7 @@ namespace stralgo::detail
     
   //--------------------------------------------------------------------------------------------------------
   
-  template<typename forward_iterator, typename value_type,
-    typename = std::enable_if_t<strconcept::is_forward_iterator_v<forward_iterator>>>
+  template<strconcept::forward_iterator forward_iterator, typename value_type>
   constexpr forward_iterator find(forward_iterator first, forward_iterator last, value_type const & v)
     {
     for (; first != last; ++first) 
@@ -141,6 +129,7 @@ namespace stralgo::detail
             break;
     return first;
     }
+    
   struct identity_projection
     {
     template<typename input_value_type >
@@ -148,10 +137,9 @@ namespace stralgo::detail
       { return std::forward<input_value_type>(value); }
     };
   //--------------------------------------------------------------------------------------------------------
-    template<typename input_iterator, typename output_iterator, typename unary_operation = identity_projection,
-      typename = std::enable_if_t<strconcept::is_input_iterator_v<input_iterator> 
-                               && strconcept::is_writable_iterator_v<output_iterator>>
-      >
+    template<strconcept::input_iterator input_iterator,
+             strconcept::writable_iterator output_iterator,
+             typename unary_operation = identity_projection>
     constexpr auto transform(input_iterator first, input_iterator last, output_iterator result, unary_operation unary_op = {})
       {
       for (; first != last; ++first, ++result)
@@ -160,9 +148,9 @@ namespace stralgo::detail
       }
       
   //--------------------------------------------------------------------------------------------------------
-  template<typename unary_operation = identity_projection, typename output_iterator, typename value_type,
-      typename = std::enable_if_t<strconcept::is_writable_iterator_v<output_iterator>>
-      >
+  template<typename unary_operation = identity_projection,
+           strconcept::writable_iterator output_iterator,
+           typename value_type>
     constexpr auto fill(output_iterator first, output_iterator last, value_type value, unary_operation unary_op = {} )
       {
       for (; first != last; ++first)
@@ -200,8 +188,9 @@ namespace stralgo::detail
     template<class iterator>
     not_is_any_of(iterator b, iterator e) -> not_is_any_of<iterator>;
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename string_view_type2,
-    typename = std::enable_if_t<strconcept::view_value_type_equals_v<string_view_type,string_view_type2>>>
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr auto find_first_of_( string_view_type const & view, string_view_type2 const & one_of )
     {
@@ -217,7 +206,7 @@ namespace stralgo::detail
     }
     
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename predicate_type>
+  template<strconcept::convertible_to_string_view string_view_type, typename predicate_type>
   constexpr auto trim_left_predicate( string_view_type const & view, predicate_type pred ) noexcept
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
@@ -234,7 +223,7 @@ namespace stralgo::detail
     return view_type{};
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename predicate_type>
+  template<strconcept::convertible_to_string_view string_view_type, typename predicate_type>
   constexpr auto trim_right_predicate( string_view_type const & view, predicate_type pred ) noexcept
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
@@ -254,7 +243,7 @@ namespace stralgo::detail
     return view_type{};
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename predicate_type>
+  template<strconcept::convertible_to_string_view string_view_type, typename predicate_type>
   constexpr auto trim_predicate( string_view_type const & view, predicate_type const & pred ) noexcept
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
@@ -276,8 +265,7 @@ namespace stralgo::detail
     return view_type{};
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type,
-    typename = std::enable_if_t<strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto substr_( string_view_type const & view,
                          typename string_view_type::size_type pos,
@@ -296,8 +284,7 @@ namespace stralgo::detail
       return view_type{};
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type,
-    typename = std::enable_if_t<strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto left_( string_view_type const & view, typename string_view_type::size_type count )
     {
@@ -310,8 +297,7 @@ namespace stralgo::detail
     }
   //--------------------------------------------------------------------------------------------------------
     
-  template<typename string_view_type,
-    typename = std::enable_if_t<strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::convertible_to_string_view string_view_type>
   [[nodiscard]]
   constexpr auto right_( string_view_type const & view, typename string_view_type::size_type count )
     {
@@ -327,12 +313,11 @@ namespace stralgo::detail
     
   //--------------------------------------------------------------------------------------------------------
 
-  template<typename maybe_char_type,
-    typename = std::enable_if_t<strconcept::is_char_type_v<maybe_char_type>>>
+  template<strconcept::char_type maybe_char_type>
   constexpr size_t view_size( maybe_char_type ) noexcept
     { return 1u; }
   
-  template<typename string_view_type,
+  template<strconcept::convertible_to_string_view string_view_type,
     typename = std::enable_if_t<!strconcept::is_char_type_v<string_view_type> &&
       !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
       !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>>
@@ -412,18 +397,17 @@ namespace stralgo::detail
         (!std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
         !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>) //dissallow C arrays aand pointers
         );
+
   //--------------------------------------------------------------------------------------------------------
 
   template<typename fwd_iterator>
-  inline constexpr bool merge_range_concepts_ = 
-      strconcept::is_convertible_to_string_view_v<decltype(*fwd_iterator{})>
+  concept merge_range_concept = 
+      strconcept::convertible_to_string_view<decltype(*fwd_iterator{})>
      && (!std::is_array_v< strconcept::remove_cvref_t<decltype(*fwd_iterator{})>> &&
         !std::is_pointer_v< strconcept::remove_cvref_t<decltype(*fwd_iterator{})>>)
-     && strconcept::is_forward_iterator_v<fwd_iterator>;
+     && strconcept::forward_iterator<fwd_iterator>;
      
-  template<typename fwd_iterator, typename string_type,
-    typename = std::enable_if_t<detail::merge_range_concepts_<fwd_iterator>>
-    >
+  template<merge_range_concept fwd_iterator, typename string_type>
   auto merge_range_( fwd_iterator itbeg, fwd_iterator itend )
     {
     using size_type = typename string_type::size_type;
@@ -440,8 +424,9 @@ namespace stralgo::detail
     }
     
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename string_view_type2,
-    typename = std::enable_if_t<strconcept::view_value_type_equals_v<string_view_type,string_view_type2>>>
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr bool ends_with_( string_view_type const & str, string_view_type2 const & other ) noexcept
     {
@@ -455,8 +440,9 @@ namespace stralgo::detail
     return false;
     }
   //--------------------------------------------------------------------------------------------------------
-  template<typename string_view_type, typename string_view_type2,
-    typename = std::enable_if_t<strconcept::view_value_type_equals_v<string_view_type,string_view_type2>>>
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr bool starts_with_( string_view_type const & str, string_view_type2 const & other ) noexcept
     {
@@ -471,8 +457,9 @@ namespace stralgo::detail
   //--------------------------------------------------------------------------------------------------------
 
   //TODO change to view
-  template<typename target_char_type, typename string_view_type, typename function_obj,
-    typename = std::enable_if_t<strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::char_type target_char_type,
+           strconcept::convertible_to_string_view string_view_type,
+           typename function_obj>
   auto make_transform_string_view_target( string_view_type const & str, function_obj const & fobj ) noexcept
     {
     using string_type = strconcept::string_by_char_type_t<target_char_type>;
@@ -484,16 +471,16 @@ namespace stralgo::detail
     return result;
     }
     
-  template<typename string_view_type, typename function_obj,
-    typename = std::enable_if_t<strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::convertible_to_string_view string_view_type, typename function_obj>
   auto make_transform_string_view( string_view_type const & str, function_obj const & fobj ) noexcept
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
     return make_transform_string_view_target<char_type>(str, fobj);
     }
     
-  template<typename target_char_type, typename function_obj >
-  auto make_transform_string_view( strconcept::string_by_char_type_t<target_char_type> && str, function_obj const & fobj ) noexcept
+  template<strconcept::char_type target_char_type, typename function_obj>
+  auto make_transform_string_view( strconcept::string_by_char_type_t<target_char_type> && str,
+                                   function_obj const & fobj ) noexcept
     {
     using string_type = strconcept::string_by_char_type_t<target_char_type>;
     using char_type = target_char_type;
@@ -508,8 +495,9 @@ namespace stralgo::detail
     
   //--------------------------------------------------------------------------------------------------------
   
-  template<typename string_view_type, typename string_view_type2,
-    typename = std::enable_if_t<strconcept::view_value_type_equals_v<string_view_type,string_view_type2>>>
+  template<strconcept::convertible_to_string_view string_view_type,
+           strconcept::convertible_to_string_view string_view_type2>
+    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
   [[nodiscard]]
   constexpr int compare_no_case_( string_view_type const & s1, string_view_type2 const & s2 )
     {
@@ -534,8 +522,7 @@ namespace stralgo::detail
     }
   //--------------------------------------------------------------------------------------------------------
   
-  template<typename string_view_type,
-    typename = std::enable_if_t<strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::convertible_to_string_view string_view_type>
   constexpr bool is_number_(string_view_type const & str)
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
@@ -549,8 +536,7 @@ namespace stralgo::detail
     
   //--------------------------------------------------------------------------------------------------------
   
-  template<typename string_view_type,
-    typename = std::enable_if_t<strconcept::is_convertible_to_string_view_v<string_view_type>>>
+  template<strconcept::convertible_to_string_view string_view_type>
   constexpr bool is_hexnumber(string_view_type const & str)
     {
     using char_type = strconcept::string_view_value_type<string_view_type>;
