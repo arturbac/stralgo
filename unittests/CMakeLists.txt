@@ -4,9 +4,13 @@ target_link_libraries( stralgo_test
      stralgo
      Boost::unit_test_framework
      )
+     
+add_test( stralgo_test ${CMAKE_CURRENT_BINARY_DIR}/stralgo_test )
+
 add_executable( strconv_numeric_test )
 target_sources( strconv_numeric_test PRIVATE strconv_numeric.cc )
 target_link_libraries( strconv_numeric_test
      stralgo
      Boost::unit_test_framework
      )
+add_test( strconv_numeric_test ${CMAKE_CURRENT_BINARY_DIR}/strconv_numeric_test )

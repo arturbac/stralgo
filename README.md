@@ -231,6 +231,7 @@ Performance comparision of compose vs snprintf for bellow test functions
 compiler | function | stralgo | legacy
 ---------|----------|---------|-------
 clang-13 | compose  | 14 ms   | 85 ms 
+gcc-10   | compose  | 15 ms   | 87 ms 
 
 full implementation performance comparision can be seen in perf/perf.cc
 
