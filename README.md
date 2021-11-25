@@ -17,7 +17,7 @@ This code solves thise problems:
 * every convertion, composing, formatting is constexpr except allocations
 * full suport for std::string_view with not null terminated strings
 * formating traits can be declared constexpr constant and reused consistently across project
-* minimum c++20 compiler required (in development at this point constexpr unit tests require c++20 and std::is_constant_evaluated() required for float size calculation)
+* minimum c++20 compiler required (stl at least c++17)
 * fully constexpr string to number and number to string convetions for functions that doesn't allocate (using output interators)
 * extensive number formating with constexpr traits
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
@@ -28,8 +28,8 @@ This code solves thise problems:
 * header only, except some of unit tests
 
 ## c++ compilers
-At this point of early development I work with clang 12.
-I'm planing checking and porting to gcc and msvc in near future.
+At this point of early development I work with clang 12 and gcc.
+I'm planing checking and porting to msvc in near future.
 
 * clang version 12.0.1 x86_64-portbld-freebsd13.0 with libcpp 11
 
