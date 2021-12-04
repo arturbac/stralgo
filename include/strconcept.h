@@ -7,7 +7,6 @@
 #include <type_traits>
 #include <string_view>
 #include <string>
-#include <ranges_config.h>
 
 namespace strconcept
 {

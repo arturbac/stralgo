@@ -4,6 +4,7 @@
 #include <strconv_numeric.h>
 #include <cmath>
 #include <optional>
+#include <cassert>
 
 namespace strconv::detail
 {
