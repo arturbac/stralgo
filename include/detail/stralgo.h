@@ -317,11 +317,14 @@ namespace stralgo::detail
   constexpr size_t view_size( maybe_char_type ) noexcept
     { return 1u; }
   
-  template<strconcept::convertible_to_string_view string_view_type,
+  template<strconcept::convertible_to_string_view string_view_type/*,
     typename = std::enable_if_t<!strconcept::is_char_type_v<string_view_type> &&
       !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
       !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>>
-      >
+      */>
+    requires (!strconcept::char_type<string_view_type> &&
+      !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
+      !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>)
   constexpr size_t view_size( string_view_type const & view ) noexcept
     { return std::size(view); }
     
@@ -337,7 +340,7 @@ namespace stralgo::detail
   template<typename iterator, typename string_view_type, typename ... args_type>
   void copy_views( iterator it, string_view_type const & view_or_char_value, args_type const & ... args ) noexcept
     {
-    if constexpr (strconcept::is_char_type_v<string_view_type>)
+    if constexpr (strconcept::char_type<string_view_type>)
       {
       *it = view_or_char_value;
       ++it;
@@ -392,7 +395,7 @@ namespace stralgo::detail
   inline constexpr bool merge_concepts_ = 
       (sizeof...(string_view_type_n) != 0) //require at least 2 arguemnts
       && //support chars or views 
-        (strconcept::is_char_type_v<string_view_type> //support char
+        (strconcept::char_type<string_view_type> //support char
           ||
         (!std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
         !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>) //dissallow C arrays aand pointers
@@ -415,9 +418,9 @@ namespace stralgo::detail
                                         [](size_type init, auto const & view )
                                         { return init + view.size(); }) };
     return copy_views_t<string_type>{}( aggregated_size,
-                                        [itbeg, itend]( auto out_iterator )
+                                        [itbeg, itend]( strconcept::writable_iterator auto out_iterator )
                                         {
-                                        static_assert( strconcept::is_writable_iterator_v<decltype(out_iterator)> );
+//                                         static_assert( strconcept::writable_iterator<decltype(out_iterator)> );
                                         for(auto beg{itbeg}; beg !=itend; ++beg)
                                           out_iterator = std::copy(std::begin(*beg),std::end(*beg), out_iterator );
                                         } );

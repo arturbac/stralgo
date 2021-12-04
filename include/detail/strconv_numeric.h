@@ -62,9 +62,10 @@ namespace strconv::detail
     {
     using size_type = typename string_type::size_type;
     size_type output_size{ static_cast<size_type>(send - sbeg)*2};
-    return stralgo::detail::copy_views_t<string_type>{}( output_size, [sbeg,send]( auto out_iterator )
+    return stralgo::detail::copy_views_t<string_type>{}( output_size, [sbeg,send]
+                                                    ( strconcept::writable_iterator auto out_iterator )
                                                      {
-                                                     static_assert( strconcept::is_writable_iterator_v<decltype(out_iterator)> );
+//                                                      static_assert( strconcept::is_writable_iterator_v<decltype(out_iterator)> );
                                                      to_hex_ascii_<char_case>( sbeg, send, out_iterator );
                                                     } );
     }

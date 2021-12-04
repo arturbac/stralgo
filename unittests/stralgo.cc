@@ -5,10 +5,10 @@
 #include <boost/test/unit_test.hpp>
 
   
-  static_assert(!strconcept::indexable_v<char>);
-  static_assert(!strconcept::indexable_v<int>);
-  static_assert(strconcept::indexable_v<char *>);
-  static_assert(strconcept::indexable_v<std::basic_string_view<char>>);
+  static_assert(!strconcept::indexable<char>);
+  static_assert(!strconcept::indexable<int>);
+  static_assert(strconcept::indexable<char *>);
+  static_assert(strconcept::indexable<std::basic_string_view<char>>);
   
 using namespace std::literals::string_view_literals;
 

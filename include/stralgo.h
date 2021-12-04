@@ -186,7 +186,6 @@ namespace stralgo
   [[nodiscard]]
   constexpr auto trim( string_view_type const & view, string_view_type2 const & any_of) noexcept
     {
-    static_assert(strconcept::view_value_type_equals_v<string_view_type,string_view_type2>);
     return detail::trim_predicate( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
     }
 
