@@ -1,4 +1,4 @@
-# stralgo
+# stralgo ![MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![language](https://img.shields.io/badge/language-C%2B%2B20-blue.svg)
 constexpr number &lt;-> string composition, formating and convertions with full support of unterminated string views.
 I started my jurney with C++ in the 2004 with compilers like embedded visual c++ 4, gcc 2.95. Thru years of participation in big projects i have had to fix many errors that source was in string formating like vnprintf.
 
