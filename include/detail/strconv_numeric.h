@@ -1046,6 +1046,7 @@ namespace strconv::detail
     }
   
   template<strconcept::char_type char_type = char, typename ... input_argument_type_n>
+    requires (sizeof ...(input_argument_type_n) > 1 )
   [[nodiscard]]
   auto compose_(input_argument_type_n const & ... args) noexcept
     {

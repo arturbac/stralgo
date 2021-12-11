@@ -207,6 +207,7 @@ namespace strconv
 
   ///\brief composes a string from multiple arguments, arguments other that char/string are first converted into string representation
   template<strconcept::char_type char_type = char, typename ... input_argument_type_n>
+    requires (sizeof ...(input_argument_type_n) > 1 )
   [[nodiscard]]
   auto compose(input_argument_type_n const & ... args) noexcept
     {
