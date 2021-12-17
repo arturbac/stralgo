@@ -5,6 +5,7 @@
 #include <cmath>
 #include <optional>
 #include <cassert>
+#include <bit>
 
 namespace strconv::detail
 {
