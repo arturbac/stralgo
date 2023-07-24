@@ -4,7 +4,7 @@
 //--------------------------------------------------------------------------
 #pragma once
 
-#include <detail/stralgo.h>
+#include <stralgo/detail/stralgo.h>
 #include <algorithm>
 #include <numeric>
 #include <cwctype>

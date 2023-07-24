@@ -4,7 +4,6 @@
 //--------------------------------------------------------------------------
 #pragma once
 
-// #include "constexpr_string.h"
 #include <coll/basic_string.h>
 #include <ranges>
 #include <type_traits>

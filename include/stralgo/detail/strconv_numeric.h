@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stralgo.h>
-#include <strconv_numeric.h>
+#include <stralgo/stralgo.h>
+#include <stralgo/strconv_numeric.h>
 #include <cmath>
 #include <optional>
 #include <cassert>

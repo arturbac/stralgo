@@ -3,6 +3,8 @@
 // {C} Artur Bac 2021
 //--------------------------------------------------------------------------
 #pragma once
+#include <cstdint>
+
 namespace stralgo
 {
   enum struct char_case_e : bool { lowercase, uppercase };

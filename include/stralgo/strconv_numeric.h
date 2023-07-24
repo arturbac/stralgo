@@ -4,9 +4,9 @@
 //--------------------------------------------------------------------------
 #pragma once
 
-#include <stralgo.h>
-#include <strconv_numeric_common.h>
-#include <detail/strconv_numeric.h>
+#include <stralgo/stralgo.h>
+#include <stralgo/strconv_numeric_common.h>
+#include <stralgo/detail/strconv_numeric.h>
 #include <array>
 #include <numeric>
 #include <cstdint>

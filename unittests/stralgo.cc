@@ -1,5 +1,5 @@
 #include <unit_test_core.h>
-#include <stralgo.h>
+#include <stralgo/stralgo.h>
 #include <coll/basic_fixed_string.h>
 
 using namespace std::literals::string_view_literals;
