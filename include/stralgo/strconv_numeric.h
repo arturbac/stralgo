@@ -75,142 +75,61 @@ namespace stralgo
     inline constexpr compose_t<detail::stl::basic_string> compose;
     }
   using detail::fmt;
-#if 0
 
-  //--------------------------------------------------------------------------------------------------------
-  
-  template<stralgo::concepts::forward_iterator iterator, stralgo::concepts::writable_iterator output_iterator>
-  
-  constexpr output_iterator from_hex_ascii(iterator sbeg, iterator send, output_iterator outit)
-    {
-    return detail::from_hex_ascii_(sbeg,send,outit);
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief estimates size info for integral_to_string with output_iterator
-  template<integral_format_traits traits, stralgo::concepts::integral value_type>
-  constexpr auto estimate_integral_to_str( value_type value )
-    {
-    return detail::estimate_integral_to_str_<traits>(value);
-    }
-    
-  
-  template<integral_format_traits traits = integral_format_traits{},
-           stralgo::concepts::writable_iterator output_iterator,
-           stralgo::concepts::integral value_type>
-  [[nodiscard]]
-  constexpr output_iterator integral_to_string( value_type value, output_iterator oit ) noexcept
-    {
-    return detail::integral_to_string_<traits>(value, oit );
-    }
-  
-  ///\brief converts itnergral signed or unsigned type to string using specified formating traits
-  template<integral_format_traits traits = integral_format_traits{},
-           stralgo::concepts::char_type char_type = char, 
-           typename string_type = stralgo::concepts::string_by_char_type_t<char_type>,
-           stralgo::concepts::integral value_type
-          >
-  [[nodiscard]]
-  auto integral_to_string( value_type value ) noexcept
-    {
-    return detail::integral_to_string_<traits,char_type,string_type>(value);
-    }
-  
-  ///\brief converts itnergral signed or unsigned type to string using specified formating traits
+  ///\brief converts integral signed or unsigned type to coll::basic_string using specified formatting traits
   template<integral_format_traits traits = integral_format_traits{},
            stralgo::concepts::char_type char_type = char,
-           stralgo::concepts::integral value_type,
-    typename string_type = stralgo::concepts::string_by_char_type_t<char_type>>
-  auto int2str( value_type value ) noexcept
-    { return detail::integral_to_string_<traits,char_type,string_type>(value); }
-  
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief estimates requires space for given value and formating traits, first pass of convertion, est_info.size() may be used to obtaion requires storage size
-  template<float_format_traits traits, stralgo::concepts::floating_point float_type>
-  [[nodiscard]]
-  constexpr auto estimate_float_to_string( float_type value ) noexcept
-    { return detail::estimate_float_to_string_<traits>(value); }
-  
-  ///\brief converts number into string using precalculated info, final pass
-  template<float_format_traits traits,
-          stralgo::concepts::writable_iterator output_iterator,
-          stralgo::concepts::floating_point float_type>
-  [[nodiscard]]
-  constexpr output_iterator float_to_string( detail::float_estimate_info_t<float_type> const & est_info, output_iterator oit ) noexcept
-    {
-    return detail::float_to_string_<traits>(est_info,oit);
-    }
+           std::integral value_type>
+  inline constexpr auto int2str( value_type value )
+    { return integral_to_string<char_type,traits>(value); }
     
-  template<float_format_traits traits = float_format_traits{},
-          stralgo::concepts::writable_iterator output_iterator,
-          stralgo::concepts::floating_point float_type>
-  [[nodiscard]]
-  constexpr output_iterator float_to_string( float_type value, output_iterator oit ) noexcept
+  namespace stl
     {
-    auto est_info{ detail::estimate_float_to_string_<traits>(value) };
-    return detail::float_to_string_<traits>(est_info,oit);
+  template<integral_format_traits traits = integral_format_traits{},
+           stralgo::concepts::char_type char_type = char,
+           std::integral value_type>
+    ///\brief converts integral signed or unsigned type to std::basic_string using specified formatting traits
+    inline constexpr auto int2str( value_type value )
+      { return stl::integral_to_string<char_type,traits>(value); }
     }
-    
-  ///\brief converts floating point type to string
+
+  ///\brief converts floating point type to coll::basic_string, alias
   template<float_format_traits traits = float_format_traits{},
             stralgo::concepts::char_type char_type = char,
-            typename string_type = stralgo::concepts::string_by_char_type_t<char_type>,
-            stralgo::concepts::floating_point value_type>
+            std::floating_point value_type>
   [[nodiscard]]
-  auto float_to_string( value_type value ) noexcept
+  inline constexpr auto f2str( value_type value )
+    { return float_to_string<char_type,traits>(value); }
+    
+  namespace stl
     {
-    return detail::float_to_string_<traits, char_type,string_type>(value);
-    }
-  
-  ///\brief converts floating point type to string, alias
-  template<float_format_traits traits = float_format_traits{},
-            stralgo::concepts::char_type char_type = char,
-            typename string_type = stralgo::concepts::string_by_char_type_t<char_type>,
-            stralgo::concepts::floating_point value_type>
-  [[nodiscard]]
-  auto f2str( value_type value ) noexcept
-    {
-    return detail::float_to_string_<traits,char_type,string_type>(value);
+    ///\brief converts floating point type to std::basic_string, alias
+    template<float_format_traits traits = float_format_traits{},
+             stralgo::concepts::char_type char_type = char,
+             std::floating_point value_type>
+    [[nodiscard]]
+    inline constexpr auto f2str( value_type value )
+      { return stl::float_to_string<char_type,traits>(value); }
     }
 
   //--------------------------------------------------------------------------------------------------------
-  ///\brief integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
-  ///\return pair of decoded integral value and iterator to source view pass the last parsed character
-  template<stralgo::concepts::integral integral_type,
-           input_format_e input_format = input_format_e::undetermined,
-           stralgo::concepts::convertible_to_string_view string_view_type>
-  constexpr auto string_to_integral( string_view_type str_number ) 
-    {
-     return detail::string_to_integral_<integral_type,input_format>(str_number);
-    }
-
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
+  ///\brief integral conversion from string supports untrimmed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
   ///\return pair of decoded integral value and iterator pass the last parsed character
-  template<stralgo::concepts::integral integral_type,
+  template<std::integral integral_type,
            input_format_e input_format = input_format_e::undetermined,
-           stralgo::concepts::convertible_to_string_view string_view_type>
-  constexpr auto str2int( string_view_type str_number ) 
-    { return detail::string_to_integral_<integral_type,input_format>(str_number); }
-      
+           stralgo::concepts::char_range string_view_type>
+  inline constexpr auto str2int( string_view_type const & str_number ) noexcept
+    { return string_to_integral<integral_type,input_format>(str_number); }
+
   //--------------------------------------------------------------------------------------------------------
-  ///\brief signed float convertion from string supports untrimed strings of decimal notation [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
-  ///\return pair of value with pass the end iterator to source string view
-  template<stralgo::concepts::floating_point float_type,
-           stralgo::concepts::convertible_to_string_view string_view_type>
-  constexpr auto string_to_float( string_view_type str_number ) 
+  ///\brief signed float conversion from string supports untrimmed strings of decimal notation [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
+  template<std::floating_point float_type,
+           stralgo::concepts::char_range string_view_type>
+  inline constexpr auto str2f( string_view_type const & str_number ) noexcept
     {
-    return detail::string_to_float_<float_type>( str_number );
-    }
-  //--------------------------------------------------------------------------------------------------------
-  //alias
-  template<stralgo::concepts::floating_point float_type,
-           stralgo::concepts::convertible_to_string_view string_view_type>
-  constexpr auto str2f( string_view_type str_number ) 
-    {
-    return detail::string_to_float_<float_type>(str_number);
+    return string_to_float<float_type>(str_number);
     }
 
-#endif
+
 }
 
