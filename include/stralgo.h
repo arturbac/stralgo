@@ -12,252 +12,155 @@
 
 namespace stralgo
 {
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief match https://en.cppreference.com/w/cpp/string/byte/isblank but is resistant to signed char UB
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr bool isblank( possible_char_type src )
-    { return detail::isblank_(src); }
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief match https://en.cppreference.com/w/cpp/string/byte/isspace but is resistant to signed char UB  
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr bool isspace( possible_char_type src )
-    { return detail::isspace_(src); }
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief match https://en.cppreference.com/w/cpp/string/byte/isdigit but is resistant to signed char UB
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr bool isdigit( possible_char_type src )
-    { return detail::isdigit_(src); }
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief match https://en.cppreference.com/w/cpp/string/byte/isxdigit but is resistant to signed char UB
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr bool isxdigit( possible_char_type src )
-    { return detail::isxdigit_(src); }
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief match https://en.cppreference.com/w/cpp/string/byte/islower but is resistant to signed char UB
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr bool islower( possible_char_type src )
-    { return detail::islower_(src); }
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief match https://en.cppreference.com/w/cpp/string/byte/islower but is resistant to signed char UB
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr bool isupper( possible_char_type src )
-    { return detail::isupper_(src); }
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr auto to_lower( possible_char_type c )
-    {
-    return detail::to_lower_(c);
-    }
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::char_type possible_char_type>
-  [[nodiscard]]
-  constexpr auto to_upper( possible_char_type c )
-    {
-    return detail::to_upper_(c);
-    }
-  //--------------------------------------------------------------------------------------------------------
-  ///\returns pos to the first occurrence in view of any of the characters that are part of one_of, or npos if there are no matches.
-  ///\warning requires char_type of both views/strings to be same type
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::convertible_to_string_view string_view_type2>
-    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
-  ///\param view and \param one_of any view_type or string_type
-  [[nodiscard]]
-  constexpr auto find_first_of( string_view_type const & view, string_view_type2 const & one_of )
-    {
-    return detail::find_first_of_(view,one_of);
-    }
+  using detail::isblank;
+  using detail::isspace;
+  using detail::isdigit;
+  using detail::isxdigit;
+  using detail::islower;
+  using detail::isupper;
+  using detail::to_lower;
+  using detail::to_upper;
+  using detail::find_first_of;
 
   //--------------------------------------------------------------------------------------------------------
-  ///\returns trimmed left view of \param view from values that match isspace
-  template<strconcept::convertible_to_string_view string_view_type>
-  [[nodiscard]]
-  constexpr auto trim_left( string_view_type const & view) noexcept
-    {
-    return detail::trim_left_predicate( view, detail::not_is_space_pred_t{} );
-    }
-    
-  ///\returns trimmed left view \param view from values that match value
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::char_type char_type>
-    requires strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type> 
-  [[nodiscard]]
-  constexpr auto trim_left( string_view_type const & view, char_type value) noexcept
-    {
-    return detail::trim_left_predicate( view, detail::not_is_char_pred_t<char_type>{value} );
-    }
-    
-  ///\returns trimmed left view \param view from values that match any chars in any_of
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::convertible_to_string_view string_view_type2>
-    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
-  [[nodiscard]]
-  constexpr auto trim_left( string_view_type const & view, string_view_type2 any_of) noexcept
-    {
-    return detail::trim_left_predicate( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
-    }
-
-  //--------------------------------------------------------------------------------------------------------
-  ///\returns trimmed right view of \param view from values that match isspace
-  template<strconcept::convertible_to_string_view string_view_type>
-  [[nodiscard]]
-  constexpr auto trim_right( string_view_type const & view) noexcept
-    {
-    return detail::trim_right_predicate( view, detail::not_is_space_pred_t{} );
-    }
-    
-  ///\returns trimmed right view of \param view from values that match value
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::char_type char_type>
-    requires strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type>
-  [[nodiscard]]
-  constexpr auto trim_right( string_view_type const & view, char_type value) noexcept
-    {
-    return detail::trim_right_predicate( view, detail::not_is_char_pred_t<char_type>{value} );
-    }
-    
-  ///\returns trimmed right view of \param view from values that match any chars in any_of
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::convertible_to_string_view string_view_type2>
-    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
-  [[nodiscard]]
-  constexpr auto trim_right( string_view_type const & view, string_view_type2 const & any_of) noexcept
-    {
-    return detail::trim_right_predicate( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
-    }
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::convertible_to_string_view string_view_type>
-  [[nodiscard]]
-  constexpr auto substr( string_view_type const & view,
-                         typename string_view_type::size_type pos,
-                         typename string_view_type::size_type count = string_view_type::npos ) noexcept
-    {
-    return detail::substr_(view, pos, count );
-    }
+  using detail::trim_left_with_pred;
   
-  //--------------------------------------------------------------------------------------------------------
-    
-  template<strconcept::convertible_to_string_view string_view_type>
-  [[nodiscard]]
-  constexpr auto left( string_view_type const & view, typename string_view_type::size_type count )
+  struct trim_left_t
     {
-    return detail::left_(view,count);
-    }
-  
-  //--------------------------------------------------------------------------------------------------------
-    
-  template<strconcept::convertible_to_string_view string_view_type>
-  [[nodiscard]]
-  constexpr auto right( string_view_type const & view, typename string_view_type::size_type count )
-    {
-    return detail::right_(view,count);
-    }
+    ///\returns trimmed left view of \param view from values that match isspace
+    template<stralgo::concepts::char_range string_view_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view)
+      stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_left_with_pred( view, detail::not_is_space );
+      }
+      
+    ///\returns trimmed left view \param view from values that match value
+    template<stralgo::concepts::char_range string_view_type,
+             stralgo::concepts::char_type char_type>
+      requires std::same_as<std::ranges::range_value_t<string_view_type>,char_type> 
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view, char_type value)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_left_with_pred( view, detail::not_is_char_pred_t<char_type>{value} );
+      }
+      
+    ///\returns trimmed left view \param view from values that match any chars in any_of
+    template<stralgo::concepts::char_range string_view_type,
+             stralgo::concepts::char_range string_view_type2>
+      requires stralgo::concepts::same_range_type<string_view_type,string_view_type2>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view, string_view_type2 const & any_of)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_left_with_pred( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
+      }
+    };
+  inline constexpr trim_left_t trim_left;
 
   //--------------------------------------------------------------------------------------------------------
-  ///\returns trimmed view of \param view from values that match isspace
-  template<strconcept::convertible_to_string_view string_view_type>
-  [[nodiscard]]
-  constexpr auto trim( string_view_type const & view) noexcept
+  using detail::trim_right_with_pred;
+  
+  struct trim_right_t
     {
-    return detail::trim_predicate( view, detail::not_is_space_pred_t{} );
-    }
-    
-  ///\returns trimmed view of \param view from values that match value
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::char_type char_type>
-      requires strconcept::same_as<strconcept::string_view_value_type<string_view_type>,char_type>
-  [[nodiscard]]
-  constexpr auto trim( string_view_type const & view, char_type value) noexcept
-    {
-    return detail::trim_predicate( view, detail::not_is_char_pred_t<char_type>{value} );
-    }
-    
-  ///\returns trimmed view of \param view from values that match any chars in any_of
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::convertible_to_string_view string_view_type2>
-    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
-  [[nodiscard]]
-  constexpr auto trim( string_view_type const & view, string_view_type2 const & any_of) noexcept
-    {
-    return detail::trim_predicate( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
-    }
+    ///\returns trimmed right view of \param view from values that match isspace
+    template<stralgo::concepts::char_range string_view_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_right_with_pred( view, detail::not_is_space );
+      }
+      
+    ///\returns trimmed right view of \param view from values that match value
+    template<stralgo::concepts::char_range string_view_type,
+             stralgo::concepts::char_type char_type>
+      requires std::same_as<std::ranges::range_value_t<string_view_type>,char_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view, char_type value)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_right_with_pred( view, detail::not_is_char_pred_t<char_type>{value} );
+      }
+      
+    ///\returns trimmed right view of \param view from values that match any chars in any_of
+    template<stralgo::concepts::char_range string_view_type,
+             stralgo::concepts::char_range string_view_type2>
+      requires stralgo::concepts::same_range_type<string_view_type,string_view_type2>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view, string_view_type2 const & any_of)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_right_with_pred( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
+      }
+    };
+  inline constexpr trim_right_t trim_right;
+  //--------------------------------------------------------------------------------------------------------
+  using detail::substr;
+  using detail::left;
+  using detail::right;
 
   //--------------------------------------------------------------------------------------------------------
-  ///\brief merges many strings views or chars into one with single string buffer allocation
-  template<typename ... string_view_or_char_n,
-    typename string_type = strconcept::string_by_char_type_t<strconcept::char_type_from_view_t<typename strconcept::unpack_first<string_view_or_char_n ...>::type> >
-    >
-    requires detail::merge_concepts_<string_view_or_char_n...>
-  [[nodiscard]]
-  auto merge( string_view_or_char_n const & ... args ) noexcept
+  using detail::trim_pred;
+  
+  struct trim_t
     {
-    return detail::merge_impl_<string_type>(args...);
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief merges range of string view with one buffer allocation
-  template<detail::merge_range_concept fwd_iterator,
-  typename string_type = strconcept::string_by_value_type_t<strconcept::remove_cvref_t<decltype(*std::declval<fwd_iterator>())>>>
-  [[nodiscard]]
-  auto merge_range( fwd_iterator beg, fwd_iterator itend )
-    {
-    return detail::merge_range_<fwd_iterator,string_type>(beg,itend);
-    }
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::convertible_to_string_view string_view_type2>
-    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
-  [[nodiscard]]
-  constexpr bool ends_with( string_view_type const & str, string_view_type2 const & other ) noexcept
-    {
-    return detail::ends_with_(str,other);
-    }
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::convertible_to_string_view string_view_type2>
-    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
-  [[nodiscard]]
-  constexpr bool starts_with( string_view_type const & str, string_view_type2 const & other ) noexcept
-    {
-    return detail::starts_with_(str,other);
-    }
+    ///\returns trimmed view of \param view from values that match isspace
+    template<stralgo::concepts::char_range string_view_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_pred( view, detail::not_is_space );
+      }
 
+    ///\returns trimmed view of \param view from values that match value
+    template<stralgo::concepts::char_range string_view_type,
+             stralgo::concepts::char_type char_type>
+        requires std::same_as<std::ranges::range_value_t<string_view_type>,char_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view, char_type value)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_pred( view, detail::not_is_char_pred_t<char_type>{value} );
+      }
+      
+    ///\returns trimmed view of \param view from values that match any chars in any_of
+    template<stralgo::concepts::char_range string_view_type,
+             stralgo::concepts::char_range string_view_type2>
+      requires stralgo::concepts::same_range_type<string_view_type,string_view_type2>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & view, string_view_type2 const & any_of)
+        stralgo_static_call_operator_const noexcept
+      {
+      return detail::trim_pred( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
+      }
+    };
+  inline constexpr trim_t trim;
   //--------------------------------------------------------------------------------------------------------
-  template<strconcept::convertible_to_string_view string_view_type,
-           strconcept::convertible_to_string_view string_view_type2>
-    requires strconcept::view_value_type_equals<string_view_type,string_view_type2>
-  [[nodiscard]]
-  constexpr int compare_no_case( string_view_type const & s1, string_view_type2 const & s2 )
+  using detail::merge;
+  using detail::merge_range;
+  namespace stl
     {
-    return detail::compare_no_case_(s1,s2);
+    using detail::stl::merge;
+    using detail::stl::merge_range;
     }
-  
-  //--------------------------------------------------------------------------------------------------------
-    
-  ///\returns true when string contains only number chars.
-  ///\param str any string or view convertible to std::basic_string_view
-  template<strconcept::convertible_to_string_view string_view_type>
-  constexpr bool is_number(string_view_type const & str)
-    {
-    return detail::is_number_(str);
-    }
-  
-  //--------------------------------------------------------------------------------------------------------
-    
-  ///\returns true when string contains only number chars.
-  ///\param str any string or view convertible to std::basic_string_view
-  template<strconcept::convertible_to_string_view string_view_type>
-  constexpr bool is_hexnumber(string_view_type const & str)
-    {
-    return detail::is_hexnumber(str);
-    }
+  using detail::ends_with;
+  using detail::starts_with;
+  using detail::compare_no_case;
+  using detail::is_number;
+  using detail::is_hexnumber;
 
   }
 

@@ -1,15 +1,7 @@
+#include <unit_test_core.h>
 #include <stralgo.h>
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MAIN
+#include <coll/basic_fixed_string.h>
 
-#include <boost/test/unit_test.hpp>
-
-  
-  static_assert(!strconcept::indexable<char>);
-  static_assert(!strconcept::indexable<int>);
-  static_assert(strconcept::indexable<char *>);
-  static_assert(strconcept::indexable<std::basic_string_view<char>>);
-  
 using namespace std::literals::string_view_literals;
 
   static_assert( stralgo::isspace(' ') == true );
@@ -216,8 +208,8 @@ namespace stralgo_compare_no_case
 namespace stralgo_right
 {
   constexpr auto t1 {"Lorem ipsum"sv};
-  static_assert( stralgo::right( t1, 2 ) == "um"sv );
-  static_assert( stralgo::right( t1, 0 ) == std::string_view{} );
+  static_assert( stralgo::right( t1, 2u ) == "um"sv );
+  static_assert( stralgo::right( t1, 0u ) == std::string_view{} );
   static_assert( stralgo::right( t1,  std::string_view::npos ) == t1 );
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -235,10 +227,10 @@ namespace stralgo_substr
 {
   
   constexpr auto t1 {"Lorem ipsum"sv};
-  static_assert( stralgo::substr( t1, 2, 2 ) == "re"sv );
-  static_assert( stralgo::substr( t1, 22, 2 ).empty() );
-  static_assert( stralgo::substr( t1, 2, std::string_view::npos ) == "rem ipsum"sv );
-  static_assert( stralgo::substr( t1, 0, std::string_view::npos ) == t1 );
+  static_assert( stralgo::substr( t1, 2u, 2u ) == "re"sv );
+  static_assert( stralgo::substr( t1, 22u, 2u ).empty() );
+  static_assert( stralgo::substr( t1, 2u, std::string_view::npos ) == "rem ipsum"sv );
+  static_assert( stralgo::substr( t1, 0u, std::string_view::npos ) == t1 );
   static_assert( stralgo::substr( t1, std::string_view::npos, 1 ).empty() );
   static_assert( stralgo::substr( t1, std::string_view::npos, std::string_view::npos ).empty() );
 }
@@ -261,42 +253,80 @@ namespace stralgo_to_upper
   static_assert( stralgo::to_upper(':') == ':' );
 }
 //----------------------------------------------------------------------------------------------------------------------
-struct stralgo_fixture_t {};
+using metatests::constexpr_test;
+using metatests::run_consteval_test;
+using metatests::run_constexpr_test;
+namespace ut = boost::ut;
+using ut::operator""_test;
+using namespace ut::operators::terse;
+using metatests::test_result;
+using char_type_list = metatests::type_list<char,char8_t,char16_t,char32_t,wchar_t>;
+using coll::cast_fixed_string;
 
-BOOST_FIXTURE_TEST_SUITE(stralgo_fixture, stralgo_fixture_t )
-
-
-using std::string_view;
-using std::wstring_view;
-
-BOOST_AUTO_TEST_CASE(stralgo_merge)
+static_assert( stralgo::detail::merge_concepts<char,char> );
+static_assert( stralgo::detail::merge_concepts<wchar_t,wchar_t> );
+template<typename decl_chr_type>
+struct cfs_t
 {
-  {
-  string_view t1a {"orem ipsum dolor sit amet, consectetur adipiscing elit. "sv}, t2a { }, t3a {"Vestibulum"sv }; char t4a{' '}; string_view t5a{"rutrum leo libero"};
-  constexpr string_view expected{"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum rutrum leo libero"};
-  auto resa{ stralgo::merge('L',t1a,t2a,t3a,t4a,t5a)};
-  
-  BOOST_TEST( resa.compare(expected) == 0 );
-  }
-  {
-  wstring_view t1a {L"orem ipsum dolor sit amet, consectetur adipiscing elit. "sv}, t2a { }, t3a {L"Vestibulum"sv }; wchar_t t4a{L' '};wstring_view t5a{L"rutrum leo libero"};
-  constexpr wstring_view expected{L"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum rutrum leo libero"};
-  auto resa{ stralgo::merge(L'L',t1a,t2a,t3a,t4a,t5a)};
-  
-  BOOST_TEST( resa.compare(expected) == 0 );
-  }
+  template<typename char_type, std::size_t N>
+  inline constexpr auto operator()(char_type const (&str)[N]) const noexcept
+    { return coll::basic_fixed_string<decl_chr_type, N - 1>(str); }
+};
+
+int main()
+{
+  test_result result;
+  "stralgo_merge"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr auto t1a { cfs("orem ipsum dolor sit amet, consectetur adipiscing elit. ")};
+      std::basic_string_view<char_type> t2a { };
+      constexpr auto t3a {cfs("Vestibulum") };
+      char_type t4a{' '};
+      char_type t0('L');
+      constexpr auto t5a{ cfs("rutrum leo libero")};
+      constexpr auto expected{ cfs("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum rutrum leo libero")};
+      auto res{ stralgo::merge( t0,t1a,t2a,t3a,t4a,t5a)};
+      
+      constexpr_test( res.compare(expected) == 0 );
+      
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+
+  "stralgo_merge_range"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      std::array tst1 = { 
+        coll::basic_string<char_type>{cfs("Lorem ipsum")},
+        coll::basic_string<char_type>{cfs("Lorem ipsum dolor ")},
+        coll::basic_string<char_type>{cfs("sit amet")},
+        coll::basic_string<char_type>{},
+        coll::basic_string<char_type>{cfs(",consectetur adipiscing elit.")}
+      };
+      auto constexpr expected{cfs("Lorem ipsumLorem ipsum dolor sit amet,consectetur adipiscing elit.")};
+      {
+      auto res { stralgo::merge_range(std::begin(tst1), std::end(tst1) ) };
+      constexpr_test( res.compare(expected) == 0 );
+      }
+      {
+      auto res { stralgo::merge_range(tst1) };
+      constexpr_test( res.compare(expected) == 0 );
+      }
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
 }
 
-
-
-
-//----------------------------------------------------------------------------------------------------------------------
-BOOST_AUTO_TEST_CASE(stralgo_merge_range)
-{
-  auto tst1 = { "Lorem ipsum"sv, "Lorem ipsum dolor "sv,"sit amet"sv, std::string_view{},""sv,", consectetur adipiscing elit."sv };
-  auto res { stralgo::merge_range(std::begin(tst1), std::end(tst1) ) };
-  BOOST_TEST( "Lorem ipsumLorem ipsum dolor sit amet, consectetur adipiscing elit."sv == res );
-  
-}
-//----------------------------------------------------------------------------------------------------------------------
-BOOST_AUTO_TEST_SUITE_END()

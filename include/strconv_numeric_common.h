@@ -3,7 +3,7 @@
 // {C} Artur Bac 2021
 //--------------------------------------------------------------------------
 #pragma once
-namespace strconv
+namespace stralgo
 {
   enum struct char_case_e : bool { lowercase, uppercase };
     

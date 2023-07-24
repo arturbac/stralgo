@@ -6,115 +6,175 @@
 #include <optional>
 #include <cassert>
 
-namespace strconv::detail
+namespace stralgo::detail
 {
-  template<strconcept::integral value_type>
-  constexpr uint8_t log2p1( value_type value ) noexcept
+  struct log2p1_t
     {
-    if( value != value_type{} )
+    template<std::integral value_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr uint8_t operator()( value_type value )
+      stralgo_static_call_operator_const noexcept
       {
-      constexpr auto Nd = std::numeric_limits<value_type>::digits;
-      return static_cast<uint8_t>(Nd - std::countl_zero( value ));
+      if( value != value_type{} )
+        {
+        constexpr auto Nd = std::numeric_limits<value_type>::digits;
+        return static_cast<uint8_t>(Nd - std::countl_zero( value ));
+        }
+      return {};
       }
-    return {};
-    }
-    
-  template<char_case_e char_case = char_case_e::uppercase,
-           strconcept::integral_uint8 value_type>
-  constexpr char value_to_hex_( value_type value )
+    };
+  inline constexpr log2p1_t log2p1;
+  //--------------------------------------------------------------------------------------------------------
+  template<char_case_e char_case, concepts::char_type char_type>
+  struct value_to_hex_t
     {
-    if( value < 10) 
-      return static_cast<char>('0' + value);
-    else
+     ///\returns char representation of single decimal value, value must be in range 0..15
+     [[nodiscard]]
+     stralgo_static_call_operator
+     constexpr char_type operator()( concepts::integral_uint8 auto value )
+         stralgo_static_call_operator_const noexcept
       {
-      if constexpr (char_case_e::uppercase == char_case)
-        return static_cast<char>('A' + value - 10);
+      if( value < 10) 
+        return static_cast<char_type>('0' + value);
       else
-        return static_cast<char>('a' + value - 10);
+        {
+        if constexpr (char_case_e::uppercase == char_case)
+          return static_cast<char_type>('A' + value - 10);
+        else
+          return static_cast<char_type>('a' + value - 10);
+        }
       }
-    }
+    };
     
-  template<char_case_e char_case = char_case_e::uppercase,
-           strconcept::forward_iterator iterator,
-           strconcept::writable_iterator output_iterator>
-  ///\brief converts binary representation to hexadecimal representation
-  ///\warning \param outit must have double size capacity of source range
-  constexpr output_iterator to_hex_ascii_( iterator sbeg, iterator send, output_iterator outit )
-    {
-    using input_value_type = typename std::iterator_traits<iterator>::value_type;
-    static_assert( std::is_same_v<uint8_t,input_value_type>);
+  template<char_case_e char_case, concepts::char_type char_type>
+  inline constexpr value_to_hex_t<char_case,char_type> value_to_hex;
 
-    for(;sbeg != send; ++sbeg)
-      {
-      uint8_t const source_byte = static_cast<uint8_t>( *sbeg );
-      char c0 = value_to_hex_<char_case>( static_cast<uint8_t>(source_byte & 0xFu) );
-      char c1 = value_to_hex_<char_case>( static_cast<uint8_t>((source_byte>>4) & 0xFu) );
-      *outit++ = c1;
-      *outit++ = c0;
-      }
-    return outit;
-    }
   //--------------------------------------------------------------------------------------------------------
-  template<char_case_e char_case = char_case_e::uppercase,
-           strconcept::char_type char_type = char,
-           typename string_type = strconcept::string_by_value_type_t<char_type>,
-           strconcept::forward_iterator iterator>
-  constexpr auto to_hex_ascii_( iterator sbeg, iterator send )
+  ///\brief converts binary representation to hexadecimal representation
+  template<char_case_e char_case>
+  struct to_hex_ascii_t
     {
-    using size_type = typename string_type::size_type;
-    size_type output_size{ static_cast<size_type>(send - sbeg)*2};
-    return stralgo::detail::copy_views_t<string_type>{}( output_size, [sbeg,send]
-                                                    ( strconcept::writable_iterator auto out_iterator )
-                                                     {
-//                                                      static_assert( strconcept::is_writable_iterator_v<decltype(out_iterator)> );
-                                                     to_hex_ascii_<char_case>( sbeg, send, out_iterator );
-                                                    } );
-    }
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::integral integral_type, strconcept::char_type char_type>
-  constexpr integral_type from_xdigit( char_type c )
-    { 
-    return static_cast<integral_type>( stralgo::isdigit(c) ? unsigned(c) - unsigned('0') 
-                                                           : (stralgo::islower(c) ? (unsigned(c) - unsigned('a')) 
-                                                                                  : (unsigned(c) - unsigned('A'))
-                                                             ) + 10u );
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  
-  template<strconcept::forward_iterator iterator,
-           strconcept::writable_iterator output_iterator>
-  ///\warning \param outit must have half the size capacity of source range and soruce range must be multiple of 2
-  constexpr output_iterator from_hex_ascii_(iterator sbeg, iterator send, output_iterator outit)
-    {
-    using input_value_type = std::remove_cv_t<typename std::iterator_traits<iterator>::value_type>;
-    //using output_value_type = aq_typetraits::remove_cvref_t<decltype(*outit = std::declval<uint8_t>())>;
-    static_assert( std::is_same_v<char,input_value_type>);
-    //static_assert( std::is_same_v<uint8_t,output_value_type>);
-    
-    for(;sbeg != send; ) 
+    template<concepts::ui8_iterator iterator, std::sentinel_for<iterator> sentinel,
+              typename output_iterator>
+    stralgo_static_call_operator
+    constexpr output_iterator operator()( iterator sbeg, sentinel send, output_iterator outit )
+        stralgo_static_call_operator_const noexcept
       {
-      char c0{ *sbeg }; sbeg++;
-      char c1{ *sbeg }; sbeg++;
-      *outit = static_cast<uint8_t>(from_xdigit<int>(c1) + 16 * from_xdigit<int>(c0));
-      ++outit;
+      using char_type = std::iter_value_t<output_iterator>;
+      for(;sbeg != send; ++sbeg)
+        {
+        uint8_t const source_byte = static_cast<uint8_t>( *sbeg );
+        char_type c0 = value_to_hex<char_case,char_type>( static_cast<uint8_t>(source_byte & 0xFu) );
+        char_type c1 = value_to_hex<char_case,char_type>( static_cast<uint8_t>((source_byte>>4) & 0xFu) );
+        *outit++ = c1;
+        *outit++ = c0;
+        }
+      return outit;
       }
-    return outit;
+    template<std::ranges::forward_range forward_range, typename output_iterator>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( forward_range const & range, output_iterator outit )
+        stralgo_static_call_operator_const
+      {
+      return operator()(std::ranges::begin(range), std::ranges::end(range), outit );
+      }
+    };
+  template<char_case_e char_case>
+  inline constexpr to_hex_ascii_t<char_case> to_hex_ascii;
+  //--------------------------------------------------------------------------------------------------------
+  template<template<typename> typename basic_string_type, char_case_e char_case, concepts::char_type char_type>
+  struct to_hex_ascii_string_t
+    {
+    template<concepts::ui8_iterator iterator, std::sentinel_for<iterator> sentinel>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( iterator sbeg, sentinel send )
+        stralgo_static_call_operator_const
+      {
+      using string_type = basic_string_type<char_type>;
+      using size_type = typename string_type::size_type;
+      constexpr bool supports_resize_and_overwrite = string_supports_resize_and_overwrite_t<basic_string_type>::value;
+      size_type output_size{ static_cast<size_type>(send - sbeg)*2};
+      return stralgo::detail::copy_views_t<string_type,supports_resize_and_overwrite>{}( output_size, [sbeg,send]
+                                                      ( auto out_iterator )
+                                                       { return to_hex_ascii<char_case>( sbeg, send, out_iterator ); } );
+      }
+    template<std::ranges::forward_range forward_range>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( forward_range const & range)
+        stralgo_static_call_operator_const
+      {
+      return operator()(std::ranges::begin(range), std::ranges::end(range) );
+      }
+    };
+  template<char_case_e char_case = char_case_e::uppercase, concepts::char_type char_type = char>
+  inline constexpr to_hex_ascii_string_t<coll::basic_string,char_case,char_type> to_hex_ascii_string;
+  namespace stl
+    {
+    template<char_case_e char_case = char_case_e::uppercase, concepts::char_type char_type = char>
+    inline constexpr to_hex_ascii_string_t<basic_string,char_case,char_type> to_hex_ascii_string;
     }
-    
+  //--------------------------------------------------------------------------------------------------------
+  struct from_xdigit_t
+    {
+    template<concepts::char_type char_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr uint32_t operator()( char_type c )
+        stralgo_static_call_operator_const noexcept
+      { 
+      return static_cast<uint32_t>( stralgo::isdigit(c) ? uint32_t(c) - uint32_t('0') 
+                                                             : (stralgo::islower(c) ? (uint32_t(c) - uint32_t('a')) 
+                                                                                    : (uint32_t(c) - uint32_t('A'))
+                                                               ) + 10u );
+      }
+    };
+  inline constexpr from_xdigit_t from_xdigit;
+  //--------------------------------------------------------------------------------------------------------
+  struct from_hex_ascii_t
+    {
+    ///\warning \ref outit must have half the size capacity of source range and source range must be multiple of 2
+    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel, typename output_iterator>
+    stralgo_static_call_operator
+    constexpr output_iterator operator()(iterator sbeg, sentinel send, output_iterator outit)
+        stralgo_static_call_operator_const noexcept
+      {
+      using char_type = std::iter_value_t<iterator>;
+      for(;sbeg != send; ) 
+        {
+        char_type c0{ *sbeg }; ++sbeg;
+        char_type c1{ *sbeg }; ++sbeg;
+        *outit = static_cast<uint8_t>(from_xdigit(c1) + 16u * from_xdigit(c0));
+        ++outit;
+        }
+      return outit;
+      }
+    template<std::ranges::forward_range forward_range, typename output_iterator>
+    stralgo_static_call_operator
+    constexpr auto operator()( forward_range const & range, output_iterator outit)
+        stralgo_static_call_operator_const
+      {
+      return operator()(std::ranges::begin(range), std::ranges::end(range), outit );
+      }
+    };
+  inline constexpr from_hex_ascii_t from_hex_ascii;
+
   struct base_2_t
     {
     static constexpr unsigned base = 2;
     static constexpr std::string_view output_prefix{"0b"};
     static constexpr unsigned integral_to_string_max_size = 70;
     
-    template<strconcept::integral integral_type, strconcept::char_type char_type>
+    template<concepts::integral integral_type, concepts::char_type char_type>
+    [[nodiscard]]
     static constexpr integral_type convert( char_type c ) noexcept 
-      {
-      return static_cast<integral_type>( unsigned(c) - unsigned('0'));
-      }
+      { return static_cast<integral_type>( unsigned(c) - unsigned('0')); }
       
-    template<strconcept::char_type char_type>
+    template<concepts::char_type char_type>
+    [[nodiscard]]
     static constexpr bool is_number( char_type c ) noexcept { return c== '0' || c == '1'; }
     };
     
@@ -124,13 +184,15 @@ namespace strconv::detail
     static constexpr std::string_view output_prefix{};
     static constexpr unsigned integral_to_string_max_size = 22;
     
-    template<strconcept::integral integral_type, strconcept::char_type char_type>
+    template<concepts::integral integral_type, concepts::char_type char_type>
+    [[nodiscard]]
     static constexpr integral_type convert( char_type c ) noexcept 
       {
       return static_cast<integral_type>( unsigned(c) - unsigned('0'));
       }
       
-    template<strconcept::char_type char_type>
+    template<concepts::char_type char_type>
+    [[nodiscard]]
     static constexpr bool is_number( char_type c ) noexcept { return stralgo::isdigit(c); }
     };
     
@@ -140,13 +202,15 @@ namespace strconv::detail
     static constexpr std::string_view output_prefix{"0x"};
     static constexpr unsigned integral_to_string_max_size = 12;
     
-    template<strconcept::integral integral_type, strconcept::char_type char_type>
+    template<concepts::integral integral_type, concepts::char_type char_type>
+    [[nodiscard]]
     static constexpr integral_type convert( char_type c ) noexcept 
       {
-      return detail::from_xdigit<integral_type>( c );
+      return static_cast<integral_type>(detail::from_xdigit( c ));
       }
       
     template<typename char_type>
+    [[nodiscard]]
     static constexpr bool is_number( char_type c ) noexcept { return stralgo::isxdigit(c); }
     };
 
@@ -161,96 +225,109 @@ namespace strconv::detail
   
   template<format_e fmt>
   using base_conv_by_format_t = typename base_conv_by_format<fmt>::type;
+
+    //--------------------------------------------------------------------------------------------------------
+
+  struct lower_projection_t
+    {
+    template<concepts::char_type char_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr char_type operator()( char_type c )
+        stralgo_static_call_operator_const noexcept
+      { return stralgo::to_lower(c); }
+    };
+
+  inline constexpr lower_projection_t lower_projection;
   
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::char_type output_char_type>
-  struct lower_projection
+
+  struct upper_projection_t
     {
-    template<strconcept::char_type char_type>
-    constexpr output_char_type operator()( char_type c )
-      { return stralgo::to_lower(static_cast<output_char_type>(c)); }
+    template<concepts::char_type char_type>
+    stralgo_static_call_operator
+    constexpr char_type operator()( char_type c )
+        stralgo_static_call_operator_const noexcept
+      { return stralgo::to_upper(c); }
     };
-    
-  template<strconcept::char_type output_char_type>
-  struct upper_projection
-    {
-    template<strconcept::char_type char_type>
-    constexpr output_char_type operator()( char_type c )
-      { return stralgo::to_upper(static_cast<output_char_type>(c)); }
-    };
-    
-  template<strconcept::char_type output_char_type, char_case_e char_case>
+  inline constexpr upper_projection_t upper_projection;
+  
+  template<char_case_e char_case>
   constexpr auto char_case_projection() 
     {
     if constexpr( char_case == char_case_e::lowercase)
-      return lower_projection<output_char_type>{};
+      return lower_projection;
     else
-      return upper_projection<output_char_type>{};
+      return upper_projection;
     }
+
+
   //--------------------------------------------------------------------------------------------------------
-  template<strconcept::unsigned_integral value_type>
+  template<std::unsigned_integral value_type>
   struct size_div_info_t
     {
     value_type divisor_ {};
     unsigned size_ {};
     };
   ///\brief main calculation of required output size for unsigned integral
-  template<uint64_t base, strconcept::unsigned_integral value_type>
-  constexpr auto calculate_size_div_info(value_type value)
+  template<uint64_t base>
+  struct calculate_size_div_info_t
     {
-    size_div_info_t<value_type> result{};
-//     if( std::is_constant_evaluated())
+    template<std::unsigned_integral value_type>
+    stralgo_static_call_operator
+    constexpr auto operator()(value_type value)
+        stralgo_static_call_operator_const noexcept
+            -> size_div_info_t<value_type>
       {
-      while(value != value_type{} )
+      size_div_info_t<value_type> result{};
         {
-        result.size_ += 1;
-        if( result.divisor_ != 0u)
-          result.divisor_ *= base;
-        else
-          result.divisor_ =  1;
-        value /= base;
+        while(value != value_type{} )
+          {
+          result.size_ += 1;
+          if( result.divisor_ != 0u)
+            result.divisor_ *= base;
+          else
+            result.divisor_ =  1;
+          value /= base;
+          }
         }
+      return result;
       }
-#if 0
-    else
-      {
-      if(value != value_type{})
-        {
-        result.size_ = static_cast<unsigned>(1 + std::log(std::max<value_type>(1, value))/std::log(base) );
-        result.divisor_ = static_cast<value_type>( std::pow(base, result.size_-1) );
-        }
-      }
-#endif
-    return result;
-    }
-    
+    };
+
+  template<uint64_t base>
+  inline constexpr calculate_size_div_info_t<base> calculate_size_div_info;
+  
   ///\brief pure convertion of unisgned integer to string at destination iterator
-  template<typename base_conv_type,
-           typename projection,
-           strconcept::writable_iterator output_iterator,
-           strconcept::unsigned_integral value_type>
-  constexpr output_iterator unsigned_to_str_transform_( value_type value, projection prj,
-                                                        size_div_info_t<value_type> size_div_info,
-                                                        output_iterator oit )
+  template<typename base_conv_type, char_case_e char_case, concepts::char_type char_type>
+  struct unsigned_to_str_transform_t
     {
-    constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
-
-    while( size_div_info.size_ != 0 )
+    template<typename output_iterator, std::unsigned_integral value_type>
+    stralgo_static_call_operator
+    constexpr auto operator()( value_type value, size_div_info_t<value_type> size_div_info, output_iterator oit )
+          stralgo_static_call_operator_const noexcept
+            -> output_iterator
       {
-      value_type decimal { value / size_div_info.divisor_ };
-      value = static_cast<value_type>( value - decimal * size_div_info.divisor_);
-      size_div_info.divisor_ /= base;
-      *oit = stralgo::detail::invoke( prj, value_to_hex_( static_cast<uint8_t>( decimal ) ));
-      ++oit;
-      --size_div_info.size_;
-      }
+      constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
 
-    return oit;
-    }
-  ;
+      while( size_div_info.size_ != 0 )
+        {
+        value_type decimal { static_cast<value_type>(value / size_div_info.divisor_) };
+        value = static_cast<value_type>( value - decimal * size_div_info.divisor_);
+        size_div_info.divisor_ /= base;
+        *oit = value_to_hex<char_case,char_type>( static_cast<uint8_t>( decimal ) );
+        ++oit;
+        --size_div_info.size_;
+        }
+
+      return oit;
+      }
+    };
+  template<typename base_conv_type, char_case_e char_case, concepts::char_type char_type>
+  inline constexpr unsigned_to_str_transform_t<base_conv_type,char_case,char_type> unsigned_to_str_transform;
+  
   //--------------------------------------------------------------------------------------------------------
   ///\brief preprocessed info for output string calculation and future formating
-  template<strconcept::unsigned_integral value_type>
+  template<std::unsigned_integral value_type>
   struct estimate_info_t
     {
     size_div_info_t<value_type> size_div_info;
@@ -259,183 +336,215 @@ namespace strconv::detail
     unsigned precision{};
     std::optional<char> sign;
     
-    constexpr std::size_t number_size() const { return (sign ? 1u : 0u) +  output_prefix_size + size_div_info.size_; }
-    constexpr std::size_t size() const { return std::max<std::size_t>(number_size(),precision); }
-    };
-    
-  ///\brief calculate required output space for intergral to string convertion
-  template<integral_format_traits traits,
-           strconcept::unsigned_integral value_type>
-  constexpr auto estimate_unsigned_to_str_( value_type value, std::optional<char> sign = {})
-    {
-    using base_conv_type = detail::base_conv_by_format_t<traits.format>;
-    constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
-    
-    estimate_info_t<value_type> result{};
-    result.size_div_info = calculate_size_div_info<base>(value);
-    result.uvalue = value;
-    result.precision = traits.precision;
-    
-    if constexpr ( traits.precision != 0 )
-      if( result.size_div_info.size_ == 0 )
-        {
-        result.size_div_info.size_ = 1;
-        result.size_div_info.divisor_ = 1;
-        }
-        
-    if( result.size_div_info.size_ != 0 )
-      {
+    constexpr std::size_t number_size() const noexcept 
+      { return (sign ? 1u : 0u) +  output_prefix_size + size_div_info.size_; }
       
-      if constexpr ( traits.sign == prepend_sign_e::always ) 
+    constexpr std::size_t size() const noexcept
+      { return std::max<std::size_t>(number_size(),precision); }
+    };
+
+  ///\brief calculate required output space for intergral to string convertion
+  template<integral_format_traits traits>
+  struct estimate_integral_to_str_t
+    {
+    template<std::unsigned_integral value_type>
+    stralgo_static_call_operator
+    constexpr auto operator()( value_type value, std::optional<char> sign = {})
+        stralgo_static_call_operator_const noexcept
+      {
+      using base_conv_type = detail::base_conv_by_format_t<traits.format>;
+      constexpr value_type base { static_cast<value_type>(base_conv_type::base) };
+      
+      estimate_info_t<value_type> result{};
+      result.size_div_info = calculate_size_div_info<base>(value);
+      result.uvalue = value;
+      result.precision = traits.precision;
+      
+      if constexpr ( traits.precision != 0 )
+        if( result.size_div_info.size_ == 0 )
+          {
+          result.size_div_info.size_ = 1;
+          result.size_div_info.divisor_ = 1;
+          }
+          
+      if( result.size_div_info.size_ != 0 )
         {
-        if(!sign )
-          result.sign = '+';
+        if constexpr ( traits.sign == prepend_sign_e::always ) 
+          {
+          if(!sign )
+            result.sign = '+';
+          else
+            result.sign = sign;
+          }
         else
           result.sign = sign;
-        }
-      else
-        result.sign = sign;
-      
-      if constexpr (traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty() )
-        result.output_prefix_size = base_conv_type::output_prefix.size();
-      }
-    
-    return result;
-    }
-
-  template<integral_format_traits traits,
-           strconcept::unsigned_integral value_type,
-           strconcept::writable_iterator output_iterator>
-  [[nodiscard]]
-  constexpr output_iterator unsigned_to_str_( estimate_info_t<value_type> const & est_info, output_iterator oit ) noexcept
-    {
-    using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
-    using iter_diff_type = strconcept::iterator_difference_type<output_iterator>;
-    using base_conv_type = base_conv_by_format_t<traits.format>;
-    
-    if( est_info.size_div_info.size_ != 0 )
-      {
-      
-      auto projection = char_case_projection<char_type,traits.char_case>();
-
-      const auto estimated_number_size { est_info.number_size() };
-
-      // ----------------------------
-      if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::left )
-        {
-        if( estimated_number_size < traits.precision )
-          {
-          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-          iter_diff_type left_fill;
-          if constexpr( traits.alignment == alignment_e::right )
-            left_fill = fill_len;
-          else
-            left_fill = fill_len>>1;
-          oit = stralgo::detail::fill( oit, std::next(oit, left_fill), ' ');
-          }
-        }
         
-      if(est_info.sign)
-        {
-        *oit = stralgo::detail::invoke(projection, *est_info.sign);
-        ++oit;
+        if constexpr (traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty() )
+          result.output_prefix_size = base_conv_type::output_prefix.size();
         }
-
-      if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
-        oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
-      
-      if constexpr ( traits.padd_with == padd_with_e::zeros )
-        {
-        if( estimated_number_size < traits.precision )
-          {
-          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-          oit = stralgo::detail::fill( oit, std::next(oit,fill_len), '0');
-          }
-        }
-      
-      oit = unsigned_to_str_transform_<base_conv_type>(est_info.uvalue, projection, est_info.size_div_info, oit);
-      
-      if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::right )
-        if( estimated_number_size < traits.precision )
-          {
-          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-          iter_diff_type right_fill;
-          if constexpr( traits.alignment == alignment_e::left )
-            right_fill = fill_len;
-          else
-            right_fill = fill_len -(fill_len>>1);
-          oit = stralgo::detail::fill( oit, std::next(oit, right_fill), ' ');
-          }
+      return result;
       }
-    return oit;
-    }
-  
-  //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits,
-           strconcept::signed_integral value_type>
-  constexpr auto estimate_signed_to_str_( value_type value )
-    {
-    using unsigned_type = std::make_unsigned_t<value_type>;
-    unsigned_type uvalue;
-    std::optional<char> sign;
-    if( value >= 0 )
-      uvalue = static_cast<unsigned_type>( value );
-    else
+      
+    template<std::signed_integral value_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( value_type value )
+        stralgo_static_call_operator_const noexcept
       {
-      sign = '-';
-      uvalue = static_cast<unsigned_type>( -value );
+      using unsigned_type = std::make_unsigned_t<value_type>;
+      unsigned_type uvalue;
+      std::optional<char> sign;
+      if( value >= 0 )
+        uvalue = static_cast<unsigned_type>( value );
+      else
+        {
+        sign = '-';
+        uvalue = static_cast<unsigned_type>( -value );
+        }
+      return operator()(uvalue, sign);
       }
-    return estimate_unsigned_to_str_<traits>(uvalue, sign);
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits,
-           strconcept::integral value_type>
-  constexpr auto estimate_integral_to_str_( value_type value )
-    {
-    if constexpr (std::is_unsigned_v<value_type>)
-      return estimate_unsigned_to_str_<traits>(value, {});
-    else
-      return estimate_signed_to_str_<traits>(value);
-    }
-  //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits,
-           strconcept::writable_iterator output_iterator,
-           strconcept::unsigned_integral unsinged_value_type>
-  constexpr output_iterator integral_to_string_( estimate_info_t<unsinged_value_type> const & est_info,
-                                                 output_iterator oit ) noexcept
-    {
-    return unsigned_to_str_<traits>(est_info, oit);
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits,
-           strconcept::writable_iterator output_iterator,
-           strconcept::integral value_type>
-  [[nodiscard]]
-  constexpr output_iterator integral_to_string_( value_type value, output_iterator oit ) noexcept
-    {
-    auto est_info { estimate_integral_to_str_<traits>(value) };
-    return integral_to_string_<traits>(est_info, oit);
-    }
+    };
+  template<integral_format_traits traits>
+  inline constexpr estimate_integral_to_str_t<traits> estimate_integral_to_str;
 
   //--------------------------------------------------------------------------------------------------------
-  template<integral_format_traits traits,
-           strconcept::char_type char_type = char,
-           typename string_type = strconcept::string_by_char_type_t<char_type>,
-           strconcept::integral value_type>
-  [[nodiscard]]
-  auto integral_to_string_( value_type value ) noexcept
+
+  template<integral_format_traits traits>
+  struct unsigned_to_str_t
     {
-    auto est_info { estimate_integral_to_str_<traits>(value) };
-    string_type result;
-    result.resize(est_info.size());
-    integral_to_string_<traits>(est_info, result.data());
-    return result;
+    template<std::unsigned_integral value_type, typename output_iterator>
+    stralgo_static_call_operator
+    constexpr auto operator()( estimate_info_t<value_type> const & est_info, output_iterator oit )
+      stralgo_static_call_operator_const noexcept
+        -> output_iterator
+      {
+      using char_type = std::iter_value_t<output_iterator>;
+      using iter_diff_type = std::iter_difference_t<output_iterator>;
+      using base_conv_type = base_conv_by_format_t<traits.format>;
+      
+      if( est_info.size_div_info.size_ != 0 )
+        {
+        
+        auto projection = char_case_projection<traits.char_case>();
+
+        const auto estimated_number_size { est_info.number_size() };
+
+        // ----------------------------
+        if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::left )
+          {
+          if( estimated_number_size < traits.precision )
+            {
+            iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+            iter_diff_type left_fill;
+            if constexpr( traits.alignment == alignment_e::right )
+              left_fill = fill_len;
+            else
+              left_fill = fill_len>>1;
+            oit = stralgo::detail::fill( oit, std::next(oit, left_fill), char_type(' '));
+            }
+          }
+          
+        if(est_info.sign)
+          {
+          *oit = char_type(*est_info.sign);
+          ++oit;
+          }
+
+        if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
+          oit = stralgo::detail::transform(std::begin(base_conv_type::output_prefix), 
+                                           std::end(base_conv_type::output_prefix), oit,
+                                           [projection](auto c) noexcept{return static_cast<char_type>(projection(c));});
+        
+        if constexpr ( traits.padd_with == padd_with_e::zeros )
+          {
+          if( estimated_number_size < traits.precision )
+            {
+            iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+            oit = stralgo::detail::fill( oit, std::next(oit,fill_len), char_type('0'));
+            }
+          }
+        
+        oit = unsigned_to_str_transform<base_conv_type,traits.char_case,char_type>(est_info.uvalue, est_info.size_div_info, oit);
+        
+        if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::right )
+          if( estimated_number_size < traits.precision )
+            {
+            iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+            iter_diff_type right_fill;
+            if constexpr( traits.alignment == alignment_e::left )
+              right_fill = fill_len;
+            else
+              right_fill = fill_len -(fill_len>>1);
+            oit = stralgo::detail::fill( oit, std::next(oit, right_fill), char_type(' '));
+            }
+        }
+      return oit;
+      }
+    };
+  template<integral_format_traits traits>
+  inline constexpr unsigned_to_str_t<traits> unsigned_to_str;
+
+
+  //--------------------------------------------------------------------------------------------------------
+  // template<integral_format_traits traits,
+  //          typename output_iterator,
+  //          std::unsigned_integral unsinged_value_type>
+  // constexpr output_iterator integral_to_string_( estimate_info_t<unsinged_value_type> const & est_info,
+  //                                                output_iterator oit ) noexcept
+  //   {
+  //   return unsigned_to_str<traits>(est_info, oit);
+  //   }
+    
+  //--------------------------------------------------------------------------------------------------------
+  template<integral_format_traits traits>
+  struct integral_to_ascii_t
+    {
+    template<typename output_iterator, concepts::integral value_type>
+    stralgo_static_call_operator
+    constexpr auto operator()( value_type value, output_iterator oit )
+        stralgo_static_call_operator_const noexcept
+          -> output_iterator
+      {
+      auto est_info { estimate_integral_to_str<traits>(value) };
+      return unsigned_to_str<traits>(est_info, oit);
+      }
+    };
+  template<integral_format_traits traits>
+  inline constexpr integral_to_ascii_t<traits> integral_to_ascii;
+  //--------------------------------------------------------------------------------------------------------
+  template<template<typename > typename basic_string_type, concepts::char_type char_type, integral_format_traits traits>
+  struct integral_to_string_t
+    {
+    template<concepts::integral value_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( value_type value )
+        stralgo_static_call_operator_const
+          -> basic_string_type<char_type>
+      {
+      using string_type = basic_string_type<char_type>;
+      using size_type = typename string_type::size_type;
+      constexpr bool supports_resize_and_overwrite = supports_resize_and_overwrite_v<basic_string_type>;
+      
+      auto est_info { estimate_integral_to_str<traits>(value) };
+      
+      return copy_views_t<string_type,supports_resize_and_overwrite>{}( static_cast<size_type>(est_info.size()),
+                                          [&est_info]( auto out_iterator ) noexcept
+                                          {
+                                          return unsigned_to_str<traits>(est_info, out_iterator);
+                                          } );
+      }
+    };
+  template<concepts::char_type char_type, integral_format_traits traits>
+  inline constexpr integral_to_string_t<coll::basic_string, char_type,traits> integral_to_string;
+  namespace stl
+    {
+    template<concepts::char_type char_type, integral_format_traits traits>
+    inline constexpr integral_to_string_t<basic_string, char_type,traits> integral_to_string;
     }
   //--------------------------------------------------------------------------------------------------------
-//   
-  template<strconcept::floating_point value_type>
+
+  template<std::floating_point value_type>
   struct float_estimate_info_t
     {
     size_div_info_t<uint64_t> size_div_info;
@@ -446,455 +555,540 @@ namespace strconv::detail
     unsigned decimal_places{};
     std::optional<char> sign;
     
-    constexpr std::size_t number_size() const
+    constexpr std::size_t number_size() const noexcept
        { return (sign ? 1u : 0u) + (decimal_places != 0 ? 1u :0u) +  output_prefix_size + size_div_info.size_ + decimal_places; }
-    constexpr std::size_t size() const
+    constexpr std::size_t size() const noexcept
        { return std::max<std::size_t>(number_size(),precision); }
     };
-    
-  template<float_format_traits traits,
-           strconcept::floating_point float_type>
-  [[nodiscard]]
-  constexpr auto estimate_float_to_string_( float_type value ) noexcept
-    {
-    using base_conv_type = base_conv_by_format_t<format_e::decimal>;
-    
-    float_estimate_info_t<float_type> result{};
-    result.precision = traits.precision;
-    
-    if( value >= float_type{0} )
-      {
-      if constexpr ( traits.sign == prepend_sign_e::always ) 
-        result.sign = '+';
-      }
-    else
-      {
-      result.sign = '-';
-      value = -value;
-      }
-    result.uvalue = static_cast<uint64_t>( value );
-    
-    //store unsigned then fraction
-    result.size_div_info = calculate_size_div_info<base_conv_type::base>(result.uvalue);
-    if constexpr ( traits.precision != 0 )
-      if( result.size_div_info.size_ == 0 )
-        {
-        result.size_div_info.size_ = 1;
-        result.size_div_info.divisor_ = 1;
-        }
-        
-    result.fraction = value - static_cast<float_type>(result.uvalue);
-    
-    //calculate real decimal places
-    auto decimal_places = traits.decimal_places;
-    
-    if constexpr( traits.trailing_zeros == trailing_zeros_e::skip )
-      {
-      auto tmp_value{ result.fraction };
-      for( ; decimal_places !=0 && tmp_value != float_type{0}; --decimal_places)
-        {
-        float_type next_fraction{tmp_value * base_conv_type::base};
-        unsigned ufraction { static_cast<unsigned>( next_fraction ) };
-        tmp_value = next_fraction - static_cast<float_type>(ufraction);
-        }
-      decimal_places = traits.decimal_places - decimal_places;
-      }
-    else 
-      {
-      if( result.size_div_info.size_ == 0 )
-        decimal_places = 0;
-      }
-    result.decimal_places = decimal_places;
-    
-//     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
-//       if( result.size_div_info.size_ != 0 )
-//         result.output_prefix_size = base_conv_type::output_prefix.size();
-      
-    return result;
-    }
-    
-  template<float_format_traits traits,
-           strconcept::writable_iterator output_iterator,
-           strconcept::floating_point float_type>
-  [[nodiscard]]
-  constexpr output_iterator float_to_string_( float_estimate_info_t<float_type> const & est_info, output_iterator oit ) noexcept
-    {
-    using base_conv_type = base_conv_by_format_t<format_e::decimal>;
-    using char_type = strconcept::remove_cvref_t<decltype(*oit)>;
-    using iter_diff_type = strconcept::iterator_difference_type<output_iterator>;
-    auto projection = char_case_projection<char_type,char_case_e::lowercase>();
-        
-    const auto estimated_number_size { est_info.number_size() };
-    
-    if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::left )
-      {
-      if( estimated_number_size < traits.precision )
-        {
-        iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-        iter_diff_type left_fill;
-        if constexpr( traits.alignment == alignment_e::right )
-          left_fill = fill_len;
-        else
-          left_fill = fill_len>>1;
-        oit = stralgo::detail::fill( oit, std::next(oit, left_fill), ' ');
-        }
-      }
-      
-    if(est_info.sign)
-      {
-      *oit = stralgo::detail::invoke(projection, *est_info.sign);
-      ++oit;
-      }
-      
-//     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
-//       if( est_info.size_div_info.size_ != 0 )
-//         oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
-    
-    if constexpr ( traits.padd_with == padd_with_e::zeros )
-      {
-      if( estimated_number_size < traits.precision )
-        {
-        iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-        oit = stralgo::detail::fill( oit, std::next(oit,fill_len), '0');
-        }
-      }
-        
-    oit = unsigned_to_str_transform_<base_conv_type>(est_info.uvalue, projection, est_info.size_div_info, oit);
 
-    if(est_info.decimal_places != 0 )
+  //--------------------------------------------------------------------------------------------------------
+  template<float_format_traits traits>
+  struct estimate_float_to_string_t
+    {
+    template<std::floating_point float_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( float_type value )
+        stralgo_static_call_operator_const noexcept
       {
-      *oit = stralgo::detail::invoke(projection, char_type('.'));
-      ++oit;
+      using base_conv_type = base_conv_by_format_t<format_e::decimal>;
       
-      auto fraction { est_info.fraction };
-      //store fraction
-      for(uint32_t dpl{est_info.decimal_places}; dpl !=0 ; --dpl)
+      float_estimate_info_t<float_type> result{};
+      result.precision = traits.precision;
+      
+      if( value >= float_type{0} )
         {
-        float_type next_fraction{fraction * base_conv_type::base};
-        unsigned ufraction { static_cast<unsigned>( next_fraction ) };
-        *oit = value_to_hex_( static_cast<uint8_t>( ufraction ) );
-        ++oit;
-        fraction = next_fraction - static_cast<float_type>(ufraction);
+        if constexpr ( traits.sign == prepend_sign_e::always ) 
+          result.sign = '+';
         }
-      }
-      
-    if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::right )
-      if( estimated_number_size < traits.precision )
+      else
         {
-        iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-        iter_diff_type right_fill;
-        if constexpr( traits.alignment == alignment_e::left )
-          right_fill = fill_len;
-        else
-          right_fill = fill_len -(fill_len>>1);
-        oit = stralgo::detail::fill( oit, std::next(oit, right_fill), ' ');
+        result.sign = '-';
+        value = -value;
+        }
+      result.uvalue = static_cast<uint64_t>( value );
+      
+      //store unsigned then fraction
+      result.size_div_info = calculate_size_div_info<base_conv_type::base>(result.uvalue);
+      if constexpr ( traits.precision != 0 )
+        if( result.size_div_info.size_ == 0 )
+          {
+          result.size_div_info.size_ = 1;
+          result.size_div_info.divisor_ = 1;
+          }
+          
+      result.fraction = value - static_cast<float_type>(result.uvalue);
+      
+      //calculate real decimal places
+      auto decimal_places = traits.decimal_places;
+      
+      if constexpr( traits.trailing_zeros == trailing_zeros_e::skip )
+        {
+        auto tmp_value{ result.fraction };
+        for( ; decimal_places !=0 && tmp_value != float_type{0}; --decimal_places)
+          {
+          float_type next_fraction{tmp_value * base_conv_type::base};
+          unsigned ufraction { static_cast<unsigned>( next_fraction ) };
+          tmp_value = next_fraction - static_cast<float_type>(ufraction);
+          }
+        decimal_places = traits.decimal_places - decimal_places;
+        }
+      else 
+        {
+        if( result.size_div_info.size_ == 0 )
+          decimal_places = 0;
+        }
+      result.decimal_places = decimal_places;
+      
+  //     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
+  //       if( result.size_div_info.size_ != 0 )
+  //         result.output_prefix_size = base_conv_type::output_prefix.size();
+        
+      return result;
+      }
+    };
+  template<float_format_traits traits>
+  inline constexpr estimate_float_to_string_t<traits> estimate_float_to_string;
+
+  template<float_format_traits traits>
+  struct float_to_ascii_t
+    {
+    template<std::floating_point float_type, typename output_iterator>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( float_estimate_info_t<float_type> const & est_info, output_iterator oit )
+      stralgo_static_call_operator_const noexcept
+        -> output_iterator
+      {
+      using base_conv_type = base_conv_by_format_t<format_e::decimal>;
+      using char_type = std::iter_value_t<output_iterator>;
+      using iter_diff_type = std::iter_difference_t<output_iterator>;
+      // auto projection = char_case_projection<char_case_e::lowercase>();
+          
+      const auto estimated_number_size { est_info.number_size() };
+      
+      if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::left )
+        {
+        if( estimated_number_size < traits.precision )
+          {
+          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+          iter_diff_type left_fill;
+          if constexpr( traits.alignment == alignment_e::right )
+            left_fill = fill_len;
+          else
+            left_fill = fill_len>>1;
+          oit = stralgo::detail::fill( oit, std::next(oit, left_fill), char_type(' '));
+          }
+        }
+        
+      if(est_info.sign)
+        {
+        *oit = char_type(*est_info.sign);
+        ++oit;
+        }
+        
+  //     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
+  //       if( est_info.size_div_info.size_ != 0 )
+  //         oit = stralgo::detail::transform( std::begin(base_conv_type::output_prefix), std::end(base_conv_type::output_prefix), oit, projection);
+      
+      if constexpr ( traits.padd_with == padd_with_e::zeros )
+        {
+        if( estimated_number_size < traits.precision )
+          {
+          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+          oit = stralgo::detail::fill( oit, std::next(oit,fill_len), char_type('0'));
+          }
         }
           
-    return oit;
-    }
+      oit = unsigned_to_str_transform<base_conv_type,char_case_e::lowercase,char_type>(est_info.uvalue, est_info.size_div_info, oit);
+
+      if(est_info.decimal_places != 0 )
+        {
+        *oit = char_type('.');
+        ++oit;
+        
+        auto fraction { est_info.fraction };
+        //store fraction
+        for(uint32_t dpl{est_info.decimal_places}; dpl !=0 ; --dpl)
+          {
+          float_type next_fraction{fraction * base_conv_type::base};
+          unsigned ufraction { static_cast<unsigned>( next_fraction ) };
+          *oit = value_to_hex<char_case_e::lowercase,char_type>( static_cast<uint8_t>( ufraction ) );
+          ++oit;
+          fraction = next_fraction - static_cast<float_type>(ufraction);
+          }
+        }
+        
+      if constexpr ( traits.padd_with == padd_with_e::space && traits.alignment != alignment_e::right )
+        if( estimated_number_size < traits.precision )
+          {
+          iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
+          iter_diff_type right_fill;
+          if constexpr( traits.alignment == alignment_e::left )
+            right_fill = fill_len;
+          else
+            right_fill = fill_len -(fill_len>>1);
+          oit = stralgo::detail::fill( oit, std::next(oit, right_fill), char_type(' '));
+          }
+            
+      return oit;
+      }
+
+    template<std::floating_point float_type, typename output_iterator>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( float_type value, output_iterator oit )
+        stralgo_static_call_operator_const noexcept
+        -> output_iterator
+      {
+      float_estimate_info_t<float_type> est_info{ estimate_float_to_string<traits>(value) };
+      return operator()(est_info, oit );
+      }
+    };
     
+  template<float_format_traits traits>
+  inline constexpr float_to_ascii_t<traits> float_to_ascii;
   //--------------------------------------------------------------------------------------------------------
-  template<float_format_traits traits,
-            strconcept::char_type char_type = char,
-            typename string_type = strconcept::string_by_char_type_t<char_type>,
-            strconcept::floating_point value_type>
-  [[nodiscard]]
-  auto float_to_string_( value_type value ) noexcept
+  template<template<typename > typename basic_string_type, concepts::char_type char_type, float_format_traits traits>
+  struct float_to_string_t
     {
-    auto est_info{ detail::estimate_float_to_string_<traits>(value) };
-    string_type result;
-    result.resize(est_info.size());
-    auto oit = detail::float_to_string_<traits>(est_info, std::data(result));
-    result.resize( static_cast<size_t>(oit - std::data(result)) );
-    return result;
+    template<std::floating_point value_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( value_type value )
+        stralgo_static_call_operator_const
+          -> basic_string_type<char_type>
+      {
+      using string_type = basic_string_type<char_type>;
+      using size_type = typename string_type::size_type;
+      constexpr bool supports_resize_and_overwrite = supports_resize_and_overwrite_v<basic_string_type>;
+      
+      auto est_info{ detail::estimate_float_to_string<traits>(value) };
+      
+      return copy_views_t<string_type,supports_resize_and_overwrite>{}( static_cast<size_type>(est_info.size()),
+                                          [&est_info]( auto out_iterator ) noexcept
+                                          {
+                                          return float_to_ascii<traits>(est_info, out_iterator);
+                                          } );
+      }
+    };
+  template<concepts::char_type char_type, float_format_traits traits>
+  inline constexpr float_to_string_t<coll::basic_string, char_type,traits> float_to_string;
+  namespace stl
+    {
+    template<concepts::char_type char_type, float_format_traits traits>
+    inline constexpr float_to_string_t<basic_string, char_type,traits> float_to_string;
     }
-    
+
+
   //--------------------------------------------------------------------------------------------------------
-  //workaround for LIBCPP < 12 and no constexpr on tuple
-  template<strconcept::unsigned_integral integral_type,
-           strconcept::forward_iterator iterator>
+  template<std::unsigned_integral integral_type, std::forward_iterator iterator>
   struct tstoui_result_t
     {
     integral_type result;
-    iterator ret_it;
+    iterator out;
     };
 
-  template<strconcept::unsigned_integral integral_type,
-           typename base_conv_t,
-           strconcept::forward_iterator iterator>
-  constexpr auto trimed_string_to_unsigned_integral( iterator beg, iterator end) 
+  template<std::unsigned_integral integral_type, typename base_conv>
+  struct trimed_string_to_unsigned_integral_t
     {
-    using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
-    using result_type = tstoui_result_t<integral_type,iterator>;
-
-    integral_type total{};
-    auto it{ beg };
-
-    while( it != end )
+    template<std::forward_iterator iterator, std::sentinel_for<iterator> sentinel>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( iterator beg, sentinel end )
+        stralgo_static_call_operator_const noexcept
+        -> tstoui_result_t<integral_type,iterator>
       {
-      char_type c { *it };
-      if(base_conv_t::is_number(c))
-        {
-        total = base_conv_t::base * total + base_conv_t:: template convert<integral_type>(c);
-        ++it;
-        }
-      else
-        break;
-      }
-    return result_type{ total, it };
-    }
+      using char_type = std::iter_value_t<iterator>;
+      using result_type = tstoui_result_t<integral_type,iterator>;
 
-  template<strconcept::char_type char_type>
-  constexpr bool is_hex_prefix( char_type c0, char_type c1 )
+      integral_type total{};
+      while( beg != end )
+        {
+        char_type c { *beg };
+        if(base_conv::is_number(c))
+          {
+          total = base_conv::base * total + base_conv:: template convert<integral_type>(c);
+          ++beg;
+          }
+        else
+          break;
+        }
+      return result_type{ .result = total, .out = beg };
+      }
+    };
+  template<std::unsigned_integral integral_type, typename base_conv>
+  inline constexpr trimed_string_to_unsigned_integral_t<integral_type,base_conv> trimed_string_to_unsigned_integral;
+  //--------------------------------------------------------------------------------------------------------
+  
+  struct is_hex_prefix_t
     {
-    return c0 == char_type('0') && ( c1 == char_type('x') || c1 == char_type('X') );
-    }
+    template<concepts::char_type char_type>
+    stralgo_static_call_operator
+    constexpr bool operator()( char_type c0, char_type c1 )
+        stralgo_static_call_operator_const noexcept
+      {
+      return c0 == char_type('0') && ( c1 == char_type('x') || c1 == char_type('X') );
+      }
+    };
+  inline constexpr is_hex_prefix_t is_hex_prefix;
 
   //--------------------------------------------------------------------------------------------------------
-  template<strconcept::unsigned_integral integral_type,
-           input_format_e input_format,
-           strconcept::convertible_to_string_view string_view_type>
-  constexpr auto string_to_integral_( string_view_type str_number ) 
+  template<std::unsigned_integral integral_type, input_format_e input_format>
+  struct string_to_unsigned_integral_t
     {
-    using char_type = strconcept::string_view_value_type<string_view_type>;
-    using view_type = std::basic_string_view<char_type>;
-
-
-    view_type view_str_number{ static_cast<view_type>(str_number) };
-    
-    auto snumber{ stralgo::trim_left(view_str_number) };
-
-    using oit_type = decltype(std::begin(view_str_number));
-    using tstoui_result_type = tstoui_result_t<integral_type,oit_type>;
-
-    tstoui_result_type data{ {}, std::begin(view_str_number) };
-//     auto ret_it{ std::begin(view_str_number) };
-//     integral_type result{};
-    
-    if( !snumber.empty() )
+    template<concepts::char_range string_view_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & str_number )
+        stralgo_static_call_operator_const noexcept
       {
-      auto it{ std::begin(snumber) };
-      char_type c { *it };
-      if (c != char_type('-') )
+      using std::ranges::begin;
+      using std::ranges::end;
+      using char_type = std::ranges::range_value_t<string_view_type>;
+      
+      auto snumber{trim_left(str_number) };
+      auto out_it {begin(str_number)};
+      integral_type result{};
+      if( !std::ranges::empty(snumber) )
         {
-        if ( c == char_type('+'))
-          ++it;
+        using oit_type = decltype(begin(snumber));
+        using tstoui_result_type = tstoui_result_t<integral_type,oit_type>;
+        tstoui_result_type data{ {}, begin(snumber) };
+        auto it{ begin(snumber) };
+        if (char_type c { *it }; c != char_type('-') )
+          {
+          if ( c == char_type('+'))
+            ++it;
+          
+          if constexpr (input_format == input_format_e::undetermined)
+            {
+            //if contains hex prefix assume hexadecimal
+            if( auto next_it{ it+1 }; next_it < end( snumber ) && is_hex_prefix(*it, *next_it) )
+              {
+              it += 2;
+              data = trimed_string_to_unsigned_integral<integral_type, base_16_t>( it, end( snumber ) );
+              }
+            else
+              data = trimed_string_to_unsigned_integral<integral_type, base_10_t>( it, end( snumber ) );
+            }
+          else if constexpr( input_format == input_format_e::hexadecimal )
+            {
+            //skip hex prefix if exists
+            if( auto next_it{ it+1 }; next_it < end( snumber ) && is_hex_prefix(*it, *next_it) )
+              it += 2;
+
+            data = trimed_string_to_unsigned_integral<integral_type, base_16_t>( it, end( snumber ) );
+            }
+          else 
+            data = trimed_string_to_unsigned_integral<integral_type, base_10_t>( it, end( snumber ) );
+          using std::ranges::size;
+          result = data.result;
+          out_it = std::ranges::next(begin(str_number),
+                                          static_cast<std::ptrdiff_t>(size(str_number) - size(snumber)) + std::ranges::distance(begin(snumber),data.out));
+          }
+        }
+
+      return std::make_pair( result, out_it);
+      }
+    };
+  template<std::unsigned_integral integral_type, input_format_e input_format>
+  inline constexpr string_to_unsigned_integral_t<integral_type,input_format> string_to_unsigned_integral;
+
+  //--------------------------------------------------------------------------------------------------------
+  ///\brief signed integral convertion from string supports untrimmed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
+  template<std::signed_integral integral_type, input_format_e input_format>
+  struct string_to_signed_integral_t
+    {
+    template<concepts::char_range string_view_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & str_number )
+        stralgo_static_call_operator_const noexcept
+      {
+      using char_type = std::ranges::range_value_t<string_view_type>;
+      using unsigned_itegral_type = std::make_unsigned_t<integral_type>;
+      using std::ranges::begin;
+      using std::ranges::end;
+      
+      integral_type total{};
+      char_type sign{};
+      
+      auto snumber{ trim_left(str_number) };
+      auto ret_it{ std::ranges::begin(str_number) };
+      if( !snumber.empty() )
+        {
+        using oit_type = decltype(begin(snumber));
+        using tstoui_result_type = tstoui_result_t<unsigned_itegral_type,oit_type>;
+        tstoui_result_type data{ {}, begin(snumber) };
+
+        char_type const c { *data.out };
+        sign = c;          // save sign indication if '-', then negative, otherwise positive 
+        if (c == char_type('-') || c == char_type('+'))
+          ++data.out;
         
         if constexpr (input_format == input_format_e::undetermined)
           {
-          //if contains hex preffix assume hexadecimal
-          auto next_it{ it+1 };
-          if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+          if( auto next_it{ data.out+1 }; next_it < end( snumber ) && is_hex_prefix(*data.out, *next_it) )
             {
-            it += 2;
-            data = detail::trimed_string_to_unsigned_integral<
-                      integral_type, detail::base_16_t>( it, std::end( snumber ) );
+            data.out += 2;
+            data = trimed_string_to_unsigned_integral<unsigned_itegral_type, base_16_t>( data.out, end( snumber ) );
             }
           else
-            data = detail::trimed_string_to_unsigned_integral<
-                      integral_type, detail::base_10_t>( it, std::end( snumber ) );
+            data = trimed_string_to_unsigned_integral<unsigned_itegral_type, base_10_t>( data.out, end( snumber ) );
           }
         else if constexpr( input_format == input_format_e::hexadecimal )
           {
           //skip hex prefix if exists
-          auto next_it{ it+1 };
-          if( next_it < std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
-            it += 2;
+          if( auto next_it{ data.out+1 }; next_it < end( snumber ) && is_hex_prefix(*data.out, *next_it) )
+            data.out += 2;
 
-          data = detail::trimed_string_to_unsigned_integral<
-                      integral_type, detail::base_16_t>( it, std::end( snumber ) );
+          data = trimed_string_to_unsigned_integral<unsigned_itegral_type, base_16_t>( data.out, end( snumber ) );
           }
         else 
-          {
-          data = detail::trimed_string_to_unsigned_integral<
-                      integral_type, detail::base_10_t>( it, std::end( snumber ) );
-          }
+          data = trimed_string_to_unsigned_integral<unsigned_itegral_type, base_10_t>( data.out, end( snumber ) );
+
+        total = static_cast<integral_type>(data.result);
+        if (sign == '-')
+          total = static_cast<integral_type>(-total);
+          
+        using std::ranges::size;
+        
+        ret_it = std::ranges::next(begin(str_number),
+                                   static_cast<std::ptrdiff_t>(size(str_number) - size(snumber))
+                                   + std::ranges::distance(begin(snumber),data.out));
         }
+      return std::make_pair(total, ret_it);
       }
-    //for a case when number is negative return begin of untrimed value
-    return std::make_pair( data.result, std::next( std::begin(str_number), std::distance(std::begin(view_str_number), data.ret_it)) );
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  ///\brief signed integral convertion from string supports untrimed strings of decimal [+/-]d[n] and hexadecimal lower and uppercase [+/-]0xh[n] numbers
-  template<strconcept::signed_integral integral_type,
-           input_format_e input_format,
-           strconcept::convertible_to_string_view string_view_type>
-  constexpr auto string_to_integral_( string_view_type str_number ) 
+    };
+  template<std::signed_integral integral_type, input_format_e input_format>
+  inline constexpr string_to_signed_integral_t<integral_type,input_format> string_to_signed_integral;
+  
+  template<std::integral integral_type, input_format_e input_format>
+  struct string_to_integral_t
     {
-    using char_type = strconcept::string_view_value_type<string_view_type>;
-    using view_type = std::basic_string_view<char_type>;
-    using unsigned_itegral_type = strconcept::make_unsigned_t<integral_type>;
-    
-    view_type view_str_number{ static_cast<view_type>(str_number) };
-    auto snumber{ stralgo::trim_left(view_str_number) };
-
-    auto ret_it{ std::begin(view_str_number) };
-    integral_type total{};
-
-    char_type sign{};
-    
-    if( !snumber.empty() )
+    template<concepts::char_range string_view_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & str_number )
+        stralgo_static_call_operator_const noexcept
       {
-      using oit_type = decltype(std::begin(snumber));
-      using tstoui_result_type = tstoui_result_t<unsigned_itegral_type,oit_type>;
-      tstoui_result_type data{ {}, std::begin(snumber) };
-
-      char_type c { *data.ret_it };
-      sign = c;          // save sign indication if '-', then negative, otherwise positive 
-      if (c == char_type('-') || c == char_type('+'))
-        ++data.ret_it;
-      
-      if constexpr (input_format == input_format_e::undetermined)
-        {
-        auto next_it{ data.ret_it+1 };
-        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*data.ret_it, *next_it) )
-          {
-          data.ret_it += 2;
-          data =
-                detail::trimed_string_to_unsigned_integral<
-                    unsigned_itegral_type, detail::base_16_t>( data.ret_it, std::end( snumber ) );
-          }
-        else
-          data =
-              detail::trimed_string_to_unsigned_integral<
-                  unsigned_itegral_type, detail::base_10_t>( data.ret_it, std::end( snumber ) );
-        }
-      else if constexpr( input_format == input_format_e::hexadecimal )
-        {
-        //skip hex prefix if exists
-        auto next_it{ data.ret_it+1 };
-        if( next_it < std::end( snumber ) && detail::is_hex_prefix(*data.ret_it, *next_it) )
-          data.ret_it += 2;
-
-        data = detail::trimed_string_to_unsigned_integral<
-                    unsigned_itegral_type, detail::base_16_t>( data.ret_it, std::end( snumber ) );
-        }
-      else 
-        {
-        data = detail::trimed_string_to_unsigned_integral<
-                    unsigned_itegral_type, detail::base_10_t>( data.ret_it, std::end( snumber ) );
-        }
-      total = static_cast<integral_type>(data.result);
-      if (sign == '-')
-        total = static_cast<integral_type>(-total);
-      ret_it = data.ret_it;
+      if constexpr( std::is_signed_v<integral_type>)
+        return string_to_signed_integral<integral_type,input_format>(str_number);
+      else
+        return string_to_unsigned_integral<integral_type,input_format>(str_number);
       }
-    //nothing to convert return begin iterator
-    return std::make_pair(total, std::next( std::begin(str_number), std::distance(std::begin(view_str_number), ret_it)) );
-    }
-    
+    };
+  template<std::integral integral_type, input_format_e input_format>
+  inline constexpr string_to_integral_t<integral_type,input_format> string_to_integral;
+
   //--------------------------------------------------------------------------------------------------------
-  //workaround for LIBCPP < 12 and no constexpr on tuple
-  template<strconcept::floating_point float_type,
-           strconcept::forward_iterator iterator>
+  template<std::floating_point float_type, concepts::char_iterator iterator>
   struct tstof_result_t
     {
     float_type result;
-    iterator ret_it;
+    iterator out;
     };
 
-  template<strconcept::floating_point float_type,
-           typename base_conv_t,
-           strconcept::forward_iterator iterator>
-  constexpr auto trimed_string_to_float( iterator beg, iterator end) 
+  template<std::floating_point float_type, typename base_conv_t>
+  struct trimed_string_to_float_t
     {
-    using char_type = strconcept::remove_cvref_t<decltype(*beg)>;
-    
-    float_type total{};
-    float_type fraction{};
-    constexpr float_type ibase { float_type(1) / base_conv_t::base };
-    
-    auto it{ beg };
+    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( iterator first, sentinel last)
+        stralgo_static_call_operator_const noexcept
 
-    for( ;it != end; ++it )
       {
-      char_type c { *it };
-      if(base_conv_t::is_number(c))
-        total = base_conv_t::base * total + static_cast<float_type>(base_conv_t:: template convert<int>(c));
-      else
-        break;
-      }
-    if( it != end && *it == char_type('.'))
-      {
-      ++it;
-      float_type divider{ ibase };
-      for(;it != end; ++it )
+      using std::ranges::advance;
+      using char_type = std::iter_value_t<iterator>;
+      
+      float_type total{};
+      float_type fraction{};
+      constexpr float_type ibase { float_type(1) / base_conv_t::base };
+      
+      auto it{ first };
+
+      for( ;it != last; advance(it,1) )
         {
         char_type c { *it };
         if(base_conv_t::is_number(c))
-          fraction = fraction + static_cast<float_type>(base_conv_t:: template convert<int>(c)) * divider;
+          total = base_conv_t::base * total + static_cast<float_type>(base_conv_t:: template convert<int>(c));
         else
           break;
-        divider = divider * ibase;
         }
-      }
-    return tstof_result_t<float_type,iterator>{ total + fraction, it };
-    }
-    
-  //--------------------------------------------------------------------------------------------------------
-  template<strconcept::floating_point float_type,
-           strconcept::convertible_to_string_view string_view_type>
-  constexpr auto string_to_float_( string_view_type str_number ) 
-    {
-    using char_type = strconcept::string_view_value_type<string_view_type>;
-    using view_type = std::basic_string_view<char_type>;
-
-    view_type view_str_number{ static_cast<view_type>(str_number) };
-    auto snumber{ stralgo::trim_left(view_str_number) };
-
-    if( !snumber.empty() )
-      {
-      using oit_type = decltype(std::begin(snumber));
-      tstof_result_t<float_type,oit_type> result;
-
-      char_type sign{};
-      auto it{ std::begin(snumber) };
-
-      char_type c { *it };
-      sign = c;          // save sign indication if '-', then negative, otherwise positive 
-      if (c == char_type('-') || c == char_type('+'))
-        ++it;
-      auto next_it{ it+1 };
-      if( next_it != std::end( snumber ) && detail::is_hex_prefix(*it, *next_it) )
+      if( it != last && *it == char_type('.'))
         {
-        it += 2;
-        result = detail::trimed_string_to_float<float_type, detail::base_16_t>( it, std::end( snumber ));
+        advance(it,1);
+        float_type divider{ ibase };
+        for(;it != last; advance(it,1) )
+          {
+          char_type const c{*it};
+          if(base_conv_t::is_number(c))
+            fraction = fraction + static_cast<float_type>(base_conv_t:: template convert<int>(c)) * divider;
+          else
+            break;
+          divider = divider * ibase;
+          }
         }
-      else
-        result = detail::trimed_string_to_float<float_type, detail::base_10_t>( it, std::end( snumber ));
-      
-      auto oit = std::next( std::begin(str_number), std::distance(std::begin(view_str_number), result.ret_it));
-      if (sign == '-')
-        result.result = -result.result;
-      return std::make_pair(result.result, oit);
+      return tstof_result_t<float_type,iterator>{ total + fraction, it };
       }
-    else //nothing to convert return begin iterator
-      return std::make_pair(float_type{}, std::begin(str_number));
-    }
-    
+    };
+  //--------------------------------------------------------------------------------------------------------
+  template<std::floating_point float_type>
+  struct string_to_float_t
+    {
+    template<concepts::char_range string_view_type>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & str_number ) 
+        stralgo_static_call_operator_const noexcept
+      {
+      using char_type = std::ranges::range_value_t<string_view_type>;
+      using std::ranges::begin;
+      using std::ranges::end;
+      using std::ranges::next;
+      using std::ranges::advance;
+      using std::ranges::distance;
+      
+      auto snumber{ stralgo::trim_left(str_number) };
+      if( !snumber.empty() )
+        {
+        using oit_type = decltype(begin(snumber));
+        tstof_result_t<float_type,oit_type> result;
+
+        char_type sign{};
+        auto it{ begin(snumber) };
+
+        char_type c { *it };
+        sign = c;          // save sign indication if '-', then negative, otherwise positive 
+        if (c == char_type('-') || c == char_type('+'))
+          advance(it,1);
+        auto next_it{ next(it,1) };
+        if( next_it != end( snumber ) && is_hex_prefix(*it, *next_it) )
+          {
+          advance(it,2);
+          result = trimed_string_to_float_t<float_type, base_16_t>{}( it, end( snumber ));
+          }
+        else
+          result = trimed_string_to_float_t<float_type, base_10_t>{}( it, end( snumber ));
+
+        auto oit = next( begin(str_number), distance(begin(snumber), result.out));
+        if (sign == char_type('-'))
+          result.result = -result.result;
+        return std::make_pair(result.result, oit);
+        }
+      else //nothing to convert return begin iterator
+        return std::make_pair(float_type{}, begin(str_number));
+      }
+    };
+  template<std::floating_point float_type>
+  inline constexpr string_to_float_t<float_type> string_to_float;
+  
+
   //--------------------------------------------------------------------------------------------------------
   //compose
   //--------------------------------------------------------------------------------------------------------
 
   //preconvertion char type
-  template<strconcept::char_type char_type>
+  template<concepts::char_type char_type>
   struct view_preconv_char_t
     {
     char_type value_;
     constexpr std::size_t view_size() const noexcept { return 1; }
     
-    template<strconcept::forward_iterator iterator>
-    constexpr iterator transform( iterator it ) const
+    template<concepts::char_iterator iterator>
+    requires std::same_as<std::iter_value_t<iterator>, char_type>
+    constexpr iterator transform( iterator it ) const noexcept
       {
       *it = value_;
-      ++it;
+      std::ranges::advance(it,1);
       return it;
       }
     };
     
-  template<strconcept::char_type char_type, strconcept::char_type maybe_char_type>
-    requires strconcept::same_as<char_type, maybe_char_type>
+  template<concepts::char_type char_type, concepts::char_type maybe_char_type>
+    requires concepts::same_as<char_type, maybe_char_type>
   constexpr auto compose_preconv( maybe_char_type value )
     {
     return view_preconv_char_t<char_type>{ value };
@@ -902,81 +1096,76 @@ namespace strconv::detail
       
   //--------------------------------------------------------------------------------------------------------
   ///preconv string_view
-  template<strconcept::char_type char_type>
+  template<concepts::char_type char_type>
   struct view_preconv_string_view_t
     {
     std::basic_string_view<char_type> view_;
     
     constexpr std::size_t view_size() const noexcept { return view_.size(); }
     
-    template<strconcept::forward_iterator iterator>
-    constexpr iterator transform( iterator it ) const
-      {
-      it = std::copy(std::begin(view_),std::end(view_), it);
-      return it;
-      }
+    template<concepts::char_iterator iterator>
+    requires std::same_as<std::iter_value_t<iterator>, char_type>
+    constexpr iterator transform( iterator it ) const noexcept
+      { return std::ranges::copy(std::ranges::begin(view_),std::ranges::end(view_), it).out; }
     };
-    
-  template<strconcept::char_type char_type, strconcept::convertible_to_string_view string_view_type
-  /*,std::enable_if_t<std::is_convertible_v<string_view_type, std::basic_string_view<char_type>> &&
-    !strconcept::is_char_type_v<string_view_type> &&
-    !std::is_array_v< strconcept::remove_cvref_t<string_view_type>> &&
-    !std::is_pointer_v< strconcept::remove_cvref_t<string_view_type>>
-        ,bool> = true */>
+
+  template<concepts::char_type char_type, concepts::char_range string_view_type>
   constexpr auto compose_preconv( string_view_type const & value )
     {
-    return view_preconv_string_view_t<char_type>{ static_cast<std::basic_string_view<char_type>>(value) };
+    return view_preconv_string_view_t<char_type>{ std::basic_string_view<char_type>(std::ranges::begin(value),std::ranges::end(value)) };
     }
       
-  template<strconcept::char_type char_type, size_t size>
+  template<concepts::char_type char_type, size_t size>
   constexpr auto compose_preconv( std::array<char_type,size> const & data ) noexcept
     {
     return compose_preconv<char_type>(std::basic_string_view<char_type>{ data.data(), size });
     }
+
   //--------------------------------------------------------------------------------------------------------
   //preconv integral
-  template<strconcept::integral integral_type, integral_format_traits traits = integral_format_traits{}>
-    requires ( !strconcept::char_type<integral_type> )
+  template<concepts::integral integral_type, integral_format_traits traits = integral_format_traits{}>
+    requires ( !concepts::char_type<integral_type> )
   struct view_preconv_integral_t
     {
     using unsigned_integral_type = std::make_unsigned_t<integral_type>;
     estimate_info_t<unsigned_integral_type> est_info_;
 
     constexpr view_preconv_integral_t( integral_type value ) 
-        : est_info_{ detail::estimate_integral_to_str_<traits>(value) }
+        : est_info_{ estimate_integral_to_str<traits>(value) }
       {}
     
     constexpr std::size_t view_size() const noexcept { return est_info_.size(); }
     
-    template<strconcept::forward_iterator iterator>
+    template<concepts::char_iterator iterator>
     constexpr iterator transform( iterator oit ) const
       {
-      return integral_to_string_<traits>(est_info_, oit);
+      // using char_type = std::iter_value_t<iterator>;
+      return unsigned_to_str<traits>(est_info_, oit);
       }
     };
     
-  template<integral_format_traits traits, strconcept::integral integral_type>
-    requires ( !strconcept::char_type<integral_type> )
+  template<integral_format_traits traits, concepts::integral integral_type>
+    requires ( !concepts::char_type<integral_type> )
   constexpr auto fmt( integral_type value )
     {
     return view_preconv_integral_t<integral_type,traits>{ value };
     }
     //
-  template<strconcept::char_type char_type, strconcept::integral integral_type>
-    requires ( !strconcept::char_type<integral_type> )
+  template<concepts::char_type char_type, concepts::integral integral_type>
+    requires ( !concepts::char_type<integral_type> )
   constexpr auto compose_preconv( integral_type value )
     {
     return view_preconv_integral_t<integral_type>{ value };
     }
     
-  template<strconcept::char_type char_type, strconcept::integral integral_type, integral_format_traits traits>
-    requires ( !strconcept::char_type<integral_type> )
+  template<concepts::char_type char_type, concepts::integral integral_type, integral_format_traits traits>
+    requires ( !concepts::char_type<integral_type> )
   constexpr auto compose_preconv( view_preconv_integral_t<integral_type,traits> value )
     {
     return value;
     }
     
-  template<strconcept::char_type char_type, typename maybe_enum_type,
+  template<concepts::char_type char_type, typename maybe_enum_type,
     std::enable_if_t<std::is_enum_v<maybe_enum_type>,bool> = true >
   constexpr auto compose_preconv( maybe_enum_type value )
     {
@@ -985,45 +1174,46 @@ namespace strconv::detail
     }
   //--------------------------------------------------------------------------------------------------------
   //preconv floating point
-  template<strconcept::floating_point float_type, float_format_traits traits = float_format_traits{} >
+  template<std::floating_point float_type, float_format_traits traits = float_format_traits{} >
   struct view_preconv_float_t
     {
     float_estimate_info_t<float_type> est_info_;
 
     constexpr view_preconv_float_t( float_type value ) 
-        : est_info_{ detail::estimate_float_to_string_<traits>(value) }
+        : est_info_{ estimate_float_to_string<traits>(value) }
       {}
       
     constexpr std::size_t view_size() const noexcept { return est_info_.size(); }
     
-    template<strconcept::forward_iterator iterator>
+    template<concepts::char_iterator iterator>
     constexpr iterator transform( iterator oit ) const
       {
-      return detail::float_to_string_<traits>(est_info_, oit );
+      // using char_type = std::iter_value_t<iterator>;
+      return float_to_ascii<traits>(est_info_, oit );
       }
     };
     
-  template<float_format_traits traits, strconcept::floating_point float_type>
+  template<float_format_traits traits, std::floating_point float_type>
   constexpr auto fmt( float_type value )
     {
     return view_preconv_float_t<float_type,traits>{ value };
     }
     
-  template<strconcept::char_type char_type, strconcept::floating_point float_type>
+  template<concepts::char_type char_type, std::floating_point float_type>
   constexpr auto compose_preconv( float_type value )
     {
     return view_preconv_float_t<float_type>{ value };
     }
     
-  template<strconcept::char_type char_type, strconcept::floating_point float_type, float_format_traits traits>
+  template<concepts::char_type char_type, std::floating_point float_type, float_format_traits traits>
   constexpr auto compose_preconv( view_preconv_float_t<float_type,traits> value )
     {
     return value;
     }
-    
+
   //--------------------------------------------------------------------------------------------------------
   // main composing
-  template<strconcept::char_type char_type, typename ... args_type >
+  template<concepts::char_type char_type, typename ... args_type >
   constexpr auto compose_preprocess( args_type const & ... args )
     { return std::make_tuple(compose_preconv<char_type>(args) ...);}
     
@@ -1036,7 +1226,7 @@ namespace strconv::detail
       return preparg.view_size();
     }
     
-  template<strconcept::char_type char_type, typename iterator, typename input_argument_type, typename ... args_type>
+  template<concepts::char_type char_type, concepts::char_iterator iterator, typename input_argument_type, typename ... args_type>
   constexpr iterator preprocessed_transform_views( iterator it, input_argument_type const & preparg, args_type const & ... args ) noexcept
     {
     it = preparg.transform(it);
@@ -1045,31 +1235,43 @@ namespace strconv::detail
     return it;
     }
   
-  template<strconcept::char_type char_type = char, typename ... input_argument_type_n>
-    requires (sizeof ...(input_argument_type_n) > 1 )
-  [[nodiscard]]
-  auto compose_(input_argument_type_n const & ... args) noexcept
+  template<template<typename > typename basic_string_type, concepts::char_type char_type>
+  struct compose_t
     {
-    auto preprocessed{ detail::compose_preprocess<char_type>(args ...) };
-    static_assert(sizeof...(input_argument_type_n) > 1);
-    using string_type = strconcept::string_by_char_type_t<char_type>;
-    using size_type = typename string_type::size_type;
+    template<typename ... input_argument_type_n>
+      requires (sizeof ...(input_argument_type_n) > 1 )
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()(input_argument_type_n const & ... args)
+        stralgo_static_call_operator_const
+      {
+      auto preprocessed{ compose_preprocess<char_type>(args ...) };
+      using string_type = basic_string_type<char_type>;
+      using size_type = typename string_type::size_type;
+      constexpr bool supports_resize_and_overwrite = supports_resize_and_overwrite_v<basic_string_type>;
+      using copy_view_to_str = copy_views_t<string_type,supports_resize_and_overwrite>;
+      
+      size_type aprox_size{ static_cast<size_type>(
+          std::apply( [](auto const&... tuple_args)
+            { return preprocessed_count_size(tuple_args ...); },
+                     preprocessed))};
+      return 
+      copy_view_to_str{}(aprox_size,
+                         [&](auto out_iterator)
+                         {
+                         auto new_end {std::apply( [out_iterator](auto const & ... tuple_args)
+                          { return preprocessed_transform_views<char_type>(out_iterator, tuple_args ...); },
+                          preprocessed)};
+                        return new_end;
+                        });
+      }
+    };
     
-    size_type aprox_size{ static_cast<size_type>(
-        std::apply( [](auto const&... tuple_args)
-          { return preprocessed_count_size(tuple_args ...); },
-                   preprocessed))};
-    string_type result;
-    result.resize(aprox_size);
-    char_type * buff{ result.data() };
-    auto new_end {std::apply( [buff](auto const & ... tuple_args)
-          { return preprocessed_transform_views<char_type>(buff, tuple_args ...); },
-          preprocessed)};
-    
-    auto new_size{ static_cast<size_type>(std::distance(result.data(),new_end)) };
-    assert(new_size==aprox_size);
-//     assert(new_size<=aprox_size);
-//     result.resize( new_size );
-    return result;
+  template<concepts::char_type char_type>
+  inline constexpr compose_t<coll::basic_string,char_type> compose;
+  namespace stl
+    {
+    template<concepts::char_type char_type>
+    inline constexpr compose_t<basic_string,char_type> compose;
     }
 }
