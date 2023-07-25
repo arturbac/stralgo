@@ -74,12 +74,7 @@ namespace stralgo::concepts
   using std::output_iterator;
   using std::bidirectional_iterator;
   using std::random_access_iterator;
-  
-  // template<typename iterator_type>
-  // concept iterator = input_iterator<iterator_type> || output_iterator<iterator_type>;
-  
-  // template<typename iterator>
-  // concept writable_iterator =  (input_iterator<iterator> && !is_const<dereferenced_type<iterator>>) || output_iterator<iterator>;
+
   using std::iter_value_t;
 
   template <typename iterator>
@@ -88,11 +83,6 @@ namespace stralgo::concepts
   template< class T >
   using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
 
-  // using std::iter_difference_t;
-  
-  // template<typename iterator_type>
-  // using iterator_difference_type = std::iter_difference_t<iterator_type>;
-  
   template<typename value_type>
   concept char_1b_type = same_as<remove_cvref_t<value_type>,char>
                                       || same_as<remove_cvref_t<value_type>,char8_t>;
@@ -107,7 +97,17 @@ namespace stralgo::concepts
   concept char_iterator = std::forward_iterator<iterator_type> && char_type<std::iter_value_t<iterator_type>>;
     
   template<typename range>
-  concept char_range = std::ranges::forward_range<range> && char_type<std::ranges::range_value_t<range>>;
+  concept char_range = 
+  requires
+    {
+    requires std::ranges::forward_range<range>;
+    requires char_type<std::ranges::range_value_t<range>>; 
+    // poisoning use of pointers and C arrays to allow using working with strings containing 0 for merge, compose etc
+    // this allows in code pinpointing all inefficient pointer and arrays use
+    // this also prevents ambiguity between const char [] from string literal and intended use of char arrays with 0
+    requires !std::is_pointer_v<std::remove_cvref_t<range>>;
+    requires !std::is_array_v<std::remove_cvref_t<range>>;
+    };
     
   template<typename iterator_type>
   concept ui8_iterator = std::forward_iterator<iterator_type> && std::same_as<uint8_t,std::iter_value_t<iterator_type>>;
@@ -128,11 +128,11 @@ namespace stralgo::concepts
       requires std::same_as<std::ranges::range_value_t<string_view_type>, std::ranges::range_value_t<string_view_type2>>;
       };
       
-  template<concepts::char_range string_view_type>
+  template<char_range string_view_type>
   ///\returns string type based on view base char_type
   using string_by_value_type_t = std::basic_string<std::ranges::range_value_t<string_view_type>>;
   
-  template<concepts::char_type char_type>
+  template<char_type char_type>
   ///\brief returns string type based on char_type
   using string_by_char_type_t = std::basic_string<char_type>;
 
@@ -144,9 +144,9 @@ namespace stralgo::concepts
     template<typename T>
     consteval arg_type decl_arg_type() noexcept 
       {
-      if constexpr( concepts::char_type<T> )
+      if constexpr( char_type<T> )
         return arg_type::single;
-      else if constexpr( concepts::char_range<T> )
+      else if constexpr( char_range<T> )
         return arg_type::range;
       else return arg_type::invalid;
       }
@@ -172,6 +172,9 @@ namespace stralgo::concepts
   template<typename templ_type>
   using char_type_from_view_t = typename detail::char_type_from_view<templ_type, detail::decl_arg_type<templ_type>()>::type;
   
+  template<typename char_type, typename templ_type>
+  concept match_char_type_or_void = std::same_as<char_type, char_type_from_view_t<templ_type>> || std::same_as<void, char_type_from_view_t<templ_type>>;
+  
   template<typename templ_type, typename ... args>
   struct unpack_first { using type = templ_type ; };
   
@@ -180,16 +183,6 @@ namespace stralgo::concepts
   
   namespace detail
     {
-    template<typename T, typename ... args>
-    consteval arg_type guess_arg_type() noexcept 
-      {
-      constexpr arg_type my_value {decl_arg_type<T>()};
-      if constexpr( my_value != arg_type::invalid || sizeof...(args) == 0)
-        return my_value;
-      else
-        return guess_arg_type<args...>();
-      }
-
     template<typename T, typename ... args>
     struct decl_chartype_from_args
       {
@@ -212,6 +205,7 @@ namespace stralgo::concepts
   
   template<typename ... args>
   using decl_chartype_from_args_t = typename detail::decl_chartype_from_args<args...>::type;
+
 }
 
 #if defined(__cpp_static_call_operator)

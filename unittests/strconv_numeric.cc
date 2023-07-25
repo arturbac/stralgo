@@ -1078,6 +1078,7 @@ namespace compose_test
   using stralgo::prepend_sign_e;
   using stralgo::trailing_zeros_e;
   using stralgo::include_prefix_e;
+  using stralgo::detail::compose_arg_concept;
   
   namespace concepts = stralgo::concepts;
   
@@ -1093,6 +1094,17 @@ namespace compose_test
   static_assert( std::same_as<void, concepts::decl_chartype_from_args_t<int,double>>);
   static_assert( std::same_as<char16_t, concepts::decl_chartype_from_args_t<int,double,char16_t>>);
   
+  static_assert( compose_arg_concept<char,char> );
+  static_assert( !compose_arg_concept<wchar_t,char> );
+  static_assert( compose_arg_concept<std::u8string_view,char8_t> );
+  static_assert( compose_arg_concept<coll::u8string,char8_t> );
+  static_assert( !compose_arg_concept<std::wstring_view,char8_t> );
+  static_assert( compose_arg_concept<int,char8_t> );
+  static_assert( compose_arg_concept<double,char8_t> );
+  
+  static_assert( !concepts::char_range<decltype(' ')> );
+  static_assert( !concepts::char_range<decltype(" ")> );
+  static_assert( concepts::char_range<std::string_view> );
   static void do_test()
     {
     test_result result;

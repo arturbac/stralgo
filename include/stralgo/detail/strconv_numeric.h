@@ -1121,7 +1121,17 @@ namespace stralgo::detail
     {
     return compose_preconv<char_type>(std::basic_string_view<char_type>{ data.data(), size });
     }
-
+  //--------------------------------------------------------------------------------------------------------
+  namespace detail
+    {
+    template<typename T>
+    struct fmt_concept_helper
+      {
+      static constexpr bool value = false;
+      };
+    template<typename T>
+    inline constexpr bool fmt_result_concept_helper_v = fmt_concept_helper<T>::value;
+    }
   //--------------------------------------------------------------------------------------------------------
   //preconv integral
   template<concepts::integral integral_type, integral_format_traits traits = integral_format_traits{}>
@@ -1144,7 +1154,14 @@ namespace stralgo::detail
       return unsigned_to_str<traits>(est_info_, oit);
       }
     };
-    
+  namespace detail
+    {
+    template<typename integral_type, integral_format_traits traits>
+    struct fmt_concept_helper<view_preconv_integral_t<integral_type,traits>>
+      {
+      static constexpr bool value = true;
+      };
+    }
   template<integral_format_traits traits, concepts::integral integral_type>
     requires ( !concepts::char_type<integral_type> )
   constexpr auto fmt( integral_type value )
@@ -1193,7 +1210,14 @@ namespace stralgo::detail
       return float_to_ascii<traits>(est_info_, oit );
       }
     };
-    
+  namespace detail
+    {
+    template<typename float_type, float_format_traits traits>
+    struct fmt_concept_helper<view_preconv_float_t<float_type,traits>>
+      {
+      static constexpr bool value = true;
+      };
+    }
   template<float_format_traits traits, std::floating_point float_type>
   constexpr auto fmt( float_type value )
     {
@@ -1236,10 +1260,23 @@ namespace stralgo::detail
     return it;
     }
   
+
+  // validate argument types so constraint substitution failure will produce more human friendly results and not dive into function calls
+  template<typename T,typename char_type>
+  concept compose_arg_concept =
+  requires 
+    {
+    requires concepts::char_type<char_type>;
+    requires std::integral<T> || std::floating_point<T> || concepts::char_range<T> || concepts::char_type<T>  ||
+             detail::fmt_result_concept_helper_v<T>;
+    // all deduced char types must match
+    requires concepts::match_char_type_or_void<char_type,T>;
+    };
+
   template<template<typename > typename basic_string_type, concepts::char_type char_type>
   struct compose_t
     {
-    template<typename ... input_argument_type_n>
+    template<compose_arg_concept<char_type> ... input_argument_type_n>
       requires (sizeof ...(input_argument_type_n) > 1 )
     [[nodiscard]]
     stralgo_static_call_operator

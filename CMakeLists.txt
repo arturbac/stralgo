@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(stralgo 
-        VERSION 0.1.2
+        VERSION 0.1.3
         LANGUAGES CXX
         HOMEPAGE_URL "https://github.com/arturbac/stralgo"
         )
@@ -17,7 +17,7 @@ option(STRALGO_ENABLE_UNIT_TESTS "unit tests available from CTest"  ${PROJECT_IS
 add_feature_info("STRALGO_ENABLE_UNIT_TESTS" STRALGO_ENABLE_UNIT_TESTS "unit test available from CTest")
 
 if( PROJECT_IS_TOP_LEVEL AND STRALGO_ENABLE_UNIT_TESTS)
-  # set(SMALL_VECTORS_ENABLE_UNIT_TESTS ON)
+  set(SMALL_VECTORS_ENABLE_UNIT_TESTS ON)
   enable_testing()
 endif()
 
@@ -37,7 +37,7 @@ CPMAddPackage(
   small_vectors
   GITHUB_REPOSITORY arturbac/small_vectors
   GIT_TAG        v1.1.28
-  OPTIONS "SMALL_VECTORS_ENABLE_UNIT_TESTS ${STRALGO_ENABLE_UNIT_TESTS}"
+  OPTIONS "SMALL_VECTORS_ENABLE_UNIT_TESTS=${STRALGO_ENABLE_UNIT_TESTS}"
   )
 #----------------------------------------------------------------
 # boost-ext/ut
