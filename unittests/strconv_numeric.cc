@@ -1,5 +1,6 @@
 #include <unit_test_core.h>
 #include <stralgo/strconv_numeric.h>
+#include <stralgo/detail/strong_type_compose.h>
 #include <coll/basic_fixed_string.h>
 #include <ctime>
 
@@ -1110,8 +1111,25 @@ namespace compose_test
   static_assert( !concepts::char_range<decltype(" ")> );
   static_assert( concepts::char_range<std::string_view> );
   
-
+  struct compose_not_supported{};
   
+  static_assert(!compose_arg_concept<compose_not_supported,char>);
+  static_assert(compose_arg_concept<int,char>);
+  static_assert(compose_arg_concept<int64_t,char>);
+  static_assert(compose_arg_concept<uint64_t,char16_t>);
+  static_assert(compose_arg_concept<float,char>);
+  static_assert(compose_arg_concept<std::string,char>);
+  static_assert(compose_arg_concept<std::string_view,char>);
+  static_assert(compose_arg_concept<std::u8string_view,char8_t>);
+  static_assert(!compose_arg_concept<std::string_view,char8_t>);
+  static_assert(compose_arg_concept<coll::u8string,char8_t>);
+  static_assert(compose_arg_concept<test_enum2,char8_t>);
+  static_assert(!compose_arg_concept<char const *,char>);
+  static_assert(!compose_arg_concept<decltype(" "),char>);
+  static_assert(compose_arg_concept<stralgo::detail::view_preconv_float_t<float, stralgo::float_format_traits{}>,char>);
+  static_assert(compose_arg_concept<stralgo::detail::view_preconv_integral_t<int, stralgo::integral_format_traits{}>,char>);
+  
+
   static void do_test()
     {
     test_result result;

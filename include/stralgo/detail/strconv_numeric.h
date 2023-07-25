@@ -1087,14 +1087,22 @@ namespace stralgo::detail
       return it;
       }
     };
-    
+  template<concepts::char_type char_type, typename T>
+  struct compose_preconv_t {};
+  
   template<concepts::char_type char_type, concepts::char_type maybe_char_type>
-    requires concepts::same_as<char_type, maybe_char_type>
-  constexpr auto compose_preconv( maybe_char_type value )
+  struct compose_preconv_t<char_type,maybe_char_type>
     {
-    return view_preconv_char_t<char_type>{ value };
-    }
-      
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( maybe_char_type value )
+        stralgo_static_call_operator_const noexcept
+        requires std::same_as<char_type, maybe_char_type>
+      {
+      return view_preconv_char_t<char_type>{ value };
+      }
+    };
+
   //--------------------------------------------------------------------------------------------------------
   ///preconv string_view
   template<concepts::char_type char_type>
@@ -1111,27 +1119,18 @@ namespace stralgo::detail
     };
 
   template<concepts::char_type char_type, concepts::char_range string_view_type>
-  constexpr auto compose_preconv( string_view_type const & value )
+    requires std::same_as<char_type,std::ranges::range_value_t<string_view_type>>
+  struct compose_preconv_t<char_type,string_view_type>
     {
-    return view_preconv_string_view_t<char_type>{ std::basic_string_view<char_type>(std::ranges::begin(value),std::ranges::end(value)) };
-    }
-      
-  template<concepts::char_type char_type, size_t size>
-  constexpr auto compose_preconv( std::array<char_type,size> const & data ) noexcept
-    {
-    return compose_preconv<char_type>(std::basic_string_view<char_type>{ data.data(), size });
-    }
-  //--------------------------------------------------------------------------------------------------------
-  namespace detail
-    {
-    template<typename T>
-    struct fmt_concept_helper
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( string_view_type const & value )
+        stralgo_static_call_operator_const noexcept
       {
-      static constexpr bool value = false;
-      };
-    template<typename T>
-    inline constexpr bool fmt_result_concept_helper_v = fmt_concept_helper<T>::value;
-    }
+      return view_preconv_string_view_t<char_type>{ std::basic_string_view<char_type>(std::ranges::begin(value),std::ranges::end(value)) };
+      }
+    };
+
   //--------------------------------------------------------------------------------------------------------
   //preconv integral
   template<concepts::integral integral_type, integral_format_traits traits = integral_format_traits{}>
@@ -1141,7 +1140,7 @@ namespace stralgo::detail
     using unsigned_integral_type = std::make_unsigned_t<integral_type>;
     estimate_info_t<unsigned_integral_type> est_info_;
 
-    constexpr view_preconv_integral_t( integral_type value ) 
+    constexpr view_preconv_integral_t( integral_type value ) noexcept
         : est_info_{ estimate_integral_to_str<traits>(value) }
       {}
     
@@ -1149,19 +1148,9 @@ namespace stralgo::detail
     
     template<concepts::char_iterator iterator>
     constexpr iterator transform( iterator oit ) const
-      {
-      // using char_type = std::iter_value_t<iterator>;
-      return unsigned_to_str<traits>(est_info_, oit);
-      }
+      { return unsigned_to_str<traits>(est_info_, oit); }
     };
-  namespace detail
-    {
-    template<typename integral_type, integral_format_traits traits>
-    struct fmt_concept_helper<view_preconv_integral_t<integral_type,traits>>
-      {
-      static constexpr bool value = true;
-      };
-    }
+
   template<integral_format_traits traits, concepts::integral integral_type>
     requires ( !concepts::char_type<integral_type> )
   constexpr auto fmt( integral_type value )
@@ -1171,25 +1160,40 @@ namespace stralgo::detail
     //
   template<concepts::char_type char_type, concepts::integral integral_type>
     requires ( !concepts::char_type<integral_type> )
-  constexpr auto compose_preconv( integral_type value )
+  struct compose_preconv_t<char_type,integral_type>
     {
-    return view_preconv_integral_t<integral_type>{ value };
-    }
-    
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( integral_type value )
+        stralgo_static_call_operator_const noexcept
+      {
+      return view_preconv_integral_t<integral_type>{ value };
+      }
+    };
+
   template<concepts::char_type char_type, concepts::integral integral_type, integral_format_traits traits>
     requires ( !concepts::char_type<integral_type> )
-  constexpr auto compose_preconv( view_preconv_integral_t<integral_type,traits> value )
+  struct compose_preconv_t<char_type,view_preconv_integral_t<integral_type,traits>>
     {
-    return value;
-    }
-    
-  template<concepts::char_type char_type, typename maybe_enum_type,
-    std::enable_if_t<std::is_enum_v<maybe_enum_type>,bool> = true >
-  constexpr auto compose_preconv( maybe_enum_type value )
+    stralgo_static_call_operator
+    constexpr auto operator()( view_preconv_integral_t<integral_type,traits> value )
+        stralgo_static_call_operator_const noexcept
+      { return value; }
+    };
+
+  template<concepts::char_type char_type, concepts::enumeration maybe_enum_type>
+  struct compose_preconv_t<char_type,maybe_enum_type>
     {
-    using underlying_type = std::underlying_type_t<maybe_enum_type>;
-    return compose_preconv<char_type>( static_cast<underlying_type>(value));
-    }
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( maybe_enum_type value )
+        stralgo_static_call_operator_const noexcept
+      {
+      using underlying_type = std::underlying_type_t<maybe_enum_type>;
+      return compose_preconv_t<char_type,underlying_type>{}( static_cast<underlying_type>(value) );
+      }
+    };
+
   //--------------------------------------------------------------------------------------------------------
   //preconv floating point
   template<std::floating_point float_type, float_format_traits traits = float_format_traits{} >
@@ -1210,14 +1214,7 @@ namespace stralgo::detail
       return float_to_ascii<traits>(est_info_, oit );
       }
     };
-  namespace detail
-    {
-    template<typename float_type, float_format_traits traits>
-    struct fmt_concept_helper<view_preconv_float_t<float_type,traits>>
-      {
-      static constexpr bool value = true;
-      };
-    }
+
   template<float_format_traits traits, std::floating_point float_type>
   constexpr auto fmt( float_type value )
     {
@@ -1225,22 +1222,30 @@ namespace stralgo::detail
     }
     
   template<concepts::char_type char_type, std::floating_point float_type>
-  constexpr auto compose_preconv( float_type value )
+  struct compose_preconv_t<char_type,float_type>
     {
-    return view_preconv_float_t<float_type>{ value };
-    }
-    
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( float_type value )
+      stralgo_static_call_operator_const noexcept
+      { return view_preconv_float_t<float_type>{ value }; }
+    };
+
   template<concepts::char_type char_type, std::floating_point float_type, float_format_traits traits>
-  constexpr auto compose_preconv( view_preconv_float_t<float_type,traits> value )
+  struct compose_preconv_t<char_type,view_preconv_float_t<float_type,traits>>
     {
-    return value;
-    }
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( view_preconv_float_t<float_type,traits> value )
+        stralgo_static_call_operator_const noexcept
+      { return value; }
+    };
 
   //--------------------------------------------------------------------------------------------------------
   // main composing
   template<concepts::char_type char_type, typename ... args_type >
   constexpr auto compose_preprocess( args_type const & ... args )
-    { return std::make_tuple(compose_preconv<char_type>(args) ...);}
+    { return std::make_tuple(compose_preconv_t<char_type,args_type>{}(args) ...);}
     
   template<typename input_argument_type, typename ... args_type >
   constexpr auto preprocessed_count_size(input_argument_type const & preparg, args_type const & ... args) noexcept
@@ -1259,16 +1264,14 @@ namespace stralgo::detail
       it = preprocessed_transform_views<char_type>(it, args ... );
     return it;
     }
-  
 
   // validate argument types so constraint substitution failure will produce more human friendly results and not dive into function calls
   template<typename T,typename char_type>
   concept compose_arg_concept =
-  requires 
+  requires (T const & arg )
     {
     requires concepts::char_type<char_type>;
-    requires std::integral<T> || std::floating_point<T> || concepts::char_range<T> || concepts::char_type<T>  ||
-             std::is_enum_v<T> || detail::fmt_result_concept_helper_v<T>;
+    stralgo::detail::compose_preconv_t<char_type,T>{}(arg);
     // all deduced char types must match
     requires concepts::match_char_type_or_void<char_type,T>;
     };

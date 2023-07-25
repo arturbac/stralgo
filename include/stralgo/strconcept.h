@@ -31,6 +31,9 @@ namespace stralgo::concepts
   template< typename maybe_uint8_t>
   concept integral_uint8 = same_as<maybe_uint8_t,uint8_t>;
   
+  template<typename maybe_enum_type>
+  concept enumeration = std::is_enum_v<maybe_enum_type>;
+  
   namespace detail
     {
     //solution for lack of <concepts> equality_comaprable_v with c++17
