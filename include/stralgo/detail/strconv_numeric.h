@@ -1268,7 +1268,7 @@ namespace stralgo::detail
     {
     requires concepts::char_type<char_type>;
     requires std::integral<T> || std::floating_point<T> || concepts::char_range<T> || concepts::char_type<T>  ||
-             detail::fmt_result_concept_helper_v<T>;
+             std::is_enum_v<T> || detail::fmt_result_concept_helper_v<T>;
     // all deduced char types must match
     requires concepts::match_char_type_or_void<char_type,T>;
     };

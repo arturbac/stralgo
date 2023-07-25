@@ -1101,10 +1101,17 @@ namespace compose_test
   static_assert( !compose_arg_concept<std::wstring_view,char8_t> );
   static_assert( compose_arg_concept<int,char8_t> );
   static_assert( compose_arg_concept<double,char8_t> );
+  enum test_enum { x =1 };
+  enum struct test_enum2 { x };
+  static_assert( compose_arg_concept<test_enum,char8_t> );
+  static_assert( compose_arg_concept<test_enum2,char8_t> );
   
   static_assert( !concepts::char_range<decltype(' ')> );
   static_assert( !concepts::char_range<decltype(" ")> );
   static_assert( concepts::char_range<std::string_view> );
+  
+
+  
   static void do_test()
     {
     test_result result;
@@ -1134,6 +1141,12 @@ namespace compose_test
         {
         auto res {compose( -125.5, cfs(" "), 125, char_type(' '))};
         constexpr_test(res.view() == cfs("-125.5 125 "));
+        }
+        {
+        test_enum2 a{};
+        test_enum b{test_enum::x};
+        auto res {compose( a, b, cfs(" "))};
+        constexpr_test(res.view() == cfs("01 "));
         }
         {
         constexpr integral_format_traits ptrfmt 
