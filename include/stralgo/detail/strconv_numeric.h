@@ -63,13 +63,13 @@ namespace stralgo::detail
         stralgo_static_call_operator_const noexcept
       {
       using char_type = std::iter_value_t<output_iterator>;
-      for(;sbeg != send; ++sbeg)
+      for(;sbeg != send; ranges::advance(sbeg,1))
         {
         uint8_t const source_byte = static_cast<uint8_t>( *sbeg );
         char_type c0 = value_to_hex<char_case,char_type>( static_cast<uint8_t>(source_byte & 0xFu) );
         char_type c1 = value_to_hex<char_case,char_type>( static_cast<uint8_t>((source_byte>>4) & 0xFu) );
-        *outit++ = c1;
-        *outit++ = c0;
+        *outit = c1; ranges::advance(outit,1);
+        *outit = c0; ranges::advance(outit,1);
         }
       return outit;
       }
@@ -144,12 +144,12 @@ namespace stralgo::detail
         stralgo_static_call_operator_const noexcept
       {
       using char_type = std::iter_value_t<iterator>;
-      for(;sbeg != send; ) 
+      while(sbeg != send)
         {
-        char_type c0{ *sbeg }; ++sbeg;
-        char_type c1{ *sbeg }; ++sbeg;
+        char_type c0{ *sbeg }; ranges::advance(sbeg,1);
+        char_type c1{ *sbeg }; ranges::advance(sbeg,1);
         *outit = static_cast<uint8_t>(from_xdigit(c1) + 16u * from_xdigit(c0));
-        ++outit;
+        ranges::advance(outit,1);
         }
       return outit;
       }
@@ -316,7 +316,7 @@ namespace stralgo::detail
         value = static_cast<value_type>( value - decimal * size_div_info.divisor_);
         size_div_info.divisor_ /= base;
         *oit = value_to_hex<char_case,char_type>( static_cast<uint8_t>( decimal ) );
-        ++oit;
+        ranges::advance(oit,1);
         --size_div_info.size_;
         }
 
@@ -441,19 +441,19 @@ namespace stralgo::detail
               left_fill = fill_len;
             else
               left_fill = fill_len>>1;
-            oit = stralgo::detail::fill( oit, std::next(oit, left_fill), char_type(' '));
+            oit = stralgo::detail::fill( oit, ranges::next(oit, left_fill), char_type(' '));
             }
           }
           
         if(est_info.sign)
           {
           *oit = char_type(*est_info.sign);
-          ++oit;
+          ranges::advance(oit,1);
           }
 
         if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
-          oit = stralgo::detail::transform(std::begin(base_conv_type::output_prefix), 
-                                           std::end(base_conv_type::output_prefix), oit,
+          oit = stralgo::detail::transform(ranges::begin(base_conv_type::output_prefix), 
+                                           ranges::end(base_conv_type::output_prefix), oit,
                                            [projection](auto c) noexcept{return static_cast<char_type>(projection(c));});
         
         if constexpr ( traits.padd_with == padd_with_e::zeros )
@@ -461,7 +461,7 @@ namespace stralgo::detail
           if( estimated_number_size < traits.precision )
             {
             iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-            oit = stralgo::detail::fill( oit, std::next(oit,fill_len), char_type('0'));
+            oit = stralgo::detail::fill( oit, ranges::next(oit,fill_len), char_type('0'));
             }
           }
         
@@ -476,7 +476,7 @@ namespace stralgo::detail
               right_fill = fill_len;
             else
               right_fill = fill_len -(fill_len>>1);
-            oit = stralgo::detail::fill( oit, std::next(oit, right_fill), char_type(' '));
+            oit = stralgo::detail::fill( oit, ranges::next(oit, right_fill), char_type(' '));
             }
         }
       return oit;
@@ -658,14 +658,14 @@ namespace stralgo::detail
             left_fill = fill_len;
           else
             left_fill = fill_len>>1;
-          oit = stralgo::detail::fill( oit, std::next(oit, left_fill), char_type(' '));
+          oit = stralgo::detail::fill( oit, ranges::next(oit, left_fill), char_type(' '));
           }
         }
         
       if(est_info.sign)
         {
         *oit = char_type(*est_info.sign);
-        ++oit;
+        ranges::advance(oit,1);
         }
         
   //     if constexpr ( traits.include_prefix == include_prefix_e::with_prefix && !base_conv_type::output_prefix.empty())
@@ -677,7 +677,7 @@ namespace stralgo::detail
         if( estimated_number_size < traits.precision )
           {
           iter_diff_type fill_len = static_cast<iter_diff_type>(traits.precision - estimated_number_size);
-          oit = stralgo::detail::fill( oit, std::next(oit,fill_len), char_type('0'));
+          oit = stralgo::detail::fill( oit, ranges::next(oit,fill_len), char_type('0'));
           }
         }
           
@@ -686,7 +686,7 @@ namespace stralgo::detail
       if(est_info.decimal_places != 0 )
         {
         *oit = char_type('.');
-        ++oit;
+        ranges::advance(oit,1);
         
         auto fraction { est_info.fraction };
         //store fraction
@@ -709,7 +709,7 @@ namespace stralgo::detail
             right_fill = fill_len;
           else
             right_fill = fill_len -(fill_len>>1);
-          oit = stralgo::detail::fill( oit, std::next(oit, right_fill), char_type(' '));
+          oit = stralgo::detail::fill( oit, ranges::next(oit, right_fill), char_type(' '));
           }
             
       return oit;
@@ -786,11 +786,11 @@ namespace stralgo::detail
       integral_type total{};
       while( beg != end )
         {
-        char_type c { *beg };
+        char_type const c { *beg };
         if(base_conv::is_number(c))
           {
           total = base_conv::base * total + base_conv:: template convert<integral_type>(c);
-          ++beg;
+          ranges::advance(beg,1);
           }
         else
           break;
@@ -840,7 +840,7 @@ namespace stralgo::detail
         if (char_type c { *it }; c != char_type('-') )
           {
           if ( c == char_type('+'))
-            ++it;
+            ranges::advance(it,1);
           
           if constexpr (input_format == input_format_e::undetermined)
             {
@@ -897,7 +897,7 @@ namespace stralgo::detail
       
       auto snumber{ trim_left(str_number) };
       auto ret_it{ ranges::begin(str_number) };
-      if( !snumber.empty() )
+      if( !ranges::empty(snumber) )
         {
         using oit_type = decltype(begin(snumber));
         using tstoui_result_type = tstoui_result_t<unsigned_itegral_type,oit_type>;
@@ -906,13 +906,13 @@ namespace stralgo::detail
         char_type const c { *data.out };
         sign = c;          // save sign indication if '-', then negative, otherwise positive 
         if (c == char_type('-') || c == char_type('+'))
-          ++data.out;
+          ranges::advance(data.out,1);
         
         if constexpr (input_format == input_format_e::undetermined)
           {
-          if( auto next_it{ data.out+1 }; next_it < end( snumber ) && is_hex_prefix(*data.out, *next_it) )
+          if( auto next_it{ ranges::next(data.out,1) }; next_it < end( snumber ) && is_hex_prefix(*data.out, *next_it) )
             {
-            data.out += 2;
+            ranges::advance(data.out,2);
             data = trimed_string_to_unsigned_integral<unsigned_itegral_type, base_16_t>( data.out, end( snumber ) );
             }
           else
@@ -921,8 +921,8 @@ namespace stralgo::detail
         else if constexpr( input_format == input_format_e::hexadecimal )
           {
           //skip hex prefix if exists
-          if( auto next_it{ data.out+1 }; next_it < end( snumber ) && is_hex_prefix(*data.out, *next_it) )
-            data.out += 2;
+          if( auto next_it{ ranges::next(data.out,1) }; next_it < end( snumber ) && is_hex_prefix(*data.out, *next_it) )
+            ranges::advance(data.out,2);
 
           data = trimed_string_to_unsigned_integral<unsigned_itegral_type, base_16_t>( data.out, end( snumber ) );
           }

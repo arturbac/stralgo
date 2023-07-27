@@ -591,19 +591,25 @@ namespace stralgo::detail
     constexpr int operator()( string_view_type const & s1, string_view_type2 const & s2 )
         stralgo_static_call_operator_const noexcept
       {
+      using difference_type = ranges::range_difference_t<string_view_type>;
       using char_type = ranges::range_value_t<string_view_type>;
       using traits = std::char_traits<char_type>;
       
-      auto s1_size{ ranges::size(s1) };
-      auto s2_size{ ranges::size(s2) };
+      auto const s1_size{ ranges::size(s1) };
+      auto const s2_size{ ranges::size(s2) };
       
-      auto count{ std::min(s1_size,s2_size) };
-      for (std::size_t i = 0; i != count; ++i)
+      auto const cmp_count{ std::min(s1_size,s2_size) };
+      auto first{ranges::begin(s1)};
+      auto const last {ranges::next(first, static_cast<difference_type>(cmp_count))};
+      
+      for( auto first2{ranges::begin(s2)}; first != last;)
         {
-        char_type l1{ to_lower(s1[i]) };
-        char_type l2{ to_lower(s2[i]) };
+        auto const l1{ to_lower(*first) };
+        auto const l2{ to_lower(*first2) };
         if( !traits::eq(l1, l2) )
           return traits::lt(l1, l2) ? -1 : 1;
+        ranges::advance(first,1);
+        ranges::advance(first2,1);
         }
       if( s1_size != s2_size )
         return s1_size < s2_size ? -1 : 1;
