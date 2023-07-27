@@ -73,13 +73,13 @@ namespace stralgo::detail
         }
       return outit;
       }
-    template<std::ranges::forward_range forward_range, typename output_iterator>
+    template<ranges::forward_range forward_range, typename output_iterator>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( forward_range const & range, output_iterator outit )
         stralgo_static_call_operator_const
       {
-      return operator()(std::ranges::begin(range), std::ranges::end(range), outit );
+      return operator()(ranges::begin(range), ranges::end(range), outit );
       }
     };
   template<char_case_e char_case>
@@ -102,13 +102,13 @@ namespace stralgo::detail
                                                       ( auto out_iterator )
                                                        { return to_hex_ascii<char_case>( sbeg, send, out_iterator ); } );
       }
-    template<std::ranges::forward_range forward_range>
+    template<ranges::forward_range forward_range>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( forward_range const & range)
         stralgo_static_call_operator_const
       {
-      return operator()(std::ranges::begin(range), std::ranges::end(range) );
+      return operator()(ranges::begin(range), ranges::end(range) );
       }
     };
   template<char_case_e char_case = char_case_e::uppercase, concepts::char_type char_type = char>
@@ -153,12 +153,12 @@ namespace stralgo::detail
         }
       return outit;
       }
-    template<std::ranges::forward_range forward_range, typename output_iterator>
+    template<ranges::forward_range forward_range, typename output_iterator>
     stralgo_static_call_operator
     constexpr auto operator()( forward_range const & range, output_iterator outit)
         stralgo_static_call_operator_const
       {
-      return operator()(std::ranges::begin(range), std::ranges::end(range), outit );
+      return operator()(ranges::begin(range), ranges::end(range), outit );
       }
     };
   inline constexpr from_hex_ascii_t from_hex_ascii;
@@ -824,14 +824,14 @@ namespace stralgo::detail
     constexpr auto operator()( string_view_type const & str_number )
         stralgo_static_call_operator_const noexcept
       {
-      using std::ranges::begin;
-      using std::ranges::end;
-      using char_type = std::ranges::range_value_t<string_view_type>;
+      using ranges::begin;
+      using ranges::end;
+      using char_type = ranges::range_value_t<string_view_type>;
       
       auto snumber{trim_left(str_number) };
       auto out_it {begin(str_number)};
       integral_type result{};
-      if( !std::ranges::empty(snumber) )
+      if( !ranges::empty(snumber) )
         {
         using oit_type = decltype(begin(snumber));
         using tstoui_result_type = tstoui_result_t<integral_type,oit_type>;
@@ -863,10 +863,10 @@ namespace stralgo::detail
             }
           else 
             data = trimed_string_to_unsigned_integral<integral_type, base_10_t>( it, end( snumber ) );
-          using std::ranges::size;
+          using ranges::size;
           result = data.result;
-          out_it = std::ranges::next(begin(str_number),
-                                          static_cast<std::ptrdiff_t>(size(str_number) - size(snumber)) + std::ranges::distance(begin(snumber),data.out));
+          out_it = ranges::next(begin(str_number),
+                                          static_cast<std::ptrdiff_t>(size(str_number) - size(snumber)) + ranges::distance(begin(snumber),data.out));
           }
         }
 
@@ -887,16 +887,16 @@ namespace stralgo::detail
     constexpr auto operator()( string_view_type const & str_number )
         stralgo_static_call_operator_const noexcept
       {
-      using char_type = std::ranges::range_value_t<string_view_type>;
+      using char_type = ranges::range_value_t<string_view_type>;
       using unsigned_itegral_type = std::make_unsigned_t<integral_type>;
-      using std::ranges::begin;
-      using std::ranges::end;
+      using ranges::begin;
+      using ranges::end;
       
       integral_type total{};
       char_type sign{};
       
       auto snumber{ trim_left(str_number) };
-      auto ret_it{ std::ranges::begin(str_number) };
+      auto ret_it{ ranges::begin(str_number) };
       if( !snumber.empty() )
         {
         using oit_type = decltype(begin(snumber));
@@ -933,11 +933,11 @@ namespace stralgo::detail
         if (sign == '-')
           total = static_cast<integral_type>(-total);
           
-        using std::ranges::size;
+        using ranges::size;
         
-        ret_it = std::ranges::next(begin(str_number),
+        ret_it = ranges::next(begin(str_number),
                                    static_cast<std::ptrdiff_t>(size(str_number) - size(snumber))
-                                   + std::ranges::distance(begin(snumber),data.out));
+                                   + ranges::distance(begin(snumber),data.out));
         }
       return std::make_pair(total, ret_it);
       }
@@ -981,7 +981,7 @@ namespace stralgo::detail
         stralgo_static_call_operator_const noexcept
 
       {
-      using std::ranges::advance;
+      using ranges::advance;
       using char_type = std::iter_value_t<iterator>;
       
       float_type total{};
@@ -1025,12 +1025,12 @@ namespace stralgo::detail
     constexpr auto operator()( string_view_type const & str_number ) 
         stralgo_static_call_operator_const noexcept
       {
-      using char_type = std::ranges::range_value_t<string_view_type>;
-      using std::ranges::begin;
-      using std::ranges::end;
-      using std::ranges::next;
-      using std::ranges::advance;
-      using std::ranges::distance;
+      using char_type = ranges::range_value_t<string_view_type>;
+      using ranges::begin;
+      using ranges::end;
+      using ranges::next;
+      using ranges::advance;
+      using ranges::distance;
       
       auto snumber{ stralgo::trim_left(str_number) };
       if( !snumber.empty() )
@@ -1083,7 +1083,7 @@ namespace stralgo::detail
     constexpr iterator transform( iterator it ) const noexcept
       {
       *it = value_;
-      std::ranges::advance(it,1);
+      ranges::advance(it,1);
       return it;
       }
     };
@@ -1115,11 +1115,11 @@ namespace stralgo::detail
     template<concepts::char_iterator iterator>
     requires std::same_as<std::iter_value_t<iterator>, char_type>
     constexpr iterator transform( iterator it ) const noexcept
-      { return std::ranges::copy(std::ranges::begin(view_),std::ranges::end(view_), it).out; }
+      { return ranges::copy(ranges::begin(view_),ranges::end(view_), it).out; }
     };
 
   template<concepts::char_type char_type, concepts::char_range string_view_type>
-    requires std::same_as<char_type,std::ranges::range_value_t<string_view_type>>
+    requires std::same_as<char_type,ranges::range_value_t<string_view_type>>
   struct compose_preconv_t<char_type,string_view_type>
     {
     [[nodiscard]]
@@ -1127,7 +1127,7 @@ namespace stralgo::detail
     constexpr auto operator()( string_view_type const & value )
         stralgo_static_call_operator_const noexcept
       {
-      return view_preconv_string_view_t<char_type>{ std::basic_string_view<char_type>(std::ranges::begin(value),std::ranges::end(value)) };
+      return view_preconv_string_view_t<char_type>{ std::basic_string_view<char_type>(ranges::begin(value),ranges::end(value)) };
       }
     };
 
@@ -1271,6 +1271,7 @@ namespace stralgo::detail
   requires (T const & arg )
     {
     requires concepts::char_type<char_type>;
+    // requires compose_supported_concept<T,char_type>;
     stralgo::detail::compose_preconv_t<char_type,T>{}(arg);
     // all deduced char types must match
     requires concepts::match_char_type_or_void<char_type,T>;

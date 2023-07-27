@@ -11,6 +11,10 @@
 #include <iterator>
 #include <string>
 
+namespace stralgo
+{
+  namespace ranges = std::ranges;
+}
 namespace stralgo::concepts
 {
   template<typename type>
@@ -103,15 +107,18 @@ namespace stralgo::concepts
   concept char_range = 
   requires
     {
-    requires std::ranges::forward_range<range>;
-    requires char_type<std::ranges::range_value_t<range>>; 
+    requires ranges::forward_range<range>;
+    requires char_type<ranges::range_value_t<range>>; 
     // poisoning use of pointers and C arrays to allow using working with strings containing 0 for merge, compose etc
     // this allows in code pinpointing all inefficient pointer and arrays use
     // this also prevents ambiguity between const char [] from string literal and intended use of char arrays with 0
     requires !std::is_pointer_v<std::remove_cvref_t<range>>;
     requires !std::is_array_v<std::remove_cvref_t<range>>;
     };
-    
+  
+  template<typename range>
+  concept char_contiguous_range = char_range<range> && ranges::contiguous_range<range>;
+  
   template<typename iterator_type>
   concept ui8_iterator = std::forward_iterator<iterator_type> && std::same_as<uint8_t,std::iter_value_t<iterator_type>>;
   
@@ -120,7 +127,7 @@ namespace stralgo::concepts
   
   template<char_range string_view_type>
   ///\returns string or view char_type
-  using string_view_value_type = std::ranges::range_value_t<string_view_type>;
+  using string_view_value_type = ranges::range_value_t<string_view_type>;
 
   template<typename string_view_type, typename string_view_type2>
   ///\brief true when both views have same base char_type but views may be different types (strings or views)
@@ -128,12 +135,12 @@ namespace stralgo::concepts
     requires {
       requires char_range<string_view_type>;
       requires char_range<string_view_type2>;
-      requires std::same_as<std::ranges::range_value_t<string_view_type>, std::ranges::range_value_t<string_view_type2>>;
+      requires std::same_as<ranges::range_value_t<string_view_type>, ranges::range_value_t<string_view_type2>>;
       };
       
   template<char_range string_view_type>
   ///\returns string type based on view base char_type
-  using string_by_value_type_t = std::basic_string<std::ranges::range_value_t<string_view_type>>;
+  using string_by_value_type_t = std::basic_string<ranges::range_value_t<string_view_type>>;
   
   template<char_type char_type>
   ///\brief returns string type based on char_type
@@ -169,7 +176,7 @@ namespace stralgo::concepts
     template<typename templ_type>
     struct char_type_from_view<templ_type,arg_type::range>
       {
-      using type = std::ranges::range_value_t<templ_type>;
+      using type = ranges::range_value_t<templ_type>;
       };
     }
   template<typename templ_type>

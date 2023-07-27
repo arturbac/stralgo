@@ -27,39 +27,30 @@ namespace stralgo
   
   struct trim_left_t
     {
-    ///\returns trimmed left view of \param view from values that match isspace
-    template<stralgo::concepts::char_range string_view_type>
+    ///\returns trimmed left view of \ref view from values that match isspace, if string_view_type meets ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
     [[nodiscard]]
     stralgo_static_call_operator
-    constexpr auto operator()( string_view_type const & view)
+    constexpr auto operator()( concepts::char_range auto const & view)
       stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_left_with_pred( view, detail::not_is_space );
-      }
+      { return detail::trim_left_with_pred( view, detail::not_is_space ); }
       
-    ///\returns trimmed left view \param view from values that match value
-    template<stralgo::concepts::char_range string_view_type,
-             stralgo::concepts::char_type char_type>
-      requires std::same_as<std::ranges::range_value_t<string_view_type>,char_type> 
+    ///\returns trimmed left view \ref view from values that match value, if string_view_type meets ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
+    template<concepts::char_range string_view_type, concepts::char_type char_type>
+      requires std::same_as<ranges::range_value_t<string_view_type>,char_type> 
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, char_type value)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_left_with_pred( view, detail::not_is_char_pred_t<char_type>{value} );
-      }
+      { return detail::trim_left_with_pred( view, detail::not_is_char_pred_t<char_type>{value} ); }
       
-    ///\returns trimmed left view \param view from values that match any chars in any_of
-    template<stralgo::concepts::char_range string_view_type,
-             stralgo::concepts::char_range string_view_type2>
-      requires stralgo::concepts::same_range_type<string_view_type,string_view_type2>
+    ///\returns trimmed left view \ref view from values that match any chars in any_of, if string_view_type meets ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
+    template<concepts::char_range string_view_type, concepts::char_range string_view_type2>
+      requires concepts::same_range_type<string_view_type,string_view_type2>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, string_view_type2 const & any_of)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_left_with_pred( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
-      }
+      { return detail::trim_left_with_pred( view, detail::not_is_any_of{ ranges::begin(any_of), ranges::end(any_of) }); }
     };
   inline constexpr trim_left_t trim_left;
 
@@ -68,42 +59,34 @@ namespace stralgo
   
   struct trim_right_t
     {
-    ///\returns trimmed right view of \param view from values that match isspace
-    template<stralgo::concepts::char_range string_view_type>
+    ///\returns trimmed right view of \ref view from values that match isspace,if string_view_type meets ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
     [[nodiscard]]
     stralgo_static_call_operator
-    constexpr auto operator()( string_view_type const & view)
+    constexpr auto operator()( concepts::char_range auto const & view)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_right_with_pred( view, detail::not_is_space );
-      }
+      { return detail::trim_right_with_pred( view, detail::not_is_space ); }
       
-    ///\returns trimmed right view of \param view from values that match value
-    template<stralgo::concepts::char_range string_view_type,
-             stralgo::concepts::char_type char_type>
-      requires std::same_as<std::ranges::range_value_t<string_view_type>,char_type>
+    ///\returns trimmed right view of \ref view from values that match value,if string_view_type meets ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
+    template<concepts::char_range string_view_type, concepts::char_type char_type>
+      requires std::same_as<ranges::range_value_t<string_view_type>,char_type>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, char_type value)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_right_with_pred( view, detail::not_is_char_pred_t<char_type>{value} );
-      }
+      { return detail::trim_right_with_pred( view, detail::not_is_char_pred_t<char_type>{value} ); }
       
-    ///\returns trimmed right view of \param view from values that match any chars in any_of
-    template<stralgo::concepts::char_range string_view_type,
-             stralgo::concepts::char_range string_view_type2>
-      requires stralgo::concepts::same_range_type<string_view_type,string_view_type2>
+    ///\returns trimmed right view of \ref view from values that match any chars in any_of,if string_view_type meets ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
+    template<concepts::char_range string_view_type, concepts::char_range string_view_type2>
+      requires concepts::same_range_type<string_view_type,string_view_type2>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, string_view_type2 const & any_of)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_right_with_pred( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
-      }
+      { return detail::trim_right_with_pred( view, detail::not_is_any_of{ ranges::begin(any_of), ranges::end(any_of) }); }
     };
   inline constexpr trim_right_t trim_right;
   //--------------------------------------------------------------------------------------------------------
+  using detail::npos;
   using detail::substr;
   using detail::left;
   using detail::right;
@@ -114,38 +97,29 @@ namespace stralgo
   struct trim_t
     {
     ///\returns trimmed view of \param view from values that match isspace
-    template<stralgo::concepts::char_range string_view_type>
     [[nodiscard]]
     stralgo_static_call_operator
-    constexpr auto operator()( string_view_type const & view)
+    constexpr auto operator()( concepts::char_range auto const & view)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_pred( view, detail::not_is_space );
-      }
+      { return detail::trim_pred( view, detail::not_is_space ); }
 
     ///\returns trimmed view of \param view from values that match value
-    template<stralgo::concepts::char_range string_view_type,
-             stralgo::concepts::char_type char_type>
-        requires std::same_as<std::ranges::range_value_t<string_view_type>,char_type>
+    template<concepts::char_range string_view_type, concepts::char_type char_type>
+        requires std::same_as<ranges::range_value_t<string_view_type>,char_type>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, char_type value)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_pred( view, detail::not_is_char_pred_t<char_type>{value} );
-      }
+      { return detail::trim_pred( view, detail::not_is_char_pred_t<char_type>{value} ); }
       
     ///\returns trimmed view of \param view from values that match any chars in any_of
-    template<stralgo::concepts::char_range string_view_type,
-             stralgo::concepts::char_range string_view_type2>
-      requires stralgo::concepts::same_range_type<string_view_type,string_view_type2>
+    template<concepts::char_range string_view_type, concepts::char_range string_view_type2>
+      requires concepts::same_range_type<string_view_type,string_view_type2>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, string_view_type2 const & any_of)
         stralgo_static_call_operator_const noexcept
-      {
-      return detail::trim_pred( view, detail::not_is_any_of{ std::begin(any_of), std::end(any_of) });
-      }
+      { return detail::trim_pred( view, detail::not_is_any_of{ ranges::begin(any_of), ranges::end(any_of) }); }
     };
   inline constexpr trim_t trim;
   //--------------------------------------------------------------------------------------------------------

@@ -3,255 +3,6 @@
 #include <coll/basic_fixed_string.h>
 
 using namespace std::literals::string_view_literals;
-
-  static_assert( stralgo::isspace(' ') == true );
-  static_assert( stralgo::isspace('\r') == true );
-  static_assert( stralgo::isspace('\n') == true );
-  static_assert( stralgo::isspace('\t') == true );
-  static_assert( stralgo::isspace('r') == false );
-  static_assert( stralgo::isspace('b') == false );
-  static_assert( stralgo::isspace('a') == false );
-
-  static_assert( stralgo::isdigit(' ') == false );
-  static_assert( stralgo::isdigit('\r') == false );
-  static_assert( stralgo::isdigit('\n') == false );
-  static_assert( stralgo::isdigit('\t') == false );
-  static_assert( stralgo::isdigit('r') == false );
-  static_assert( stralgo::isdigit('B') == false );
-  static_assert( stralgo::isdigit('a') == false );
-  static_assert( stralgo::isdigit('0') == true );
-  static_assert( stralgo::isdigit('3') == true );
-  static_assert( stralgo::isdigit('9') == true );
-  static_assert( stralgo::isdigit(L'1') == true );
-  static_assert( stralgo::isdigit(L'0') == true );
-  static_assert( stralgo::isdigit(L'3') == true );
-  static_assert( stralgo::isdigit(L'9') == true );
-  static_assert( stralgo::isdigit(L'1') == true );
-  
-  static_assert( stralgo::isxdigit(' ') == false );
-  static_assert( stralgo::isxdigit('\r') == false );
-  static_assert( stralgo::isxdigit('\n') == false );
-  static_assert( stralgo::isxdigit('\t') == false );
-  static_assert( stralgo::isxdigit('r') == false );
-  static_assert( stralgo::isxdigit('A') == true );
-  static_assert( stralgo::isxdigit('B') == true );
-  static_assert( stralgo::isxdigit('F') == true );
-  static_assert( stralgo::isxdigit('G') == false );
-  static_assert( stralgo::isxdigit('a') == true );
-  static_assert( stralgo::isxdigit('f') == true );
-  static_assert( stralgo::isxdigit('g') == false );
-  static_assert( stralgo::isxdigit('0') == true );
-  static_assert( stralgo::isxdigit('3') == true );
-  static_assert( stralgo::isxdigit('9') == true );
-  static_assert( stralgo::isxdigit(L'1') == true );
-  static_assert( stralgo::isxdigit(L'0') == true );
-  static_assert( stralgo::isxdigit(L'3') == true );
-  static_assert( stralgo::isxdigit(L'9') == true );
-  static_assert( stralgo::isxdigit(L'1') == true );
-  static_assert( stralgo::isxdigit(L' ') == false );
-  static_assert( stralgo::isxdigit(L'\r') == false );
-  static_assert( stralgo::isxdigit(L'\n') == false );
-  static_assert( stralgo::isxdigit(L'\t') == false );
-  static_assert( stralgo::isxdigit(L'r') == false );
-  static_assert( stralgo::isxdigit(L'A') == true );
-  static_assert( stralgo::isxdigit(L'B') == true );
-  static_assert( stralgo::isxdigit(L'F') == true );
-  static_assert( stralgo::isxdigit(L'G') == false );
-  static_assert( stralgo::isxdigit(L'a') == true );
-  static_assert( stralgo::isxdigit(L'f') == true );
-  static_assert( stralgo::isxdigit(L'g') == false );
-  static_assert( stralgo::isxdigit(L'0') == true );
-  static_assert( stralgo::isxdigit(L'3') == true );
-  static_assert( stralgo::isxdigit(L'9') == true );
-  static_assert( stralgo::isxdigit(L'1') == true );
- 
-  static_assert( stralgo::is_number( "0"sv ) == true );
-  static_assert( stralgo::is_number( " "sv ) == false );
-  static_assert( stralgo::is_number( "avde"sv ) == false );
-  static_assert( stralgo::is_number( "9838320"sv ) == true );
-  static_assert( stralgo::is_number( "9838a320"sv ) == false );
-  static_assert( stralgo::is_number( "9838.320"sv ) == false );
-  static_assert( stralgo::is_number( "9838,320"sv ) == false );
-  static_assert( stralgo::is_number( ""sv ) == true );
-  static_assert( stralgo::is_number( "9,"sv ) == false );
-  static_assert( stralgo::is_number( ".9838320"sv ) == false );
-  
-  static_assert( stralgo::is_number( L"0"sv ) == true );
-  static_assert( stralgo::is_number( L"9838320"sv ) == true );
-  static_assert( stralgo::is_number( L"9838a320"sv ) == false );
-  static_assert( stralgo::is_number( L"9838.320"sv ) == false );
-  static_assert( stralgo::is_number( L"9838,320"sv ) == false );
-  static_assert( stralgo::is_number( L""sv ) == true );
-  static_assert( stralgo::is_number( L"9,"sv ) == false );
-  static_assert( stralgo::is_number( L".9838320"sv ) == false );
-  
-  static_assert( stralgo::is_hexnumber( "0"sv ) == true );
-  static_assert( stralgo::is_hexnumber( " "sv ) == false );
-  static_assert( stralgo::is_hexnumber( "avde"sv ) == false );
-  static_assert( stralgo::is_hexnumber( "9838320"sv ) == true );
-  static_assert( stralgo::is_hexnumber( "9838a320"sv ) == true );
-  static_assert( stralgo::is_hexnumber( "9838.320"sv ) == false );
-  static_assert( stralgo::is_hexnumber( "9838,320"sv ) == false );
-  static_assert( stralgo::is_hexnumber( ""sv ) == true );
-  static_assert( stralgo::is_hexnumber( "9,"sv ) == false );
-  static_assert( stralgo::is_hexnumber( ".9838320"sv ) == false );
-  static_assert( stralgo::is_hexnumber( "afcbef"sv ) == true );
-  static_assert( stralgo::is_hexnumber( "ABCDEF"sv ) == true );
-  static_assert( stralgo::is_hexnumber( "AaBCcDEF"sv ) == true );
-  static_assert( stralgo::is_hexnumber( "ABCDEFg"sv ) == false );
-  static_assert( stralgo::is_hexnumber( "1AB3CDEF"sv ) == true );
-  
-  static_assert( stralgo::is_hexnumber( L"0"sv ) == true );
-  static_assert( stralgo::is_hexnumber( L"9838320"sv ) == true );
-  static_assert( stralgo::is_hexnumber( L"9838a320"sv ) == true );
-  static_assert( stralgo::is_hexnumber( L"9838.320"sv ) == false );
-  static_assert( stralgo::is_hexnumber( L"9838,320"sv ) == false );
-  static_assert( stralgo::is_hexnumber( L""sv ) == true );
-  static_assert( stralgo::is_hexnumber( L"9,"sv ) == false );
-  static_assert( stralgo::is_hexnumber( L".9838320"sv ) == false );
-  static_assert( stralgo::is_hexnumber( L"afcbef"sv ) == true );
-  static_assert( stralgo::is_hexnumber( L"ABCDEF"sv ) == true );
-  static_assert( stralgo::is_hexnumber( L"AaBCcDEF"sv ) == true );
-  static_assert( stralgo::is_hexnumber( L"ABCDEFg"sv ) == false );
-  static_assert( stralgo::is_hexnumber( L"1AB3CDEF"sv ) == true );
-  
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_find_first_of
-{
-  auto constexpr t1a {"Lorem ipsum dolor sit amet, consectetur adipiscing elit. "sv};
-  static_assert( stralgo::find_first_of(t1a, ""sv) == t1a.npos);
-  static_assert( stralgo::find_first_of(t1a, " i"sv) == 5u);
-  static_assert( stralgo::find_first_of(t1a, "i "sv) == 5u);
-  static_assert( stralgo::find_first_of(t1a, "XZ"sv) == t1a.npos);
-  static_assert( stralgo::find_first_of(std::string_view{}, "XZ"sv) == t1a.npos);
-  
-  auto constexpr t2a {L"Lorem ipsum dolor sit amet, consectetur adipiscing elit. "sv};
-  static_assert( stralgo::find_first_of(t2a, L""sv) == t1a.npos);
-  static_assert( stralgo::find_first_of(t2a, L" i"sv) == 5u);
-  static_assert( stralgo::find_first_of(t2a, L"XZ"sv) == t1a.npos);
-  static_assert( stralgo::find_first_of(std::wstring_view{}, L"XZ"sv) == t1a.npos);
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_starts_with
-  {
-  auto constexpr t1a {" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv};
-  static_assert( stralgo::starts_with(t1a, ""sv) );
-  static_assert( !stralgo::starts_with(t1a, "Lorem"sv) );
-  static_assert( stralgo::starts_with(t1a, " \t\r\nLorem"sv) );
-  
-  auto constexpr t2a {L" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv};
-  static_assert( stralgo::starts_with(t2a, L""sv) );
-  static_assert( !stralgo::starts_with(t2a, L"Lorem"sv) );
-  static_assert( stralgo::starts_with(t2a, L" \t\r\nLorem"sv) );
-  }
-
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_trim_left
-{
-  constexpr auto t1a {" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv};
-
-  static_assert( stralgo::trim_left(t1a) == "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv );
-  static_assert( stralgo::trim_left(t1a,std::string_view{}) == t1a );
-  static_assert( stralgo::trim_left(t1a, ' ') == "\t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv );
-  static_assert( stralgo::trim_left(t1a, "Lorem  \t\r\n"sv) == "ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv );
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_trim_right
-{
-  constexpr auto t1a {" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv};
-
-  static_assert( stralgo::trim_right(t1a) == " \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit."sv );
-  static_assert( stralgo::trim_right(t1a,std::string_view{}) == t1a );
-  static_assert( stralgo::trim_right(t1a,'\n') == " \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r"sv );
-  static_assert( stralgo::trim_right(t1a,"Lorem  \t\r\nelit."sv) == " \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing"sv );
-}
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_trim
-{
-  
-  constexpr auto t1a {" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv};
-
-    static_assert( stralgo::trim(t1a) == "Lorem ipsum dolor sit amet, consectetur adipiscing elit."sv );
-    static_assert( std::is_same_v<decltype(stralgo::trim(t1a)),std::string_view> );
-    static_assert( stralgo::trim(t1a,std::string_view{}) == t1a );
-    static_assert( stralgo::trim(t1a,'\n') == " \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r"sv );
-    static_assert( stralgo::trim(t1a,"Lorem  \t\r\nelit."sv) == "psum dolor sit amet, consectetur adipiscing"sv );
-}
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_ends_with
-{
-  auto constexpr t1a {" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"sv};
-  static_assert( stralgo::ends_with(t1a, ""sv) == true );
-  static_assert( stralgo::ends_with(t1a, std::string_view{}) == true );
-  static_assert( stralgo::ends_with(t1a, "elit."sv) == false );
-  static_assert( stralgo::ends_with(t1a, "elit. \t\r\n"sv) == true );
-}
-//----------------------------------------------------------------------------------------------------------------------
-
-namespace stralgo_compare_no_case
-{
-  
-  auto constexpr t1 {"Lorem ipsum"sv}; auto constexpr t1b {"Lorem ipsum"sv};
-  auto constexpr t2 {"Lorem"sv};
-  std::string_view constexpr t4 {};
-  static_assert( stralgo::compare_no_case(t1,t2) == 1 );
-  static_assert( stralgo::compare_no_case(t1,t1b) == 0 );
-  static_assert( stralgo::compare_no_case(t1,t1) == 0 );
-  static_assert( stralgo::compare_no_case(t2,t1) == -1 );
-  static_assert( stralgo::compare_no_case(t4,t4) == 0 );
-  static_assert( stralgo::compare_no_case(t1,t4) == 1 );
-  static_assert( stralgo::compare_no_case(t4,t1) == -1 );
-}
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_right
-{
-  constexpr auto t1 {"Lorem ipsum"sv};
-  static_assert( stralgo::right( t1, 2u ) == "um"sv );
-  static_assert( stralgo::right( t1, 0u ) == std::string_view{} );
-  static_assert( stralgo::right( t1,  std::string_view::npos ) == t1 );
-}
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_left
-{
-  
-  constexpr auto t1 {"Lorem ipsum"sv};
-  static_assert( stralgo::left( t1, 2 ) == "Lo"sv );
-  static_assert( stralgo::left( t1, 0 ) == std::string_view{} );
-  static_assert( stralgo::left( t1, std::string_view::npos ) == t1 );
-
-}
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_substr
-{
-  
-  constexpr auto t1 {"Lorem ipsum"sv};
-  static_assert( stralgo::substr( t1, 2u, 2u ) == "re"sv );
-  static_assert( stralgo::substr( t1, 22u, 2u ).empty() );
-  static_assert( stralgo::substr( t1, 2u, std::string_view::npos ) == "rem ipsum"sv );
-  static_assert( stralgo::substr( t1, 0u, std::string_view::npos ) == t1 );
-  static_assert( stralgo::substr( t1, std::string_view::npos, 1 ).empty() );
-  static_assert( stralgo::substr( t1, std::string_view::npos, std::string_view::npos ).empty() );
-}
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_to_lower
-{
-  static_assert( stralgo::to_lower('a') == 'a' );
-  static_assert( stralgo::to_lower('A') == 'a' );
-  static_assert( stralgo::to_lower('Z') == 'z' );
-  static_assert( stralgo::to_lower('1') == '1' );
-  static_assert( stralgo::to_lower(':') == ':' );
-}
-//----------------------------------------------------------------------------------------------------------------------
-namespace stralgo_to_upper
-{
-  static_assert( stralgo::to_upper('a') == 'A' );
-  static_assert( stralgo::to_upper('A') == 'A' );
-  static_assert( stralgo::to_upper('z') == 'Z' );
-  static_assert( stralgo::to_upper('1') == '1' );
-  static_assert( stralgo::to_upper(':') == ':' );
-}
 //----------------------------------------------------------------------------------------------------------------------
 using metatests::constexpr_test;
 using metatests::run_consteval_test;
@@ -273,9 +24,470 @@ struct cfs_t
     { return coll::basic_fixed_string<decl_chr_type, N - 1>(str); }
 };
 
-int main()
+
+namespace stralgo_isspace
 {
-  test_result result;
+static void do_test(test_result &result)
+  {
+  "stralgo_isspace"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr_test( stralgo::isspace(char_type(' ')) == true );
+      constexpr_test( stralgo::isspace(char_type('\r')) == true );
+      constexpr_test( stralgo::isspace(char_type('\n')) == true );
+      constexpr_test( stralgo::isspace(char_type('\t')) == true );
+      constexpr_test( stralgo::isspace(char_type('r')) == false );
+      constexpr_test( stralgo::isspace(char_type('b')) == false );
+      constexpr_test( stralgo::isspace(char_type('a')) == false );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+namespace stralgo_isdigit
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_isdigit"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr_test( stralgo::isdigit(char_type(' ')) == false );
+      constexpr_test( stralgo::isdigit(char_type('\r')) == false );
+      constexpr_test( stralgo::isdigit(char_type('\n')) == false );
+      constexpr_test( stralgo::isdigit(char_type('\t')) == false );
+      constexpr_test( stralgo::isdigit(char_type('r')) == false );
+      constexpr_test( stralgo::isdigit(char_type('B')) == false );
+      constexpr_test( stralgo::isdigit(char_type('a')) == false );
+      constexpr_test( stralgo::isdigit(char_type('0')) == true );
+      constexpr_test( stralgo::isdigit(char_type('3')) == true );
+      constexpr_test( stralgo::isdigit(char_type('9')) == true );
+      constexpr_test( stralgo::isdigit(char_type('1')) == true );
+      constexpr_test( stralgo::isdigit(char_type('0')) == true );
+      constexpr_test( stralgo::isdigit(char_type('3')) == true );
+      constexpr_test( stralgo::isdigit(char_type('9')) == true );
+      constexpr_test( stralgo::isdigit(char_type('1')) == true );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+namespace stralgo_isxdigit
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_isxdigit"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr_test( stralgo::isxdigit(char_type(' ')) == false );
+      constexpr_test( stralgo::isxdigit(char_type('\r')) == false );
+      constexpr_test( stralgo::isxdigit(char_type('\n')) == false );
+      constexpr_test( stralgo::isxdigit(char_type('\t')) == false );
+      constexpr_test( stralgo::isxdigit(char_type('r')) == false );
+      constexpr_test( stralgo::isxdigit(char_type('A')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('B')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('F')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('G')) == false );
+      constexpr_test( stralgo::isxdigit(char_type('a')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('f')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('g')) == false );
+      constexpr_test( stralgo::isxdigit(char_type('0')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('3')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('9')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('1')) == true );
+      constexpr_test( stralgo::isxdigit(char_type('b')) == true );
+
+       return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+namespace stralgo_is_number
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_is_number"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr_test( stralgo::is_number( cfs("0") ) == true );
+      constexpr_test( stralgo::is_number( cfs(" ") ) == false );
+      constexpr_test( stralgo::is_number( cfs("avde") ) == false );
+      constexpr_test( stralgo::is_number( cfs("9838320") ) == true );
+      constexpr_test( stralgo::is_number( cfs("9838a320") ) == false );
+      constexpr_test( stralgo::is_number( cfs("9838.320") ) == false );
+      constexpr_test( stralgo::is_number( cfs("9838,320") ) == false );
+      constexpr_test( stralgo::is_number( cfs("") ) == true );
+      constexpr_test( stralgo::is_number( cfs("9,") ) == false );
+      constexpr_test( stralgo::is_number( cfs(".9838320") ) == false );
+
+       return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+namespace stralgo_is_hexnumber
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_is_hexnumber"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr_test( stralgo::is_hexnumber( cfs("0") ) == true );
+      constexpr_test( stralgo::is_hexnumber( cfs(" ") ) == false );
+      constexpr_test( stralgo::is_hexnumber( cfs("avde") ) == false );
+      constexpr_test( stralgo::is_hexnumber( cfs("9838320") ) == true );
+      constexpr_test( stralgo::is_hexnumber( cfs("9838a320") ) == true );
+      constexpr_test( stralgo::is_hexnumber( cfs("9838.320") ) == false );
+      constexpr_test( stralgo::is_hexnumber( cfs("9838,320") ) == false );
+      constexpr_test( stralgo::is_hexnumber( cfs("") ) == true );
+      constexpr_test( stralgo::is_hexnumber( cfs("9,") ) == false );
+      constexpr_test( stralgo::is_hexnumber( cfs(".9838320") ) == false );
+      constexpr_test( stralgo::is_hexnumber( cfs("afcbef") ) == true );
+      constexpr_test( stralgo::is_hexnumber( cfs("ABCDEF") ) == true );
+      constexpr_test( stralgo::is_hexnumber( cfs("AaBCcDEF") ) == true );
+      constexpr_test( stralgo::is_hexnumber( cfs("ABCDEFg") ) == false );
+      constexpr_test( stralgo::is_hexnumber( cfs("1AB3CDEF") ) == true );
+       return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_find_first_of
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_find_first_of"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      auto constexpr t1a {cfs("Lorem ipsum dolor sit amet, consectetur adipiscing elit. ")};
+      constexpr_test( stralgo::find_first_of(t1a, cfs("")) == t1a.end());
+      constexpr_test( stralgo::find_first_of(t1a, cfs(" i")) == std::ranges::next(t1a.begin(),5));
+      constexpr_test( stralgo::find_first_of(t1a, cfs("i ")) == std::ranges::next(t1a.begin(),5));
+      constexpr_test( stralgo::find_first_of(t1a, cfs("XZ")) == t1a.end());
+      auto constexpr t2{cfs("")};
+      constexpr_test( stralgo::find_first_of(t2, cfs("XZ")) == t2.end());
+       return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_starts_with
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_starts_with"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      auto constexpr t1a { cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n")};
+      constexpr_test( stralgo::starts_with(t1a, cfs("")) );
+      constexpr_test( !stralgo::starts_with(t1a, cfs("Lorem")) );
+      constexpr_test( stralgo::starts_with(t1a, cfs(" \t\r\nLorem")) );
+       return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_ends_with
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_trim"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      auto constexpr t1a {cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n")};
+      constexpr_test( stralgo::ends_with(t1a, std::basic_string_view<char_type>{}) == true );
+      constexpr_test( stralgo::ends_with(t1a, cfs("")) == true );
+      constexpr_test( stralgo::ends_with(t1a, cfs("elit.")) == false );
+      constexpr_test( stralgo::ends_with(t1a, cfs("elit. \t\r\n")) == true );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_trim_left
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_trim_left"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr auto t1a {cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n")};
+      using std::ranges::equal;
+      
+      constexpr_test(equal(stralgo::trim_left(t1a), cfs("Lorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n") ));
+      constexpr_test(stralgo::trim_left(t1a) == cfs("Lorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n") );
+      
+      constexpr_test( stralgo::trim_left(t1a,std::basic_string_view<char_type>{}) == t1a );
+      constexpr_test( stralgo::trim_left(t1a, char_type(' ')) == cfs("\t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n") );
+      constexpr_test( stralgo::trim_left(t1a, cfs("Lorem  \t\r\n")) == cfs("ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n"));
+      constexpr_test(std::ranges::empty(stralgo::trim_left(cfs("\t\r\n"), cfs("\t\r\n"))));
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_trim_right
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_trim_right"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr auto t1a {cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n")};
+
+      constexpr_test( stralgo::trim_right(t1a) == cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit.") );
+      constexpr_test( stralgo::trim_right(t1a,std::basic_string_view<char_type>{}) == t1a );
+      constexpr_test( stralgo::trim_right(t1a,char_type('\n')) == cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r") );
+      constexpr_test( stralgo::trim_right(t1a, cfs("Lorem  \t\r\nelit.")) == cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing") );
+      constexpr_test(stralgo::trim_right(cfs("\t\r\n"), cfs("\t\r\n")) == cfs(""));
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_trim
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_trim"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr auto t1a {cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r\n")};
+
+      constexpr_test( stralgo::trim(t1a) == cfs("Lorem ipsum dolor sit amet, consectetur adipiscing elit.") );
+      constexpr_test( stralgo::trim(t1a,std::basic_string_view<char_type>{}) == t1a );
+      constexpr_test( stralgo::trim(t1a, char_type('\n')) == cfs(" \t\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. \t\r") );
+      constexpr_test( stralgo::trim(t1a, cfs("Lorem  \t\r\nelit.")) == cfs("psum dolor sit amet, consectetur adipiscing") );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+namespace stralgo_compare_no_case
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_trim"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      auto constexpr t1 {cfs("Lorem ipsum")}; auto constexpr t1b {cfs("Lorem ipsum")};
+      auto constexpr t2 {cfs("Lorem")};
+      std::basic_string_view<char_type> constexpr t4 {};
+      constexpr_test( stralgo::compare_no_case(t1,t2) == 1 );
+      constexpr_test( stralgo::compare_no_case(t1,t1b) == 0 );
+      constexpr_test( stralgo::compare_no_case(t1,t1) == 0 );
+      constexpr_test( stralgo::compare_no_case(t2,t1) == -1 );
+      constexpr_test( stralgo::compare_no_case(t4,t4) == 0 );
+      constexpr_test( stralgo::compare_no_case(t1,t4) == 1 );
+      constexpr_test( stralgo::compare_no_case(t4,t1) == -1 );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_left
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_left"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr auto t1 { cfs("Lorem ipsum")};
+      constexpr_test( stralgo::left( t1, 2 ) == cfs("Lo") );
+      constexpr_test( stralgo::left( t1, 0 ) == std::basic_string_view<char_type>{} );
+      constexpr_test( stralgo::left( t1, stralgo::npos ) == t1 );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_right
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_right"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr auto t1 {cfs("Lorem ipsum")};
+      constexpr_test( stralgo::right( t1, 2u ) == cfs("um") );
+      constexpr_test( stralgo::right( t1, 0u ) == std::basic_string_view<char_type>{} );
+      constexpr_test( stralgo::right( t1,  stralgo::npos ) == t1 );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_substr
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_substr"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr cfs_t<char_type> cfs;
+      constexpr auto t1 {cfs("Lorem ipsum")};
+      constexpr_test( stralgo::substr( t1, 2u, 2u ) == cfs("re") );
+      constexpr_test( std::ranges::empty(stralgo::substr( t1, 22u, 2u )) );
+      constexpr_test( stralgo::substr( t1, 2u, stralgo::npos ) == cfs("rem ipsum") );
+      constexpr_test( stralgo::substr( t1, 0u, stralgo::npos ) == t1 );
+      constexpr_test( stralgo::substr( t1, stralgo::npos, 1 ).empty() );
+      constexpr_test( std::ranges::empty(stralgo::substr( t1, stralgo::npos, stralgo::npos )) );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_to_lower
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_to_lower"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr_test( stralgo::to_lower(char_type('a')) == char_type('a') );
+      constexpr_test( stralgo::to_lower(char_type('A')) == char_type('a') );
+      constexpr_test( stralgo::to_lower(char_type('Z')) == char_type('z') );
+      constexpr_test( stralgo::to_lower(char_type('1')) == char_type('1') );
+      constexpr_test( stralgo::to_lower(char_type(':')) == char_type(':') );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+//----------------------------------------------------------------------------------------------------------------------
+namespace stralgo_to_upper
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_to_upper"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr_test( stralgo::to_upper(char_type('a')) == char_type('A') );
+      constexpr_test( stralgo::to_upper(char_type('A')) == char_type('A') );
+      constexpr_test( stralgo::to_upper(char_type('z')) == char_type('Z') );
+      constexpr_test( stralgo::to_upper(char_type('1')) == char_type('1') );
+      constexpr_test( stralgo::to_upper(char_type(':')) == char_type(':') );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+namespace stralgo_merge
+{
+static void do_test(test_result &result)
+  {
   "stralgo_merge"_test = [&]
     {
     auto fn_tmpl =
@@ -299,7 +511,12 @@ int main()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-
+  }
+}
+namespace stralgo_merge_range
+{
+static void do_test(test_result &result)
+  {
   "stralgo_merge_range"_test = [&]
     {
     auto fn_tmpl =
@@ -328,5 +545,31 @@ int main()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
+  }
+}
+
+int main()
+{
+  test_result result;
+  stralgo_isspace::do_test(result);
+  stralgo_isdigit::do_test(result);
+  stralgo_isxdigit::do_test(result);
+  stralgo_is_number::do_test(result);
+  stralgo_is_hexnumber::do_test(result);
+  stralgo_find_first_of::do_test(result);
+  stralgo_starts_with::do_test(result);
+  stralgo_ends_with::do_test(result);
+  stralgo_trim_left::do_test(result);
+  stralgo_trim_right::do_test(result);
+  stralgo_trim::do_test(result);
+  stralgo_compare_no_case::do_test(result);
+  stralgo_left::do_test(result);
+  stralgo_right::do_test(result);
+  stralgo_substr::do_test(result);
+  stralgo_to_lower::do_test(result);
+  stralgo_to_upper::do_test(result);
+  stralgo_merge::do_test(result);
+  stralgo_merge_range::do_test(result);
+  return result ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

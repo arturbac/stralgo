@@ -15,12 +15,6 @@ struct cfs_t
     { return coll::basic_fixed_string<decl_chr_type, N - 1>(str); }
 };
 
-namespace strconv_value_to_hex
-  {
-  static_assert( stralgo::value_to_hex<char_case_e::uppercase,char>(uint8_t(0)) == '0' );
-  static_assert( stralgo::value_to_hex<char_case_e::uppercase,char>(uint8_t(5)) == '5' );
-  static_assert( stralgo::value_to_hex<char_case_e::uppercase,char>(uint8_t(15)) == 'F' );
-  }
 using metatests::constexpr_test;
 using metatests::run_consteval_test;
 using metatests::run_constexpr_test;
@@ -30,10 +24,32 @@ using namespace ut::operators::terse;
 using metatests::test_result;
 using char_type_list = metatests::type_list<char,char8_t,char16_t,char32_t,wchar_t>;
 using coll::cast_fixed_string;
-static void test_part1()
+
+namespace stralgo_value_to_hex
 {
-  test_result result;
-  "from_hex_ascii"_test = [&]
+static void do_test(test_result &result)
+  {
+  "stralgo_value_to_hex"_test = [&]
+    {
+    auto fn_tmpl =
+      []<typename char_type>
+        ( char_type const *) -> metatests::test_result
+      {
+      constexpr_test( stralgo::value_to_hex<char_case_e::uppercase,char_type>(uint8_t(0)) == char_type('0') );
+      constexpr_test( stralgo::value_to_hex<char_case_e::uppercase,char_type>(uint8_t(5)) == char_type('5') );
+      constexpr_test( stralgo::value_to_hex<char_case_e::uppercase,char_type>(uint8_t(15)) == char_type('F') );
+      return {};
+      };
+    result |= run_consteval_test<char_type_list>(fn_tmpl);
+    result |= run_constexpr_test<char_type_list>(fn_tmpl);
+    };
+  }
+}
+namespace stralgo_from_hex_ascii
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_from_hex_ascii"_test = [&]
     {
     auto fn_tmpl =
       []<typename char_type>
@@ -50,7 +66,13 @@ static void test_part1()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-  "to_hex_ascii"_test = [&]
+  }
+}
+namespace stralgo_to_hex_ascii
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_to_hex_ascii"_test = [&]
     {
     auto fn_tmpl =
       []<typename char_type>
@@ -77,7 +99,13 @@ static void test_part1()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-  "to_hex_ascii_string"_test = [&]
+  }
+}
+namespace stralgo_to_hex_ascii_string
+{
+static void do_test(test_result &result)
+  {
+  "stralgo_to_hex_ascii_string"_test = [&]
     {
     auto fn_tmpl =
       []<typename char_type>
@@ -101,7 +129,12 @@ static void test_part1()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-    
+  }
+}
+namespace stralgo_calculate_size_div_info
+{
+static void do_test(test_result &result)
+  {
   "calculate_size_div_info"_test = [&]
     {
     auto fn_tmpl =
@@ -145,9 +178,15 @@ static void test_part1()
     result |= run_consteval_test(fn_tmpl);
     result |= run_constexpr_test(fn_tmpl);
     };
+  }
+}
 
-  static constexpr auto integral_to_string_max_size = 128;
+static constexpr auto integral_to_string_max_size = 128;
 
+namespace stralgo_integral_to_ascii
+{
+static void do_test(test_result &result)
+  {
   using stralgo::format_e;
   using stralgo::char_case_e;
   using stralgo::prepend_sign_e;
@@ -155,7 +194,7 @@ static void test_part1()
   using stralgo::include_prefix_e;
   using stralgo::alignment_e;
 
-  "integral_to_ascii_base10"_test = [&]
+  "stralgo_integral_to_ascii_base10"_test = [&]
     {
     auto fn_tmpl =
       []<typename char_type>
@@ -245,7 +284,7 @@ static void test_part1()
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
     
-  "integral_to_ascii_base16"_test = [&]
+  "stralgo_integral_to_ascii_base16"_test = [&]
     {
     auto fn_tmpl =
       []<typename char_type>
@@ -420,7 +459,7 @@ static void test_part1()
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
     
-  "integral_to_ascii_base2"_test = [&]
+  "stralgo_integral_to_ascii_base2"_test = [&]
     {
     auto fn_tmpl =
       []<typename char_type>
@@ -596,8 +635,18 @@ static void test_part1()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-
-  "from_hex_ascii"_test = [&]
+  }
+}
+namespace stralgo_integral_to_string
+{
+static void do_test(test_result &result)
+  {
+  using stralgo::format_e;
+  using stralgo::char_case_e;
+  using stralgo::prepend_sign_e;
+  using stralgo::include_prefix_e;
+  using stralgo::alignment_e;
+  "stralgo_integral_to_string"_test = [&]
     {
     auto fn_tmpl = []<typename char_type>
         ( char_type const *) -> metatests::test_result
@@ -637,10 +686,15 @@ static void test_part1()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-    
+  }
+}
+namespace stralgo_estimate_float_to_string
+{
+static void do_test(test_result &result)
+  {
   using stralgo::trailing_zeros_e;
   
-  "estimate_float_to_string"_test = [&]
+  "stralgo_estimate_float_to_string"_test = [&]
     {
     auto fn_tmpl = []()-> metatests::test_result
       {
@@ -699,8 +753,21 @@ static void test_part1()
     result |= run_consteval_test(fn_tmpl);
     result |= run_constexpr_test(fn_tmpl);
     };
-    
-  "float_to_ascii"_test = [&]
+  }
+}
+namespace stralgo_float_to_ascii
+{
+static void do_test(test_result &result)
+  {
+  using stralgo::format_e;
+  using stralgo::char_case_e;
+  using stralgo::prepend_sign_e;
+  using stralgo::padd_with_e;
+  using stralgo::include_prefix_e;
+  using stralgo::alignment_e;
+  using stralgo::trailing_zeros_e;
+  
+  "stralgo_float_to_ascii"_test = [&]
     {
     auto fn_tmpl = []<typename char_type>
         ( char_type const *) -> metatests::test_result
@@ -857,8 +924,16 @@ static void test_part1()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-
-  "float_to_string"_test = [&]
+  }
+}
+namespace stralgo_float_to_string
+{
+  using stralgo::alignment_e;
+  using stralgo::trailing_zeros_e;
+  
+static void do_test(test_result &result)
+  {
+  "stralgo_float_to_string"_test = [&]
     {
     auto fn_tmpl = []<typename char_type>
         ( char_type const *) -> metatests::test_result
@@ -880,14 +955,13 @@ static void test_part1()
     result |= run_consteval_test<char_type_list>(fn_tmpl);
     result |= run_constexpr_test<char_type_list>(fn_tmpl);
     };
-    
-
+  }
 }
-namespace string_to_integral_test
+
+namespace stralgo_string_to_integral_test
 {
 using stralgo::string_to_integral;
 using stralgo::input_format_e;
-
 
 template<std::integral integral_type, input_format_e input_format = input_format_e::undetermined,
         stralgo::concepts::char_range view_type, typename expected_type>
@@ -898,10 +972,10 @@ template<std::integral integral_type, input_format_e input_format = input_format
     constexpr_test(std::ranges::next(std::ranges::begin(source),end_it_offset) == end_it);
     }
  
-  static void do_test()
+  static void do_test(test_result &result)
     {
-    test_result result;
-    "string_to_integral"_test = [&]
+
+    "stralgo_string_to_integral_test"_test = [&]
       {
       auto fn_tmpl = []<typename char_type>
           ( char_type const *) -> metatests::test_result
@@ -1016,7 +1090,7 @@ template<std::integral integral_type, input_format_e input_format = input_format
       };
     }
 }
-namespace string_to_float_test
+namespace stralgo_string_to_float_test
   {
   using stralgo::string_to_float;
   using stralgo::input_format_e;
@@ -1030,10 +1104,9 @@ template<std::floating_point float_type,
     constexpr_test(static_cast<float_type>(expected) == result);
     constexpr_test(std::ranges::next(std::ranges::begin(source),end_it_offset) == end_it);
     }
-  static void do_test()
+  static void do_test(test_result &result)
     {
-    test_result result;
-    "string_to_integral"_test = [&]
+    "stralgo_string_to_float_test"_test = [&]
       {
       auto fn_tmpl = []<typename char_type>
           ( char_type const *) -> metatests::test_result
@@ -1067,7 +1140,7 @@ template<std::floating_point float_type,
       };
     }
   }
-namespace compose_test
+namespace stralgo_compose_test
 {
   using stralgo::integral_format_traits;
   using stralgo::fmt;
@@ -1128,12 +1201,10 @@ namespace compose_test
   static_assert(!compose_arg_concept<decltype(" "),char>);
   static_assert(compose_arg_concept<stralgo::detail::view_preconv_float_t<float, stralgo::float_format_traits{}>,char>);
   static_assert(compose_arg_concept<stralgo::detail::view_preconv_integral_t<int, stralgo::integral_format_traits{}>,char>);
-  
 
-  static void do_test()
+  static void do_test(test_result &result)
     {
-    test_result result;
-    "string_to_integral"_test = [&]
+    "stralgo_compose_test"_test = [&]
       {
       auto fn_tmpl = []<typename char_type>
           ( char_type const *) -> metatests::test_result
@@ -1255,8 +1326,20 @@ namespace compose_test
 }
 int main()
   {
-  test_part1();
-  string_to_integral_test::do_test();
-  string_to_float_test::do_test();
-  compose_test::do_test();
+  test_result result;
+  stralgo_value_to_hex::do_test(result);
+  stralgo_from_hex_ascii::do_test(result);
+  stralgo_to_hex_ascii::do_test(result);
+  stralgo_to_hex_ascii_string::do_test(result);
+  stralgo_calculate_size_div_info::do_test(result);
+  stralgo_integral_to_ascii::do_test(result);
+  stralgo_integral_to_string::do_test(result);
+  stralgo_estimate_float_to_string::do_test(result);
+  stralgo_float_to_ascii::do_test(result);
+  stralgo_float_to_string::do_test(result);
+  stralgo_string_to_integral_test::do_test(result);
+  stralgo_string_to_float_test::do_test(result);
+  stralgo_compose_test::do_test(result);
+  
+  return result ? EXIT_SUCCESS : EXIT_FAILURE;
   }
