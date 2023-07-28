@@ -57,7 +57,7 @@ namespace stralgo::detail
   struct to_hex_ascii_t
     {
     template<concepts::ui8_iterator iterator, std::sentinel_for<iterator> sentinel,
-              typename output_iterator>
+             concepts::typed_char_output_iterator output_iterator>
     stralgo_static_call_operator
     constexpr output_iterator operator()( iterator sbeg, sentinel send, output_iterator outit )
         stralgo_static_call_operator_const noexcept
@@ -73,7 +73,7 @@ namespace stralgo::detail
         }
       return outit;
       }
-    template<ranges::forward_range forward_range, typename output_iterator>
+    template<ranges::forward_range forward_range, concepts::typed_char_output_iterator output_iterator>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( forward_range const & range, output_iterator outit )
@@ -138,7 +138,8 @@ namespace stralgo::detail
   struct from_hex_ascii_t
     {
     ///\warning \ref outit must have half the size capacity of source range and source range must be multiple of 2
-    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel, typename output_iterator>
+    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel,
+             std::output_iterator<std::uint8_t> output_iterator>
     stralgo_static_call_operator
     constexpr output_iterator operator()(iterator sbeg, sentinel send, output_iterator outit)
         stralgo_static_call_operator_const noexcept
@@ -153,7 +154,7 @@ namespace stralgo::detail
         }
       return outit;
       }
-    template<ranges::forward_range forward_range, typename output_iterator>
+    template<ranges::forward_range forward_range, std::output_iterator<std::uint8_t> output_iterator>
     stralgo_static_call_operator
     constexpr auto operator()( forward_range const & range, output_iterator outit)
         stralgo_static_call_operator_const
@@ -169,7 +170,7 @@ namespace stralgo::detail
     static constexpr std::string_view output_prefix{"0b"};
     static constexpr unsigned integral_to_string_max_size = 70;
     
-    template<concepts::integral integral_type, concepts::char_type char_type>
+    template<std::integral integral_type, concepts::char_type char_type>
     [[nodiscard]]
     static constexpr integral_type convert( char_type c ) noexcept 
       { return static_cast<integral_type>( unsigned(c) - unsigned('0')); }
@@ -185,7 +186,7 @@ namespace stralgo::detail
     static constexpr std::string_view output_prefix{};
     static constexpr unsigned integral_to_string_max_size = 22;
     
-    template<concepts::integral integral_type, concepts::char_type char_type>
+    template<std::integral integral_type, concepts::char_type char_type>
     [[nodiscard]]
     static constexpr integral_type convert( char_type c ) noexcept 
       {
@@ -203,7 +204,7 @@ namespace stralgo::detail
     static constexpr std::string_view output_prefix{"0x"};
     static constexpr unsigned integral_to_string_max_size = 12;
     
-    template<concepts::integral integral_type, concepts::char_type char_type>
+    template<std::integral integral_type, concepts::char_type char_type>
     [[nodiscard]]
     static constexpr integral_type convert( char_type c ) noexcept 
       {
@@ -302,7 +303,7 @@ namespace stralgo::detail
   template<typename base_conv_type, char_case_e char_case, concepts::char_type char_type>
   struct unsigned_to_str_transform_t
     {
-    template<typename output_iterator, std::unsigned_integral value_type>
+    template<concepts::char_output_iterator<char_type> output_iterator, std::unsigned_integral value_type>
     stralgo_static_call_operator
     constexpr auto operator()( value_type value, size_div_info_t<value_type> size_div_info, output_iterator oit )
           stralgo_static_call_operator_const noexcept
@@ -413,7 +414,7 @@ namespace stralgo::detail
   template<integral_format_traits traits>
   struct unsigned_to_str_t
     {
-    template<std::unsigned_integral value_type, typename output_iterator>
+    template<std::unsigned_integral value_type, concepts::typed_char_output_iterator output_iterator>
     stralgo_static_call_operator
     constexpr auto operator()( estimate_info_t<value_type> const & est_info, output_iterator oit )
       stralgo_static_call_operator_const noexcept
@@ -500,7 +501,7 @@ namespace stralgo::detail
   template<integral_format_traits traits>
   struct integral_to_ascii_t
     {
-    template<typename output_iterator, concepts::integral value_type>
+    template<concepts::typed_char_output_iterator output_iterator, std::integral value_type>
     stralgo_static_call_operator
     constexpr auto operator()( value_type value, output_iterator oit )
         stralgo_static_call_operator_const noexcept
@@ -516,7 +517,7 @@ namespace stralgo::detail
   template<template<typename > typename basic_string_type, concepts::char_type char_type, integral_format_traits traits>
   struct integral_to_string_t
     {
-    template<concepts::integral value_type>
+    template<std::integral value_type>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( value_type value )
@@ -634,7 +635,7 @@ namespace stralgo::detail
   template<float_format_traits traits>
   struct float_to_ascii_t
     {
-    template<std::floating_point float_type, typename output_iterator>
+    template<std::floating_point float_type, concepts::typed_char_output_iterator output_iterator>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( float_estimate_info_t<float_type> const & est_info, output_iterator oit )
@@ -763,7 +764,7 @@ namespace stralgo::detail
 
 
   //--------------------------------------------------------------------------------------------------------
-  template<std::unsigned_integral integral_type, std::forward_iterator iterator>
+  template<std::unsigned_integral integral_type, concepts::char_iterator iterator>
   struct tstoui_result_t
     {
     integral_type result;
@@ -773,7 +774,7 @@ namespace stralgo::detail
   template<std::unsigned_integral integral_type, typename base_conv>
   struct trimed_string_to_unsigned_integral_t
     {
-    template<std::forward_iterator iterator, std::sentinel_for<iterator> sentinel>
+    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( iterator beg, sentinel end )
@@ -1133,7 +1134,7 @@ namespace stralgo::detail
 
   //--------------------------------------------------------------------------------------------------------
   //preconv integral
-  template<concepts::integral integral_type, integral_format_traits traits = integral_format_traits{}>
+  template<std::integral integral_type, integral_format_traits traits = integral_format_traits{}>
     requires ( !concepts::char_type<integral_type> )
   struct view_preconv_integral_t
     {
@@ -1151,14 +1152,14 @@ namespace stralgo::detail
       { return unsigned_to_str<traits>(est_info_, oit); }
     };
 
-  template<integral_format_traits traits, concepts::integral integral_type>
+  template<integral_format_traits traits, std::integral integral_type>
     requires ( !concepts::char_type<integral_type> )
   constexpr auto fmt( integral_type value )
     {
     return view_preconv_integral_t<integral_type,traits>{ value };
     }
     //
-  template<concepts::char_type char_type, concepts::integral integral_type>
+  template<concepts::char_type char_type, std::integral integral_type>
     requires ( !concepts::char_type<integral_type> )
   struct compose_preconv_t<char_type,integral_type>
     {
@@ -1171,7 +1172,7 @@ namespace stralgo::detail
       }
     };
 
-  template<concepts::char_type char_type, concepts::integral integral_type, integral_format_traits traits>
+  template<concepts::char_type char_type, std::integral integral_type, integral_format_traits traits>
     requires ( !concepts::char_type<integral_type> )
   struct compose_preconv_t<char_type,view_preconv_integral_t<integral_type,traits>>
     {
@@ -1271,7 +1272,6 @@ namespace stralgo::detail
   requires (T const & arg )
     {
     requires concepts::char_type<char_type>;
-    // requires compose_supported_concept<T,char_type>;
     stralgo::detail::compose_preconv_t<char_type,T>{}(arg);
     // all deduced char types must match
     requires concepts::match_char_type_or_void<char_type,T>;

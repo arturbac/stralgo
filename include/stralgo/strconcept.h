@@ -22,18 +22,12 @@ namespace stralgo::concepts
   
   template<typename iterator>
   using dereferenced_type = decltype(*std::declval<iterator>());
- 
-  using std::integral;
-  using std::signed_integral;
-  using std::unsigned_integral;
-  using std::floating_point;
-  using std::same_as;
 
   template<typename from, typename to>
   concept convertible = std::is_convertible_v<from,to>;
   
   template< typename maybe_uint8_t>
-  concept integral_uint8 = same_as<maybe_uint8_t,uint8_t>;
+  concept integral_uint8 = std::same_as<maybe_uint8_t,uint8_t>;
   
   template<typename maybe_enum_type>
   concept enumeration = std::is_enum_v<maybe_enum_type>;
@@ -53,9 +47,7 @@ namespace stralgo::concepts
       static constexpr bool value = std::is_same<bool, decltype(test<T, EqualTo>(nullptr))>::value;
       };
     }
-    
-  using std::equality_comparable;
-  
+
   namespace detail
     {
     template<class T>
@@ -76,33 +68,43 @@ namespace stralgo::concepts
   template<typename iterator>
   using iterator_category_t = typename std::iterator_traits<iterator>::iterator_category;
   
-  using std::forward_iterator;
-  using std::input_iterator;
-  using std::output_iterator;
-  using std::bidirectional_iterator;
-  using std::random_access_iterator;
-
-  using std::iter_value_t;
+  // using std::forward_iterator;
+  // using std::input_iterator;
+  // using std::output_iterator;
+  // using std::bidirectional_iterator;
+  // using std::random_access_iterator;
+  // 
+  // using std::iter_value_t;
 
   template <typename iterator>
-  using iterator_value_type_t = iter_value_t<iterator>;
+  using iterator_value_type_t = std::iter_value_t<iterator>;
   
   template< class T >
   using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
 
   template<typename value_type>
-  concept char_1b_type = same_as<remove_cvref_t<value_type>,char>
-                                      || same_as<remove_cvref_t<value_type>,char8_t>;
+  concept char_1b_type = std::same_as<remove_cvref_t<value_type>,char>
+                                      || std::same_as<remove_cvref_t<value_type>,char8_t>;
 
   template<typename value_type>
   concept char_type = char_1b_type<value_type>
-                    || same_as<remove_cvref_t<value_type>,char16_t>
-                    || same_as<remove_cvref_t<value_type>,char32_t>
-                    || same_as<remove_cvref_t<value_type>,wchar_t>;
+                    || std::same_as<remove_cvref_t<value_type>,char16_t>
+                    || std::same_as<remove_cvref_t<value_type>,char32_t>
+                    || std::same_as<remove_cvref_t<value_type>,wchar_t>;
 
   template<typename iterator_type>
   concept char_iterator = std::forward_iterator<iterator_type> && char_type<std::iter_value_t<iterator_type>>;
-    
+  
+  template<typename iterator_type, typename char_type_>
+  concept char_output_iterator = std::output_iterator<iterator_type,char_type_> && char_type<char_type_>;
+  
+  template<typename iterator_type>
+  concept typed_char_output_iterator = requires
+    {
+    typename std::iter_value_t<iterator_type>;
+    requires char_output_iterator<iterator_type, std::iter_value_t<iterator_type>>;
+    };
+  
   template<typename range>
   concept char_range = 
   requires

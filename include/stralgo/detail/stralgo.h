@@ -145,9 +145,6 @@ namespace stralgo::detail
     };
   inline constexpr to_upper_t to_upper;
   //--------------------------------------------------------------------------------------------------------
-  using std::find_if;
-  using std::equal;
-  using std::find;
     
   struct identity_projection_t
     {
@@ -161,26 +158,42 @@ namespace stralgo::detail
     };
   inline constexpr identity_projection_t identity_projection;
   //--------------------------------------------------------------------------------------------------------
+  struct transform_t
+    {
     template<std::forward_iterator input_iterator,
+             std::sentinel_for<input_iterator> sentinel,
              typename output_iterator,
              typename unary_operation = identity_projection_t>
-    constexpr auto transform(input_iterator first, input_iterator last, output_iterator result, unary_operation unary_op = {})
+    stralgo_static_call_operator
+    constexpr auto operator()(input_iterator first, sentinel last, output_iterator result, unary_operation unary_op = {})
+        stralgo_static_call_operator_const
+        noexcept(noexcept(invoke(unary_op, *first)))
+          -> output_iterator
       {
-      for (; first != last; ++first, ++result)
+      for (; first != last; ranges::advance(first,1), ranges::advance(result,1))
         *result = invoke(unary_op, *first);
       return result;
       }
-      
+    };
+  inline constexpr transform_t transform;
   //--------------------------------------------------------------------------------------------------------
-  template<typename unary_operation = identity_projection_t,
-           typename output_iterator,
-           typename value_type>
-    constexpr auto fill(output_iterator first, output_iterator last, value_type value, unary_operation unary_op = {} )
-      {
-      for (; first != last; ++first)
-        *first = invoke(unary_op, value);
-      return first;
-      }
+  struct fill_t
+    {
+    template<typename unary_operation = identity_projection_t,
+             std::forward_iterator output_iterator,
+             std::sentinel_for<output_iterator> sentinel,
+             typename value_type>
+      stralgo_static_call_operator
+      constexpr auto operator()(output_iterator first, sentinel last, value_type value, unary_operation unary_op = {} )
+          stralgo_static_call_operator_const
+           noexcept(noexcept(invoke(unary_op, *first)))
+        {
+        for (; first != last; ranges::advance(first,1))
+          *first = invoke(unary_op, value);
+        return first;
+        }
+     };
+   inline constexpr fill_t fill;
   //--------------------------------------------------------------------------------------------------------
   struct not_is_space_pred_t
     {
@@ -377,26 +390,47 @@ namespace stralgo::detail
     else
       return view_size(viewl);
     }
-    
-  template<typename iterator, typename string_view_type, typename ... args_type>
-  constexpr iterator copy_views( iterator it, string_view_type const & view_or_char_value, args_type const & ... args ) noexcept
+  template<typename T>
+  struct copy_view_data_t { };
+  
+  template<concepts::char_type char_type>
+  struct copy_view_data_t<char_type>
     {
-    if constexpr (concepts::char_type<string_view_type>)
+    template<concepts::char_output_iterator<char_type> iterator,  typename ... args_type>
+    stralgo_static_call_operator
+    constexpr iterator operator()( iterator it, char_type const & char_value, args_type const & ... args )
+        stralgo_static_call_operator_const noexcept
       {
-      *it = view_or_char_value;
-      ++it;
+      *it = char_value;
+      ranges::advance(it,1);
       if constexpr (sizeof...(args_type) != 0)
-        it = copy_views(it, args ... );
+        {
+        using first_arg_type = typename concepts::unpack_first<args_type...>::type;
+        it = copy_view_data_t<first_arg_type>{}(std::move(it),args...);
+        }
+      return it;
       }
-    else
+    };
+  
+  template<concepts::char_range char_range>
+  struct copy_view_data_t<char_range>
+    {
+    using char_type = std::ranges::range_value_t<char_range>;
+    template<concepts::char_output_iterator<char_type> iterator,  typename ... args_type>
+    stralgo_static_call_operator
+    constexpr iterator operator()( iterator it, char_range const & view, args_type const & ... args )
+      stralgo_static_call_operator_const noexcept
       {
-      it = ranges::copy( ranges::begin(view_or_char_value),
-                                           ranges::end(view_or_char_value), it).out;
+      it = ranges::copy(view, it).out;
       if constexpr (sizeof...(args_type) != 0)
-        it = copy_views(it, args ... );
+        {
+        using first_arg_type = typename concepts::unpack_first<args_type...>::type;
+        it = copy_view_data_t<first_arg_type>{}(std::move(it),args...);
+        }
+      return it;
       }
-    return it;
-    }
+    };
+
   template<template<typename > typename basic_string_type>
   struct string_supports_resize_and_overwrite_t
     {
@@ -420,13 +454,13 @@ namespace stralgo::detail
         result.resize_and_overwrite(aggregated_size, [&copy_views_op]( auto * data, size_type )
           {
           auto oit {copy_views_op( data )};
-          return static_cast<size_type>(std::distance(data, oit));
+          return static_cast<size_type>(ranges::distance(data, oit));
           });
       else
         {
         result.resize(aggregated_size);
         auto oit {copy_views_op(result.data())};
-        result.resize(static_cast<size_type>(std::distance(result.data(), oit)));
+        result.resize(static_cast<size_type>(ranges::distance(result.data(), oit)));
         }
       return result;
       }
@@ -471,7 +505,8 @@ namespace stralgo::detail
       return copy_views_t<string_type,supports_resize_and_overwrite>{}( aggregated_size,
                                           [&args...]( auto out_iterator ) noexcept
                                           {
-                                          return detail::copy_views( out_iterator, args...);
+                                          // return detail::copy_views( out_iterator, args...);
+                                          return copy_view_data_t<first_arg_type>{}(std::move(out_iterator),args...);
                                           } );
   
       }
@@ -514,8 +549,8 @@ namespace stralgo::detail
       return copy_views_t<string_type,supports_resize_and_overwrite>{}( aggregated_size,
                                           [itbeg, itend]( auto out_iterator )
                                           {
-                                          for(auto beg{itbeg}; beg !=itend; ++beg)
-                                            out_iterator = std::copy(std::begin(*beg),std::end(*beg), out_iterator );
+                                          for(auto beg{itbeg}; beg !=itend; ranges::advance(beg,1))
+                                            out_iterator = std::copy(std::ranges::begin(*beg), ranges::end(*beg), out_iterator );
                                           return out_iterator;
                                           } );
       }

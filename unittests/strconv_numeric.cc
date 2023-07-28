@@ -57,10 +57,10 @@ static void do_test(test_result &result)
       {
       constexpr cfs_t<char_type> cfs;
       constexpr auto input { cfs("ff1a34b5f30027")};
-      uint8_t res[7]{};
+      std::array<uint8_t,7> res{};
       stralgo::from_hex_ascii( std::begin(input), std::end(input),  std::begin(res) );
       constexpr std::array<uint8_t,7> expected { {0xff,0x1a,0x34,0xb5,0xf3,0x00,0x27} };
-      constexpr_test(stralgo::detail::equal( expected.begin(), expected.end(), &res[0] ));
+      constexpr_test(std::ranges::equal( expected, res ));
       return {};
       };
     result |= run_consteval_test<char_type_list>(fn_tmpl);
