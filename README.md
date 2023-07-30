@@ -23,6 +23,7 @@ This code solves thise problems:
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
 * compose, merge doesn't allow using directly pointers to chars and char tables (usable only with std::basic_string_view), to dissallow working with pointers
 * supports std::basic_string and my own coll::basic_string
+* stralgo::utf - fully constant evaluated utf8,16,32 string manupulation
 
 ## installation
 
@@ -227,6 +228,35 @@ Example using output iterator
       }
     static_assert( test_float_4a() );
 ```
+#### stralgo::utf convertion namespace
+
+* utf_input_view_t - utf view over range
+* length - number of code points in range
+* capacity_t<char_type> - number of bytes required to encode range into given char type, ie char8_t, char16_t, char32_t, wchar_t ...
+* convert - convert range into output iterator with other utf encoding
+* to_string_t<char_type> - convert utf range into coll::basic_string<> or std::basic_string<> with other utf encoding
+* verify - verification of utf range
+```C++
+namespace utf = stralgo::utf;
+
+// any range (string string_view, array, vector ...) to output iterator with tpe deduction
+constexpr auto view( auto const & a ) noexcept
+  { return std::basic_string_view{ std::begin(a), std::end(a)}; }
+
+constexpr std::basic_string_view u8test{u8"𐃆𐃇𐃈𐃉𐃊𐃋𐃌𐃍𐃎𐃏𐃐𐃑𐃒𐃓𐃔"};
+constexpr std::basic_string_view u16test{u16"𐃆𐃇𐃈𐃉𐃊𐃋𐃌𐃍𐃎𐃏𐃐𐃑𐃒𐃓𐃔"};
+std::array<char16_t, u16test.size()> storage;
+utf::convert( u8test, std::begin(storage));
+constexpr_test( view(storage) == u16test );
+
+//any range to own string
+constexpr_test( utf::to_u16string(u8test) == u16test );
+
+//any range to std string
+std::u16string str2 = utf::stl::to_u16string(u8test);
+constexpr_test( str2 == u16test );
+```
+
 ## Performance
 Performance comparision of compose vs snprintf for bellow test functions
 
@@ -261,6 +291,17 @@ full implementation performance comparision can be seen in perf/perf.cc
   sz = snprintf(result.data(), result.size(),fmt, data.example_string.c_str(), data.emaple_float, data.example_int );
   result.resize(static_cast<size_t>(sz));
 ```
+### tested compilers
+
+there are predefined cmake workflows to test
+* cmake --workflow --preset="clang-16-release"
+* cmake --workflow --preset="clang-16-libc++release"
+* cmake --workflow --preset="clang-15-release"
+* cmake --workflow --preset="clang-15-libc++release"
+* cmake --workflow --preset="gcc-13-release"
+* cmake --workflow --preset="gcc-12-release"
+* msvc support is planned
+
 ## Feedback
 
 If you think you have found a bug, please file an issue via issue submission [form](https://github.com/arturbac/stralgo/issues). Include the relevant information to reproduce the bug for example as static_assert( expression ), if it is important also the compiler version and target architecture. Feature requests and contributions can be filed as issues or pull requests.

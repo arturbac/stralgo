@@ -8,9 +8,12 @@ function( stralgo_add_unittest name )
   target_compile_options( ${name}_ut PRIVATE ${STRALGO_COMPILE_OPTIONS} )
 endfunction()
 
-stralgo_add_unittest( stralgo)
-stralgo_add_unittest( strconv_numeric)
+stralgo_add_unittest( stralgo )
+stralgo_add_unittest( strconv_numeric )
 target_compile_options(strconv_numeric_ut PRIVATE -Wno-float-equal)
+stralgo_add_unittest( stralgo_utf )
+stralgo_add_unittest( utf_ )
+
 # add_executable( stralgo_test )
 # target_sources( stralgo_test PRIVATE stralgo.cc )
 # target_link_libraries( stralgo_test

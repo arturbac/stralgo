@@ -145,7 +145,39 @@ namespace stralgo::detail
     };
   inline constexpr to_upper_t to_upper;
   //--------------------------------------------------------------------------------------------------------
+  struct rewind_iterator_t
+    {
+    template<std::random_access_iterator iterator, std::sentinel_for<iterator> sentinel>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()(iterator first, sentinel last, std::size_t pos )
+      stralgo_static_call_operator_const noexcept
+        -> iterator
+      {
+      using difference_type = std::iter_difference_t<iterator>;
+      auto count { std::min<std::size_t>(static_cast<std::size_t>(std::distance(first,last)), pos)};
+      std::advance(first,static_cast<difference_type>(count));
+      return first;
+      }
     
+    template<std::forward_iterator iterator, std::sentinel_for<iterator> sentinel>
+    requires (!std::random_access_iterator<iterator>)
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()(iterator first, sentinel last, std::size_t pos )
+      stralgo_static_call_operator_const noexcept
+        -> iterator
+      {
+      while( pos != 0u && first != last )
+        {
+        --pos;
+        std::advance(first,1);
+        }
+      return first;
+      }
+    };
+  inline constexpr rewind_iterator_t rewind_iterator;
+  //--------------------------------------------------------------------------------------------------------
   struct identity_projection_t
     {
     template<typename input_value_type >
@@ -307,6 +339,22 @@ namespace stralgo::detail
   //--------------------------------------------------------------------------------------------------------
   struct substr_t
     {
+    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( iterator first, sentinel last,
+                           std::size_t pos,
+                           std::size_t count = npos )
+        stralgo_static_call_operator_const noexcept
+      {
+      first = rewind_iterator(first,last,pos);
+      last  = rewind_iterator(first,last,count);
+      if constexpr (std::contiguous_iterator<iterator>)
+        return std::basic_string_view{first, last};
+      else
+        return ranges::subrange{first, last};
+      }
+             
     template<concepts::char_range string_view_type>
     [[nodiscard]]
     stralgo_static_call_operator
@@ -315,59 +363,62 @@ namespace stralgo::detail
                            std::size_t count = npos )
         stralgo_static_call_operator_const noexcept
       {
-      using difference_type = ranges::range_difference_t<string_view_type>;
-
-      auto size{ ranges::size(view) };
-      pos = std::min(pos,size);
-      count = std::min(count, size - pos);
-      auto first{ ranges::next(ranges::begin(view),static_cast<difference_type>(pos))};
-      auto last{ ranges::next(first, static_cast<difference_type>(count))};
-      if constexpr (concepts::char_contiguous_range<string_view_type>)
-        return std::basic_string_view{first, last};
-      else
-        return ranges::subrange{first, last};
+      return operator()(ranges::begin(view), ranges::end(view), pos, count );
       }
     };
   inline constexpr substr_t substr;
   //--------------------------------------------------------------------------------------------------------
   struct left_t
     {
+    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( iterator first, sentinel last, std::size_t count )
+      {
+      last = rewind_iterator(first, last, count);
+      if constexpr (std::contiguous_iterator<iterator>)
+        return std::basic_string_view{first, last};
+      else
+        return ranges::subrange{first, last};
+      }
+      
     template<concepts::char_range string_view_type>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, std::size_t count )
         stralgo_static_call_operator_const noexcept
       {
-      using difference_type = ranges::range_difference_t<string_view_type>;
-      auto const trimed_count{ static_cast<difference_type>(std::min(count, ranges::size(view))) };
-      auto first{ranges::begin(view)};
-      auto last{ranges::next(first, trimed_count)};
-      if constexpr (concepts::char_contiguous_range<string_view_type>)
-        return std::basic_string_view{first, last};
-      else
-        return ranges::subrange{first, last};
+      return operator()(ranges::begin(view), ranges::end(view), count );
       }
     };
   inline constexpr left_t left;
   //--------------------------------------------------------------------------------------------------------
   struct right_t
     {
+    template<concepts::char_iterator iterator, std::sentinel_for<iterator> sentinel>
+    [[nodiscard]]
+    stralgo_static_call_operator
+    constexpr auto operator()( iterator first, sentinel last, std::size_t count )
+      {
+      // using difference_type = std::iter_difference_t<iterator>;
+      auto size{ static_cast<std::size_t>(ranges::distance(first,last)) };
+      std::size_t const trimed_count{ std::min(count, size) };
+      std::size_t const pos{ size - trimed_count };
+      // first = ranges::next(first, static_cast<difference_type>(pos));
+      first = rewind_iterator(first,last,pos);
+      if constexpr (std::contiguous_iterator<iterator>)
+        return std::basic_string_view{first, last};
+      else
+        return ranges::subrange{first, last};
+      }
+      
     template<concepts::char_range string_view_type>
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( string_view_type const & view, std::size_t count )
       stralgo_static_call_operator_const noexcept
       {
-      using difference_type = ranges::range_difference_t<string_view_type>;
-      
-      std::size_t const trimed_count{ std::min(count, ranges::size(view)) };
-      std::size_t const pos{ ranges::size(view) - trimed_count };
-      auto first{ ranges::next(ranges::begin(view), static_cast<difference_type>(pos))};
-      auto last{ ranges::end(view)};
-         if constexpr (concepts::char_contiguous_range<string_view_type>)
-        return std::basic_string_view{first, last};
-      else
-        return ranges::subrange{first, last};
+      return operator()(ranges::begin(view), ranges::end(view), count );
       }
     };
   inline constexpr right_t right;
