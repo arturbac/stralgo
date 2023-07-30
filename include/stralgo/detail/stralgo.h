@@ -374,6 +374,7 @@ namespace stralgo::detail
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( iterator first, sentinel last, std::size_t count )
+        stralgo_static_call_operator_const noexcept
       {
       last = rewind_iterator(first, last, count);
       if constexpr (std::contiguous_iterator<iterator>)
@@ -399,6 +400,7 @@ namespace stralgo::detail
     [[nodiscard]]
     stralgo_static_call_operator
     constexpr auto operator()( iterator first, sentinel last, std::size_t count )
+        stralgo_static_call_operator_const noexcept
       {
       // using difference_type = std::iter_difference_t<iterator>;
       auto size{ static_cast<std::size_t>(ranges::distance(first,last)) };

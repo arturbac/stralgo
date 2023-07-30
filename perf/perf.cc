@@ -1,4 +1,4 @@
-#include <strconv_numeric.h>
+#include <stralgo/strconv_numeric.h>
 #include <vector>
 #include <iostream>
 #include <random>
@@ -16,6 +16,17 @@ using std::string_view;
 using std::string;
 using std::cout;
 using std::endl;
+namespace coll
+{
+ template<typename char_type>
+ requires (!std::same_as<char_type,char8_t>)
+ inline std::basic_ostream<char_type> & 
+ operator << (std::basic_ostream<char_type> & stream, basic_string<char_type> const & value )
+  {
+  stream.write(value.c_str(), value.size() );
+  return stream;
+  }
+}
 
 constexpr auto perf( steady_clock::time_point start, steady_clock::time_point end ) 
   { return duration_cast<milliseconds>(end - start).count(); }
@@ -57,7 +68,7 @@ struct test_executor
       return obj.legacy_test(data);
       } );
     using namespace std::string_view_literals;
-    return strconv::compose<char>( info, " stralgo: "sv, perf_stralo, " legacy: "sv, perf_legacy, " ms "sv);
+    return stralgo::compose( info, " stralgo: "sv, perf_stralo, " legacy: "sv, perf_legacy, " ms "sv);
     }
   };
   
@@ -79,28 +90,28 @@ struct compose_test_t
     result.emaple_float = static_cast<double>( intd(gen)/(0.1 * intd(gen)) );
     
     std::uniform_int_distribution<uint32_t> strld(1, 512);
-    std::uniform_int_distribution<char> chard('a', 'z');
+    std::uniform_int_distribution<int> chard('a', 'z');
     result.example_string.resize( strld(gen ) );
     for( size_t sz{}; sz != result.example_string.size(); ++sz )
-      result.example_string[sz] = chard(gen);
+      result.example_string[sz] = char(chard(gen));
     return result;
     }
     
-  string stralgo_test( test_data_record_t const & data ) const noexcept
+  auto stralgo_test( test_data_record_t const & data ) const noexcept
     {
-    using strconv::fmt;
-    using strconv::format_e;
-    using strconv::char_case_e;
-    using strconv::prepend_sign_e;
-    using strconv::padd_with_e;
-    using strconv::include_prefix_e;
-    using strconv::alignment_e;
+    using stralgo::fmt;
+    using stralgo::format_e;
+    using stralgo::char_case_e;
+    using stralgo::prepend_sign_e;
+    using stralgo::padd_with_e;
+    using stralgo::include_prefix_e;
+    using stralgo::alignment_e;
     
-    return strconv::compose<char>( 'T',
+    return stralgo::compose( 'T',
                                    data.example_string, ' ',
                                    data.emaple_float,
                                    ' ',
-                                   strconv::fmt<strconv::integral_format_traits{
+                                   stralgo::fmt<stralgo::integral_format_traits{
                                            .precision = 11,
                                            .format = format_e::hexadecimal,
                                            .char_case = char_case_e::lowercase,
@@ -127,12 +138,12 @@ struct str_to_int_test_t
   auto issue_test_record( std::mt19937 & gen ) const noexcept
     {
     std::uniform_int_distribution<> intd(65538, 134096);
-    return strconv::int2str(intd(gen));
+    return stralgo::int2str(intd(gen));
     }
     
   int64_t stralgo_test( test_data_record_t const & data ) const noexcept
     {
-    auto [value,it] = strconv::str2int<int64_t>(data);
+    auto [value,it] = stralgo::str2int<int64_t>(data);
     return value;
     }
     
@@ -150,16 +161,16 @@ struct float_to_int_test_t
     {
     std::uniform_int_distribution<> intd(65538, 1384096);
     auto value = static_cast<double>(intd(gen))/100.;
-    auto res = strconv::f2str( value );
+    auto res = stralgo::f2str( value );
     assert(!res.empty());
-    if(res[0] == 'a')
-      res = strconv::f2str( value );
+    if(res[0u] == 'a')
+      res = stralgo::f2str( value );
     return res;
     }
     
   double stralgo_test( test_data_record_t const & data ) const noexcept
     {
-    auto [value,it] = strconv::str2f<double>(data);
+    auto [value,it] = stralgo::str2f<double>(data);
     return value;
     }
     

@@ -11,24 +11,9 @@ endfunction()
 stralgo_add_unittest( stralgo )
 stralgo_add_unittest( strconv_numeric )
 target_compile_options(strconv_numeric_ut PRIVATE -Wno-float-equal)
-stralgo_add_unittest( stralgo_utf )
+
+if( NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR ${CMAKE_CXX_COMPILER_VERSION} STRGREATER_EQUAL "16.0.0")
+ # clang 15 with stdc++ has broken views
+  stralgo_add_unittest( stralgo_utf )
+endif()
 stralgo_add_unittest( utf_ )
-
-# add_executable( stralgo_test )
-# target_sources( stralgo_test PRIVATE stralgo.cc )
-# target_link_libraries( stralgo_test
-#     PRIVATE
-#      stralgo
-#      small_vectors_ut_core
-#      )
-#      
-# add_test( stralgo_test ${CMAKE_CURRENT_BINARY_DIR}/stralgo_test )
-
-# add_executable( strconv_numeric_test )
-# target_sources( strconv_numeric_test PRIVATE strconv_numeric.cc )
-# target_link_libraries( strconv_numeric_test
-#     PRIVATE
-#      stralgo
-#      small_vectors_ut_core
-#      )
-# add_test( strconv_numeric_test ${CMAKE_CURRENT_BINARY_DIR}/strconv_numeric_test )

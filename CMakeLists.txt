@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(stralgo 
-        VERSION 1.1.0
+        VERSION 1.1.1
         LANGUAGES CXX
         HOMEPAGE_URL "https://github.com/arturbac/stralgo"
         )
@@ -36,7 +36,7 @@ CPMAddPackage(
 CPMAddPackage(
   small_vectors
   GITHUB_REPOSITORY arturbac/small_vectors
-  GIT_TAG        v1.1.28
+  GIT_TAG        v2.0.0
   OPTIONS "SMALL_VECTORS_ENABLE_UNIT_TESTS=${STRALGO_ENABLE_UNIT_TESTS}"
   )
 #----------------------------------------------------------------
@@ -67,6 +67,8 @@ target_include_directories(stralgo
   INTERFACE   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
               $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>
 )
+target_link_libraries(stralgo INTERFACE small_vectors::small_vectors)
+
 packageProject(
   NAME ${PROJECT_NAME}
   VERSION ${PROJECT_VERSION}

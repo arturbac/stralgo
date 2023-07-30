@@ -1,29 +1,29 @@
 # stralgo ![MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![language](https://img.shields.io/badge/language-C%2B%2B20-blue.svg)
 constexpr number &lt;-> string composition, formatting and conversions with full support of unterminated string views.
-I started my jurney with C++ in the 2004 with compilers like embedded visual c++ 4, gcc 2.95. Thru years of participation in big projects i have had to fix many errors that source was in string formatting like vnprintf.
+I started my journey with C++ in the 2004 with compilers like embedded visual c++ 4, gcc 2.95. Thru years of participation in big projects i have had to fix many errors that source was in string formatting like vnprintf.
 
 The source of problems I have many time found was:
 * there was no consistency between formatting string and arguments, that was source of errors detected at runtime.
 * string composition was always done at runtime even if some operations and arguments were known and could be used at compile time
 * all that C library functions require null terminated C strings
-* formatting information for example in vsnprintf could not be easly shared/reused across project.
-* working on pointers to null terminated strings often causes a lot of redudant strlen and dangling pointer errors
+* formatting information for example in vsnprintf could not be easily shared/reused across project.
+* working on pointers to null terminated strings often causes a lot of redundant strlen and dangling pointer errors
 
 ## features
 
-This code solves thise problems:
+This code solves those problems:
 
-* foramting information is attached to arguments and prevents mismatching formatting with argument type errors at compile time
+* formatting information is attached to arguments and prevents mismatching formatting with argument type errors at compile time
 * every conversion, composing, formatting is constexpr except allocations
 * full support for std::string_view with not null terminated strings
 * formatting traits can be declared constexpr constant and reused consistently across project
 * minimum c++20 compiler required (stl at least c++17)
-* fully constexpr string to number and number to string conversion for functions that doesn't allocate (using output interators)
+* fully constexpr string to number and number to string conversion for functions that doesn't allocate (using output iterators)
 * extensive number formating with constexpr traits
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
-* compose, merge doesn't allow using directly pointers to chars and char tables (usable only with std::basic_string_view), to dissallow working with pointers
+* compose, merge doesn't allow using directly pointers to chars and char tables (usable only with std::basic_string_view), to disallow working with pointers
 * supports std::basic_string and my own coll::basic_string
-* stralgo::utf - fully constant evaluated utf8,16,32 string manupulation
+* stralgo::utf - fully constant evaluated utf8,16,32 string manipulation
 
 ## installation
 
@@ -34,13 +34,13 @@ At this point of early development I work with clang 15,16,17 and gcc-12,gcc-13.
 I'm planing checking and porting to msvc in near future.
 
 ## small_vectors integration
-* this header only library integrates with cpm my other repository smal_vectors and uses from it fully constexpr coll::basic_string and coll::basic_fixed_string for unit tests
+* this header only library integrates with cpm my other repository small_vectors and uses from it fully constexpr coll::basic_string and coll::basic_fixed_string for unit tests
 
 ## examples
 ### stralgo::compose
 ```C++
     {
-    //main feature compose with constexpr formating except final allocation
+    //main feature compose with constexpr formatting except final allocation
   using stralgo::integral_format_traits;
   using stralgo::format_e;
   using stralgo::char_case_e;
@@ -49,7 +49,7 @@ I'm planing checking and porting to msvc in near future.
   using stralgo::include_prefix_e;
   using stralgo::alignment_e;
 
-  constexpr integral_format_traits ptrfmt //reusable formating traits
+  constexpr integral_format_traits ptrfmt //reusable formatting traits
     {
     .precision = 6, //minimum precision/size of output text
     .format = format_e::hexadecimal,
@@ -68,7 +68,7 @@ I'm planing checking and porting to msvc in near future.
     stralgo::fmt<integral_format_traits{
             .precision = 15, //minimum number of characters
             .format = format_e::binary, //output format encoding of digit numbers
-            .char_case = char_case_e::lowercase, //char case whenusing hexadecimal format
+            .char_case = char_case_e::lowercase, //char case when using hexadecimal format
             .padd_with = padd_with_e::space, //pad value with zeros or space when precision is higher than value representation
             .sign = prepend_sign_e::only_negative, //prepend sign to result string
             .include_prefix = include_prefix_e::with_prefix, //include prefix when defined for format ex: for hexadecimal 0x
@@ -110,7 +110,7 @@ Building block of compose that can be use separately
 
 There are 2 variants available
 * one returning string
-* second cosntexpr storing result at output iterator returning iterator pass the end last stored char
+* second constexpr storing result at output iterator returning iterator pass the end last stored char
 
 ```C++
     //non constexpr returning string
@@ -127,7 +127,7 @@ There are 2 variants available
                                                   
     static_assert( expected == result );
     }
-    //exmple constexpr use without buffer allocation
+    //example constexpr use without buffer allocation
     
     constexpr bool test_unsigned_9d()
       {
@@ -149,7 +149,7 @@ There are 2 variants available
     ```
 ### stralgo::string_to_integral
 
-Converting string represetation of integral numbers.
+Converting string representation of integral numbers.
 Returns converted number value and iterator pass the end of source string view where conversion stopped
 Example as constexpr test function
 
@@ -182,7 +182,7 @@ Example as constexpr test function
     
 ### stralgo::string_to_float
 
-Converting string represetation of float numbers.
+Converting string representation of float numbers.
 
 ```C++
   using stralgo::string_to_float;
@@ -206,7 +206,7 @@ Converting string represetation of float numbers.
 Converts floating point number into string representation
 There are 2 variants available
 * one returning string
-* second cosntexpr storing result at output iterator returning iterator pass the end last stored char
+* second constexpr storing result at output iterator returning iterator pass the end last stored char
 
 Example using output iterator
 ```C++
@@ -258,15 +258,15 @@ constexpr_test( str2 == u16test );
 ```
 
 ## Performance
-Performance comparision of compose vs snprintf for bellow test functions
+Performance comparison of compose vs snprintf for bellow test functions
 
 **Ryzen 9 - 5900X**
 compiler | function | stralgo | legacy
 ---------|----------|---------|-------
-clang-13 | compose  | 14 ms   | 85 ms 
-gcc-10   | compose  | 15 ms   | 87 ms 
+clang-16 |  compose | 17 ms   | 42 ms
+gcc-12   |  compose | 23 ms   | 42 ms
 
-full implementation performance comparision can be seen in perf/perf.cc
+full implementation performance comparison can be seen in perf/perf.cc
 
 ```C++
   //example compose test
@@ -296,7 +296,7 @@ full implementation performance comparision can be seen in perf/perf.cc
 there are predefined cmake workflows to test
 * cmake --workflow --preset="clang-16-release"
 * cmake --workflow --preset="clang-16-libc++release"
-* cmake --workflow --preset="clang-15-release"
+* cmake --workflow --preset="clang-15-release" , this is limited as clang 15 has broken views
 * cmake --workflow --preset="clang-15-libc++release"
 * cmake --workflow --preset="gcc-13-release"
 * cmake --workflow --preset="gcc-12-release"
