@@ -12,10 +12,7 @@ namespace ut = boost::ut;
 using ut::operator""_test;
 using namespace ut::operators::terse;
 using metatests::test_result;
-using char_type_list = metatests::type_list<char,char8_t,char16_t>;
-// using char_type_list = metatests::type_list<char8_t>;
-// using char_type_list = metatests::type_list<char16_t>;
-using coll::cast_fixed_string;
+using char_type_list = metatests::type_list<char,char8_t,char16_t,char32_t>;
 
 static_assert( stralgo::detail::merge_concepts<char,char> );
 static_assert( stralgo::detail::merge_concepts<wchar_t,wchar_t> );
@@ -29,6 +26,16 @@ struct cfs_t
 namespace ranges = std::ranges;
 namespace utf = stralgo::utf;
 
+template<stralgo::concepts::char_type target_string_char, stralgo::concepts::char_range forward_range>
+[[nodiscard]]
+constexpr auto to_string( forward_range const & range )
+  {
+  if constexpr ( !std::same_as<target_string_char, std::ranges::range_value_t<forward_range>>)
+    return utf::to_string_t<target_string_char>{}(range);
+  else
+    return coll::basic_string<target_string_char>( std::basic_string_view(ranges::begin(range), ranges::end(range)));
+  }
+  
 namespace stralgo_utf_left
 {
 static void do_test(test_result &result)
@@ -40,9 +47,9 @@ static void do_test(test_result &result)
         ( char_type const *) -> metatests::test_result
       {
       constexpr auto source_u32{ coll::basic_fixed_string(U"🯀🯁🯂🯃🯄🯅🯆🯇🯈🯉🯊🯰🯱🯲🯳🯴🯵🯶🯷🯸🯹")};
-      auto source{ utf::to_string_t<char_type>{}(source_u32)};
+      auto source{ to_string<char_type>(source_u32)};
       constexpr auto expected_u32{coll::basic_fixed_string(U"🯀🯁🯂🯃")};
-      auto expected{ utf::to_string_t<char_type>{}(expected_u32)};
+      auto expected{ to_string<char_type>(expected_u32)};
       utf::utf_input_view_t view{source};
       
       auto res{stralgo::left(view, 4u )};
@@ -67,9 +74,9 @@ static void do_test(test_result &result)
         ( char_type const *) -> metatests::test_result
       {
       constexpr auto source_u32{ coll::basic_fixed_string(U"🯀🯁🯂🯃🯄🯅🯆🯇🯈🯉🯊🯰🯱🯲🯳🯴🯵🯶🯷🯸🯹")};
-      auto source{ utf::to_string_t<char_type>{}(source_u32)};
+      auto source{ to_string<char_type>(source_u32)};
       constexpr auto expected_u32{coll::basic_fixed_string(U"🯶🯷🯸🯹")};
-      auto expected{ utf::to_string_t<char_type>{}(expected_u32)};
+      auto expected{ to_string<char_type>(expected_u32)};
       utf::utf_input_view_t view{source};
       
       auto res{stralgo::right(view, 4u )};
@@ -94,9 +101,9 @@ static void do_test(test_result &result)
         ( char_type const *) -> metatests::test_result
       {
       constexpr auto source_u32{ coll::basic_fixed_string(U"🯀🯁🯂🯃🯄🯅🯆🯇🯈🯉🯊🯰🯱🯲🯳🯴🯵🯶🯷🯸🯹")};
-      auto source{ utf::to_string_t<char_type>{}(source_u32)};
+      auto source{ to_string<char_type>(source_u32)};
       constexpr auto expected_u32{coll::basic_fixed_string(U"🯁🯂🯃")};
-      auto expected{ utf::to_string_t<char_type>{}(expected_u32)};
+      auto expected{ to_string<char_type>(expected_u32)};
       utf::utf_input_view_t view{source};
       auto res{stralgo::substr(view, 1, 3 )};
       std::basic_string_view x{ res.begin().iter_, res.end().iter_ };

@@ -6,6 +6,30 @@
 
 namespace stralgo::utf
 {
+  namespace detail
+    {
+    template<concepts::char_iterator SourceIter>
+    struct iterator_category
+      {
+      //select bidirectional, forward otherwise
+      using source_iter_category = stralgo::concepts::iterator_category_t<SourceIter>;
+      using type = std::conditional_t<
+                                      std::is_base_of_v<std::bidirectional_iterator_tag,source_iter_category>,
+                                      std::bidirectional_iterator_tag,
+                                      source_iter_category>;
+      };
+      
+    template<concepts::u32bit_iterator SourceIter>
+    struct iterator_category<SourceIter>
+      {
+      //support anything for char32_t
+      using type = stralgo::concepts::iterator_category_t<SourceIter>;
+      };
+
+    template<concepts::char_iterator SourceIter>
+    using iterator_category_t = typename iterator_category<SourceIter>::type;
+    }
+    
   template<concepts::char_iterator SourceIter>
   struct utf_forward_iterator_t
     {
@@ -13,7 +37,7 @@ namespace stralgo::utf
     using difference_type = ptrdiff_t;
     using source_iterator = SourceIter;
     using source_value_type = std::iter_value_t<source_iterator>;
-    using iterator_category = std::forward_iterator_tag;
+    using iterator_category = detail::iterator_category_t<source_iterator>;
     
     source_iterator iter_{};
     
@@ -25,7 +49,7 @@ namespace stralgo::utf
       {
       return detail::dereference(iter_);
       }
-      
+
     inline constexpr utf_forward_iterator_t & operator++() noexcept
       {
       std::advance(iter_,detail::sequence_length(*iter_));
@@ -40,13 +64,84 @@ namespace stralgo::utf
       return copy;
       }
       
+    inline constexpr utf_forward_iterator_t & operator--() noexcept
+      requires std::derived_from<iterator_category, std::bidirectional_iterator_tag>
+      {
+      detail::rewind_back(iter_);
+      return *this;
+      }
+    
+    [[nodiscard]]
+    inline constexpr utf_forward_iterator_t operator--(int) noexcept
+        requires std::derived_from<iterator_category, std::bidirectional_iterator_tag>
+      {
+      utf_forward_iterator_t copy{iter_};
+      detail::rewind_back(iter_);
+      return copy;
+      }
+    
+    inline constexpr utf_forward_iterator_t & operator +=( difference_type count ) noexcept
+        requires std::derived_from<iterator_category, std::random_access_iterator_tag>
+      {
+      std::advance(iter_, count );
+      return *this;
+      }
+
+    inline constexpr utf_forward_iterator_t & operator -=( difference_type count ) noexcept
+        requires std::derived_from<iterator_category, std::random_access_iterator_tag>
+      {
+      std::advance(iter_, -count );
+      return *this;
+      }
+    
+    [[nodiscard]]
+    inline constexpr utf_forward_iterator_t operator -( difference_type count ) const noexcept
+        requires std::derived_from<iterator_category, std::random_access_iterator_tag>
+      {
+      return utf_forward_iterator_t{std::prev(iter_, count )};
+      }
+    
+    [[nodiscard]]
+    inline constexpr utf_forward_iterator_t operator +( difference_type count ) const noexcept
+        requires std::derived_from<iterator_category, std::random_access_iterator_tag>
+      {
+      return utf_forward_iterator_t{std::next(iter_, count )};
+      }
+    
+    [[nodiscard]]
+    inline constexpr char32_t & operator[]( std::size_t index ) const noexcept
+      {
+      return *iter_[index];
+      }
+      
+    [[nodiscard]]
+    inline constexpr auto
+    base() const noexcept -> source_iterator const &
+      { return iter_; }
+      
     [[nodiscard]]
     constexpr bool operator == (utf_forward_iterator_t const & rh ) const noexcept = default;
     
     [[nodiscard]]
     constexpr auto operator <=> (utf_forward_iterator_t const & rh ) const noexcept = default;
     };
-    
+
+    template<concepts::char_iterator source_iterator>
+    inline constexpr auto operator -( typename utf_forward_iterator_t<source_iterator>::difference_type count,
+                                      utf_forward_iterator_t<source_iterator> it )
+        requires std::derived_from<typename utf_forward_iterator_t<source_iterator>::iterator_category, std::random_access_iterator_tag>
+      {
+      return utf_forward_iterator_t{std::prev( it.iter_, count )};
+      }
+
+    template<concepts::char_iterator source_iterator>
+    inline constexpr auto operator +( typename utf_forward_iterator_t<source_iterator>::difference_type count,
+                                      utf_forward_iterator_t<source_iterator> it )
+        requires std::derived_from<typename utf_forward_iterator_t<source_iterator>::iterator_category, std::random_access_iterator_tag>
+      {
+      return utf_forward_iterator_t{std::next( it.iter_, count )};
+      }
+      
   template<concepts::char_iterator TargetIter>
   struct utf_output_iterator_t
     {

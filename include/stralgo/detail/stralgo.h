@@ -402,11 +402,9 @@ namespace stralgo::detail
     constexpr auto operator()( iterator first, sentinel last, std::size_t count )
         stralgo_static_call_operator_const noexcept
       {
-      // using difference_type = std::iter_difference_t<iterator>;
       auto size{ static_cast<std::size_t>(ranges::distance(first,last)) };
       std::size_t const trimed_count{ std::min(count, size) };
       std::size_t const pos{ size - trimed_count };
-      // first = ranges::next(first, static_cast<difference_type>(pos));
       first = rewind_iterator(first,last,pos);
       if constexpr (std::contiguous_iterator<iterator>)
         return std::basic_string_view{first, last};

@@ -256,7 +256,7 @@ namespace stralgo::utf::detail
       if (cp > 0xffffu)
         {
         *result = static_cast<char_type>((cp >> 10)   + lead_offset); ++result;
-        *result = static_cast<char_type>((cp & mask_10b) + trail_surrogate_min); ++result;
+        *result = static_cast<char_type>((cp & mask_10b) | trail_surrogate_min); ++result;
         }
       else
         {
@@ -277,7 +277,37 @@ namespace stralgo::utf::detail
     };
     
   inline constexpr append_t append;
-  
+  inline constexpr u32 mask_n6b {0b1100'0000};
+  inline constexpr u32 mask_n10b  {0b1111'1100'0000'0000u};
+  struct rewind_back_t
+    {
+    stralgo_static_call_operator
+    constexpr auto operator()(concepts::octet_iterator auto & iter)
+        stralgo_static_call_operator_const noexcept
+      {
+      --iter;
+      while( ((*iter) && mask_n6b) == mask_n6b)
+        --iter;
+      }
+    
+    stralgo_static_call_operator
+    constexpr auto operator()(concepts::u16bit_iterator auto & iter)
+        stralgo_static_call_operator_const noexcept
+      {
+      --iter;
+      if( ((*iter) && mask_n10b) == trail_surrogate_min)
+        --iter;
+      }
+      
+    stralgo_static_call_operator
+    constexpr auto operator()(concepts::u32bit_iterator auto & iter)
+        stralgo_static_call_operator_const noexcept
+      {
+      --iter;
+      }
+    };
+  inline constexpr rewind_back_t rewind_back;
+    
   enum struct verify_status_e : uint8_t
     {
     valid,
