@@ -286,7 +286,7 @@ namespace stralgo::utf::detail
         stralgo_static_call_operator_const noexcept
       {
       --iter;
-      while( ((*iter) && mask_n6b) == mask_n6b)
+      while( (static_cast<u32>(*iter) & mask_n6b) == mask_n6b)
         --iter;
       }
     
@@ -295,7 +295,7 @@ namespace stralgo::utf::detail
         stralgo_static_call_operator_const noexcept
       {
       --iter;
-      if( ((*iter) && mask_n10b) == trail_surrogate_min)
+      if( (static_cast<u32>(*iter) & mask_n10b) == trail_surrogate_min)
         --iter;
       }
       
