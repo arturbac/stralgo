@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(stralgo 
-        VERSION 1.1.3
+        VERSION 1.2.0
         LANGUAGES CXX
         HOMEPAGE_URL "https://github.com/arturbac/stralgo"
         )
@@ -36,7 +36,7 @@ CPMAddPackage(
 CPMAddPackage(
   small_vectors
   GITHUB_REPOSITORY arturbac/small_vectors
-  GIT_TAG        v2.1.0
+  GIT_TAG        v3.1.0
   OPTIONS "SMALL_VECTORS_ENABLE_UNIT_TESTS=${STRALGO_ENABLE_UNIT_TESTS}"
   )
 #----------------------------------------------------------------
@@ -45,7 +45,7 @@ CPMAddPackage(
 CPMAddPackage(
   ut
   GITHUB_REPOSITORY boost-ext/ut
-  GIT_TAG        v1.1.9
+  GIT_TAG        v2.0.1
 )
 
 if(NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 20 )
