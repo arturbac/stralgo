@@ -59,7 +59,10 @@ set( CMAKE_CXX_EXTENSIONS OFF)
 
 
 add_library(stralgo INTERFACE )
-add_library(stralgo::stralgo ALIAS stralgo )
+
+if(PROJECT_IS_TOP_LEVEL)
+  add_library(stralgo::stralgo ALIAS stralgo )
+endif()
 
 if(NOT DEFINED INCLUDE_INSTALL_DIR)
   set(INCLUDE_INSTALL_DIR include/${PROJECT_NAME})
