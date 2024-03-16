@@ -32,8 +32,7 @@
     "hidden": true,
     "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS" : "-stdlib=libc++",
-        "SMALL_VECTORS_ENABLE_LLD_LINKER" : "ON"
+        "CMAKE_CXX_FLAGS" : "-stdlib=libc++"
       }
     },
     {

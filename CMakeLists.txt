@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(stralgo 
-        VERSION 1.2.0
+        VERSION 1.2.1
         LANGUAGES CXX
         HOMEPAGE_URL "https://github.com/arturbac/stralgo"
         )
@@ -27,26 +27,28 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME PackageProject.cmake
   GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-  VERSION 1.11.0
+  VERSION 1.11.2
 )
-  
+
 #----------------------------------------------------------------
 # small_vectors
 #----------------------------------------------------------------
 CPMAddPackage(
   small_vectors
   GITHUB_REPOSITORY arturbac/small_vectors
-  GIT_TAG        v3.1.0
-  OPTIONS "SMALL_VECTORS_ENABLE_UNIT_TESTS=${STRALGO_ENABLE_UNIT_TESTS}"
+  GIT_TAG        v3.1.1
   )
-#----------------------------------------------------------------
-# boost-ext/ut
-#----------------------------------------------------------------
-CPMAddPackage(
-  ut
-  GITHUB_REPOSITORY boost-ext/ut
-  GIT_TAG        v2.0.1
-)
+  
+if( PROJECT_IS_TOP_LEVEL )
+  #----------------------------------------------------------------
+  # boost-ext/ut
+  #----------------------------------------------------------------
+  CPMAddPackage(
+    ut
+    GITHUB_REPOSITORY arturbac/ut-ext
+    GIT_TAG        master
+  )
+endif()
 
 if(NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 20 )
   message(STATUS "Assuming by default c++20 standard")
@@ -56,9 +58,9 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 set( CMAKE_CXX_EXTENSIONS OFF)
 
 
-
-
 add_library(stralgo INTERFACE )
+add_library(stralgo::stralgo ALIAS stralgo )
+
 if(NOT DEFINED INCLUDE_INSTALL_DIR)
   set(INCLUDE_INSTALL_DIR include/${PROJECT_NAME})
 endif()
@@ -80,10 +82,8 @@ packageProject(
 )
 
 if( PROJECT_IS_TOP_LEVEL )
+
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-      # option(SMALL_VECTORS_ENABLE_LLD_LINKER "enable lld linker for linking unit tests" ON )
-      # add_feature_info("SMALL_VECTORS_ENABLE_LLD_LINKER" SMALL_VECTORS_ENABLE_LLD_LINKER "enable lld linker for linking unit tests")
-      
       set(STRALGO_COMPILE_OPTIONS
         -Weverything
         -Werror
@@ -102,9 +102,6 @@ if( PROJECT_IS_TOP_LEVEL )
       if(WUNSAFE_BUFFER_USAGE)
         list(APPEND STRALGO_COMPILE_OPTIONS -Wno-unsafe-buffer-usage)
       endif()
-      # if(SMALL_VECTORS_ENABLE_LLD_LINKER)
-      #   add_link_options( -fuse-ld=lld )
-      # endif()
   endif()
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
       set(STRALGO_COMPILE_OPTIONS
@@ -116,7 +113,6 @@ if( PROJECT_IS_TOP_LEVEL )
 endif()
 
 if( STRALGO_ENABLE_UNIT_TESTS)
-  FetchContent_MakeAvailable(ut)
   add_subdirectory( unittests )
 endif()
 # 
