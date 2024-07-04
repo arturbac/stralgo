@@ -1,9 +1,9 @@
+add_subdirectory(ut_core)
+
 function( stralgo_add_unittest name )
   add_executable(${name}_ut)
   target_sources(${name}_ut PRIVATE ${name}.cc)
-  target_link_libraries( ${name}_ut PRIVATE stralgo )
-  target_link_libraries( ${name}_ut PRIVATE small_vectors_ut_core )
-  # add_dependencies(unit_tests ${name}_ut )
+  target_link_libraries( ${name}_ut PRIVATE stralgo_ut_core )
   add_test( NAME ${name}_test COMMAND ${name}_ut )
   target_compile_options( ${name}_ut PRIVATE ${STRALGO_COMPILE_OPTIONS} )
 endfunction()

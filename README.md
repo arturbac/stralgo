@@ -231,6 +231,9 @@ Example using output iterator
 #### stralgo::utf convertion namespace
 
 * utf_input_view_t - utf view over range
+* deducing utf_forward_iterator_t
+* deducing utf_output_iterator_t with typed output iterators
+* utf_explicit_output_iterator_t for use with untyped outpt iterators (new in version 1.3.0)
 * length - number of code points in range
 * capacity_t<char_type> - number of bytes required to encode range into given char type, ie char8_t, char16_t, char32_t, wchar_t ...
 * convert - convert range into output iterator with other utf encoding

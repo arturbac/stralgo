@@ -15,8 +15,8 @@ inline constexpr u32 surrogate_offset{0x10000u - (u32(lead_surrogate_min) << 10)
 struct utf8_code_point_size_t
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr u8
-    operator()(std::same_as<char32_t> auto cp) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr u8 operator()(std::same_as<char32_t> auto cp
+  ) stralgo_static_call_operator_const noexcept
     {
     if(cp < 0x80u)
       return 1u;
@@ -34,8 +34,8 @@ inline constexpr utf8_code_point_size_t utf8_code_point_size;
 struct utf16_code_point_size_t
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr u8
-    operator()(std::same_as<char32_t> auto cp) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr u8 operator()(std::same_as<char32_t> auto cp
+  ) stralgo_static_call_operator_const noexcept
     {
     return (cp < 0xffffu) ? 1 : 2;
     }
@@ -46,8 +46,8 @@ inline constexpr utf16_code_point_size_t utf16_code_point_size;
 struct utf32_code_point_size_t
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr u8
-    operator()(std::same_as<char32_t> auto) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr u8 operator()(std::same_as<char32_t> auto
+  ) stralgo_static_call_operator_const noexcept
     {
     return 1;
     }
@@ -85,8 +85,8 @@ constexpr bool lead_surrogate(std::same_as<char16_t> auto cp) noexcept
 struct sequence_length_t
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr u8
-    operator()(concepts::char_size<1> auto in_lead) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr u8 operator()(concepts::char_size<1> auto in_lead
+  ) stralgo_static_call_operator_const noexcept
     {
     auto lead = static_cast<u8>(in_lead);
     // u+0000  u+007f  	00xxxxxx
@@ -111,16 +111,16 @@ struct sequence_length_t
     }
 
   [[nodiscard]]
-  stralgo_static_call_operator constexpr u8
-    operator()(concepts::char_size<2> auto in_lead) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr u8 operator()(concepts::char_size<2> auto in_lead
+  ) stralgo_static_call_operator_const noexcept
     {
     auto cp{static_cast<char16_t>(in_lead)};
     return !lead_surrogate(cp) ? 1 : 2;
     }
 
   [[nodiscard]]
-  stralgo_static_call_operator constexpr u8
-    operator()(concepts::char_size<4> auto) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr u8 operator()(concepts::char_size<4> auto
+  ) stralgo_static_call_operator_const noexcept
     {
     return 1;
     }
@@ -136,8 +136,8 @@ inline constexpr u32 mask_6b{0b11'1111u};
 struct dereference_t
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr char32_t
-    operator()(concepts::octet_iterator auto it) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr char32_t operator()(concepts::octet_iterator auto it
+  ) stralgo_static_call_operator_const noexcept
     {
     switch(sequence_length(*it))
       {
@@ -181,8 +181,8 @@ struct dereference_t
     }
 
   [[nodiscard]]
-  stralgo_static_call_operator constexpr char32_t
-    operator()(concepts::u16bit_iterator auto it) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr char32_t operator()(concepts::u16bit_iterator auto it
+  ) stralgo_static_call_operator_const noexcept
     {
     auto cp{static_cast<char16_t>(*it)};
     if(lead_surrogate(cp)) [[unlikely]]
@@ -196,8 +196,8 @@ struct dereference_t
     }
 
   [[nodiscard]]
-  stralgo_static_call_operator constexpr char32_t
-    operator()(concepts::u32bit_iterator auto it) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr char32_t operator()(concepts::u32bit_iterator auto it
+  ) stralgo_static_call_operator_const noexcept
     {
     return static_cast<char32_t>(*it);
     }
@@ -211,13 +211,13 @@ inline constexpr u32 lead_110{0b110'00000};
 inline constexpr u32 lead_1110{0b1110'0000};
 inline constexpr u32 lead_11110{0b11110'000};
 
-struct append_t
+template<stralgo::concepts::char_1b_type char_type>
+struct u8_append_t
   {
   stralgo_static_call_operator constexpr auto operator()(
-    std::same_as<char32_t> auto c, concepts::octet_iterator auto result
+    std::same_as<char32_t> auto c, std::output_iterator<char_type> auto result
   ) stralgo_static_call_operator_const noexcept
     {
-    using char_type = std::iter_value_t<decltype(result)>;
     auto cp{static_cast<u32>(c)};
     if(cp < 0x80)
       {
@@ -257,13 +257,15 @@ struct append_t
       }
     return result;
     }
+  };
 
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(std::same_as<char32_t> auto cp, concepts::u16bit_iterator auto result)
-      stralgo_static_call_operator_const noexcept
+template<stralgo::utf::concepts::char_size<2u> char_type>
+struct u16_append_t
+  {
+  stralgo_static_call_operator constexpr auto operator()(
+    std::same_as<char32_t> auto cp, std::output_iterator<char_type> auto result
+  ) stralgo_static_call_operator_const noexcept
     {
-    using char_type = std::iter_value_t<decltype(result)>;
     if(cp > 0xffffu)
       {
       *result = static_cast<char_type>((cp >> 10) + lead_offset);
@@ -278,20 +280,74 @@ struct append_t
       }
     return result;
     }
+  };
 
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(std::same_as<char32_t> auto cp, concepts::u32bit_iterator auto result)
-      stralgo_static_call_operator_const noexcept
+template<stralgo::utf::concepts::char_size<4u> char_type>
+struct u32_append_t
+  {
+  stralgo_static_call_operator constexpr auto operator()(
+    std::same_as<char32_t> auto cp, std::output_iterator<char_type> auto result
+  ) stralgo_static_call_operator_const noexcept
     {
-    using char_type = std::iter_value_t<decltype(result)>;
     *result = static_cast<char_type>(cp);
     ++result;
     return result;
     }
   };
 
+///\brief append which deduces output encoding by iterator value, requires typed output iterator
+struct append_t
+  {
+  stralgo_static_call_operator constexpr auto operator()(
+    std::same_as<char32_t> auto c, concepts::octet_iterator auto result
+  ) stralgo_static_call_operator_const noexcept
+    {
+    using char_type = std::iter_value_t<decltype(result)>;
+    return u8_append_t<char_type>{}(c, result);
+    }
+
+  [[nodiscard]]
+  stralgo_static_call_operator constexpr auto operator()(
+    std::same_as<char32_t> auto cp, concepts::u16bit_iterator auto result
+  ) stralgo_static_call_operator_const noexcept
+    {
+    using char_type = std::iter_value_t<decltype(result)>;
+    return u16_append_t<char_type>{}(cp, result);
+    }
+
+  [[nodiscard]]
+  stralgo_static_call_operator constexpr auto operator()(
+    std::same_as<char32_t> auto cp, concepts::u32bit_iterator auto result
+  ) stralgo_static_call_operator_const noexcept
+    {
+    using char_type = std::iter_value_t<decltype(result)>;
+    return u32_append_t<char_type>{}(cp, result);
+    }
+  };
+
 inline constexpr append_t append;
+
+///\brief append using explicit output encoding type for use with untyped output iterators
+template<stralgo::concepts::char_type char_type>
+struct explicit_append_t
+  {
+  stralgo_static_call_operator constexpr auto operator()(
+    std::same_as<char32_t> auto c, std::output_iterator<char_type> auto result
+  ) stralgo_static_call_operator_const noexcept
+    {
+    if constexpr( sizeof(char_type)== 1)
+      return u8_append_t<char_type>{}(c, result);
+    else if constexpr( sizeof(char_type)== 2)
+      return u16_append_t<char_type>{}(c, result);
+    else if constexpr( sizeof(char_type)== 4)
+      return u32_append_t<char_type>{}(c, result);
+    else 
+      throw;
+    }
+  };
+template<stralgo::concepts::char_type char_type>
+inline constexpr explicit_append_t<char_type> explicit_append;
+
 inline constexpr u32 mask_n6b{0b1100'0000};
 inline constexpr u32 mask_n10b{0b1111'1100'0000'0000u};
 
@@ -339,9 +395,8 @@ enum struct verify_status_e : uint8_t
 struct verify_code_point_t
   {
   template<concepts::octet_iterator octet_iterator, std::sentinel_for<octet_iterator> sentinel>
-  stralgo_static_call_operator constexpr auto
-    operator()(octet_iterator beg, sentinel end) stralgo_static_call_operator_const noexcept
-    -> std::pair<verify_status_e, octet_iterator>
+  stralgo_static_call_operator constexpr auto operator()(octet_iterator beg, sentinel end)
+    stralgo_static_call_operator_const noexcept -> std::pair<verify_status_e, octet_iterator>
     {
     using enum verify_status_e;
     u8 const code_point_length{sequence_length(*beg)};
@@ -371,3 +426,4 @@ struct verify_code_point_t
 
 inline constexpr verify_code_point_t verify_code_point;
   }  // namespace stralgo::utf::detail
+
