@@ -1,0 +1,42 @@
+name: CMake
+
+on:
+  push:
+    branches: [ "master" ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      
+  pull_request:
+    branches: [ "master" ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Add LLVM Repository
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 18
+        
+    - name: Install dependencies
+      run: |
+           sudo apt-get update
+           sudo apt-get install -y gcc-14 g++-14 cmake ninja-build clang-18 libfmt-dev libc++-18-dev libc++abi-18-dev
+           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+           sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+
+    - name: tests clang-18-release
+      run: cmake --workflow --preset="clang-18-release"
+
+    - name: tests clang-18-libc++release
+      run: cmake --workflow --preset="clang-18-libc++release"
+      
+    - name: tests gcc-14-release
+      run: cmake --workflow --preset="gcc-14-release"
