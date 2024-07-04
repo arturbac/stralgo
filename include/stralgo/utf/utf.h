@@ -46,8 +46,7 @@ struct utf_forward_iterator_t
   constexpr explicit utf_forward_iterator_t(source_iterator src) : iter_{src} {}
 
   [[nodiscard]]
-  inline constexpr value_type
-    operator*() const noexcept
+  inline constexpr value_type operator*() const noexcept
     {
     return detail::dereference(iter_);
     }
@@ -59,8 +58,7 @@ struct utf_forward_iterator_t
     }
 
   [[nodiscard]]
-  inline constexpr utf_forward_iterator_t
-    operator++(int) noexcept
+  inline constexpr utf_forward_iterator_t operator++(int) noexcept
     {
     utf_forward_iterator_t copy{iter_};
     std::advance(iter_, detail::sequence_length(*iter_));
@@ -75,8 +73,7 @@ struct utf_forward_iterator_t
     }
 
   [[nodiscard]]
-  inline constexpr utf_forward_iterator_t
-    operator--(int) noexcept
+  inline constexpr utf_forward_iterator_t operator--(int) noexcept
     requires std::derived_from<iterator_category, std::bidirectional_iterator_tag>
     {
     utf_forward_iterator_t copy{iter_};
@@ -99,24 +96,21 @@ struct utf_forward_iterator_t
     }
 
   [[nodiscard]]
-  inline constexpr utf_forward_iterator_t
-    operator-(difference_type count) const noexcept
+  inline constexpr utf_forward_iterator_t operator-(difference_type count) const noexcept
     requires std::derived_from<iterator_category, std::random_access_iterator_tag>
     {
     return utf_forward_iterator_t{std::prev(iter_, count)};
     }
 
   [[nodiscard]]
-  inline constexpr utf_forward_iterator_t
-    operator+(difference_type count) const noexcept
+  inline constexpr utf_forward_iterator_t operator+(difference_type count) const noexcept
     requires std::derived_from<iterator_category, std::random_access_iterator_tag>
     {
     return utf_forward_iterator_t{std::next(iter_, count)};
     }
 
   [[nodiscard]]
-  inline constexpr char32_t &
-    operator[](std::size_t index) const noexcept
+  inline constexpr char32_t & operator[](std::size_t index) const noexcept
     {
     return *iter_[index];
     }
@@ -128,13 +122,11 @@ struct utf_forward_iterator_t
     }
 
   [[nodiscard]]
-  constexpr bool
-    operator==(utf_forward_iterator_t const & rh) const noexcept
+  constexpr bool operator==(utf_forward_iterator_t const & rh) const noexcept
     = default;
 
   [[nodiscard]]
-  constexpr auto
-    operator<=>(utf_forward_iterator_t const & rh) const noexcept
+  constexpr auto operator<=>(utf_forward_iterator_t const & rh) const noexcept
     = default;
   };
 
@@ -158,6 +150,7 @@ inline constexpr auto operator+(
   return utf_forward_iterator_t{std::next(it.iter_, count)};
   }
 
+///\brief output iterator deducing output encoding by output iterator value type, requires typed output iterator
 template<concepts::char_iterator TargetIter>
 struct utf_output_iterator_t
   {
@@ -183,11 +176,47 @@ struct utf_output_iterator_t
   inline constexpr utf_output_iterator_t & operator++() noexcept { return *this; }
 
   [[nodiscard]]
-  inline constexpr utf_output_iterator_t
-    operator++(int) noexcept
+  inline constexpr utf_output_iterator_t operator++(int) noexcept
     {
     return *this;
     }
+  };
+
+///\brief output iterator for use with untyped output iterators like std::back_inserter
+template<stralgo::concepts::char_type char_type>
+struct utf_explicit_output_iterator_t
+  {
+  template<std::output_iterator<char_type> TargetIter>
+  struct iterator
+    {
+    using value_type = char_type;
+    using difference_type = ptrdiff_t;
+    using target_iterator = TargetIter;
+    using iterator_category = std::output_iterator_tag;
+    target_iterator iter_;
+
+    constexpr iterator() noexcept = default;
+
+    inline constexpr explicit iterator(target_iterator src) noexcept : iter_{src} {}
+
+    inline constexpr iterator & operator=(std::same_as<char32_t> auto cp) noexcept
+      {
+      iter_ = detail::explicit_append<char_type>(cp, iter_);
+      return *this;
+      }
+
+    inline constexpr iterator & operator*() noexcept { return *this; }
+
+    inline constexpr iterator & operator++() noexcept { return *this; }
+
+    [[nodiscard]]
+    inline constexpr iterator operator++(int) noexcept
+      {
+      return *this;
+      }
+    };
+  template<std::output_iterator<char_type> TargetIter>
+  iterator(TargetIter src) -> iterator<TargetIter>;
   };
 
 // TODO write sentinel adapter for source sentinel
@@ -259,8 +288,8 @@ struct length_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  ) stralgo_static_call_operator_const noexcept
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));
     }
@@ -300,8 +329,8 @@ struct capacity_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  ) stralgo_static_call_operator_const noexcept
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));
     }
@@ -347,7 +376,9 @@ namespace detail
     };
   }  // namespace detail
 
-template<concepts::char_type target_string_char, template<typename> typename basic_string_type = small_vectors::basic_string>
+template<
+  concepts::char_type target_string_char,
+  template<typename> typename basic_string_type = small_vectors::basic_string>
 struct to_string_t
   {
   using string_type = basic_string_type<target_string_char>;
@@ -382,8 +413,8 @@ struct to_string_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range) stralgo_static_call_operator_const->string_type
+  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  ) stralgo_static_call_operator_const->string_type
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));
     }
@@ -447,8 +478,8 @@ struct verify_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range) noexcept stralgo_static_call_operator_const->verify_status_e
+  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  ) noexcept stralgo_static_call_operator_const->verify_status_e
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));
     }

@@ -36,9 +36,18 @@
       }
     },
     {
+      "name": "clang-18-release",
+      "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
+      "cacheVariables": { "CMAKE_CXX_COMPILER" : "clang++-18" }
+    },
+    {
+      "name": "clang-18-libc++release",
+      "inherits": ["clang-18-release", "cfg-libc++"]
+    },
+    {
       "name": "clang-17-release",
       "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
-      "cacheVariables": { "CMAKE_CXX_COMPILER" : "/usr/lib/llvm/17/bin/clang++" }
+      "cacheVariables": { "CMAKE_CXX_COMPILER" : "clang++-17" }
     },
     {
       "name": "clang-17-libc++release",
@@ -47,7 +56,7 @@
     {
       "name": "clang-16-release",
       "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
-      "cacheVariables": { "CMAKE_CXX_COMPILER" : "/usr/lib/llvm/16/bin/clang++" }
+      "cacheVariables": { "CMAKE_CXX_COMPILER" : "clang++-16" }
     },
     {
       "name": "clang-16-libc++release",
@@ -56,7 +65,7 @@
     {
       "name": "clang-15-release",
       "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
-      "cacheVariables": { "CMAKE_CXX_COMPILER": "/usr/lib/llvm/15/bin/clang++" }
+      "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++-15" }
     },
     {
       "name": "clang-15-libc++release",
@@ -75,6 +84,14 @@
       "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
       "cacheVariables": {
         "CMAKE_CXX_COMPILER": "g++-13",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "gcc-14-release",
+      "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "g++-14",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
     },
@@ -98,6 +115,14 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "clang-18-release",
+      "configurePreset": "clang-18-release"
+    },
+    {
+      "name": "clang-18-libc++release",
+      "configurePreset": "clang-18-libc++release"
+    },
     {
       "name": "clang-17-release",
       "configurePreset": "clang-17-release"
@@ -129,9 +154,25 @@
     {
       "name": "gcc-13-release",
       "configurePreset": "gcc-13-release"
+    },
+    {
+      "name": "gcc-14-release",
+      "configurePreset": "gcc-14-release"
     }
   ],
   "testPresets": [
+    {
+      "name": "clang-18-release",
+      "configurePreset": "clang-18-release",
+      "output": {"outputOnFailure": true},
+      "execution": {"noTestsAction": "error", "stopOnFailure": true}
+    },
+    {
+      "name": "clang-18-libc++release",
+      "configurePreset": "clang-18-libc++release",
+      "output": {"outputOnFailure": true},
+      "execution": {"noTestsAction": "error", "stopOnFailure": true}
+    },
     {
       "name": "clang-17-release",
       "configurePreset": "clang-17-release",
@@ -179,9 +220,49 @@
       "configurePreset": "gcc-13-release",
       "output": {"outputOnFailure": true},
       "execution": {"noTestsAction": "error", "stopOnFailure": true}
+    },
+    {
+      "name": "gcc-14-release",
+      "configurePreset": "gcc-14-release",
+      "output": {"outputOnFailure": true},
+      "execution": {"noTestsAction": "error", "stopOnFailure": true}
     }
   ],
   "workflowPresets": [
+    {
+      "name": "clang-18-release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang-18-release"
+        },
+        {
+          "type": "build",
+          "name": "clang-18-release"
+        },
+        {
+          "type": "test",
+          "name": "clang-18-release"
+        }
+      ]
+    },
+    {
+      "name": "clang-18-libc++release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang-18-libc++release"
+        },
+        {
+          "type": "build",
+          "name": "clang-18-libc++release"
+        },
+        {
+          "type": "test",
+          "name": "clang-18-libc++release"
+        }
+      ]
+    },
     {
       "name": "clang-17-release",
       "steps": [
@@ -298,6 +379,23 @@
         {
           "type": "test",
           "name": "gcc-12-release"
+        }
+      ]
+    },
+    {
+      "name": "gcc-14-release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gcc-14-release"
+        },
+        {
+          "type": "build",
+          "name": "gcc-14-release"
+        },
+        {
+          "type": "test",
+          "name": "gcc-14-release"
         }
       ]
     },

@@ -458,5 +458,59 @@ int main()
     result |= run_constexpr_test(fn_tmpl);
     result |= run_consteval_test(fn_tmpl);
   };
+  "utf_explicit_output_iterator_t<char>"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      if(!std::is_constant_evaluated() || enable_consteval_string_testing)
+        {
+        utf::utf_input_view_t input{u16test};
+        std::vector<char8_t> output;
+        utf::utf_explicit_output_iterator_t<char8_t>::iterator oit{std::back_inserter(output)};
+        std::ranges::copy(input, oit);
+
+        constexpr_test(std::u8string_view{output.data(), output.size()} == u8test);
+        }
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  "utf_explicit_output_iterator_t<char16>"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      if(!std::is_constant_evaluated() || enable_consteval_string_testing)
+        {
+        utf::utf_input_view_t input{u8test};
+        std::vector<char16_t> output;
+        utf::utf_explicit_output_iterator_t<char16_t>::iterator oit{std::back_inserter(output)};
+        std::ranges::copy(input, oit);
+
+        constexpr_test(std::u16string_view{output.data(), output.size()} == u16test);
+        }
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  "utf_explicit_output_iterator_t<char32>"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      if(!std::is_constant_evaluated() || enable_consteval_string_testing)
+        {
+        utf::utf_input_view_t input{u8test};
+        std::vector<char32_t> output;
+        utf::utf_explicit_output_iterator_t<char32_t>::iterator oit{std::back_inserter(output)};
+        std::ranges::copy(input, oit);
+
+        constexpr_test(std::u32string_view{output.data(), output.size()} == u32test);
+        }
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
   }
 
