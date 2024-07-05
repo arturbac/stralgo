@@ -165,6 +165,8 @@ struct utf_output_iterator_t
 
   inline constexpr explicit utf_output_iterator_t(target_iterator src) noexcept : iter_{src} {}
 
+  inline constexpr auto base() const noexcept -> target_iterator { return iter_; }
+
   inline constexpr utf_output_iterator_t & operator=(std::same_as<char32_t> auto cp) noexcept
     {
     iter_ = detail::append(cp, iter_);
@@ -199,6 +201,8 @@ struct utf_explicit_output_iterator_t
 
     inline constexpr explicit iterator(target_iterator src) noexcept : iter_{src} {}
 
+    inline constexpr auto base() const noexcept -> target_iterator { return iter_; }
+
     inline constexpr iterator & operator=(std::same_as<char32_t> auto cp) noexcept
       {
       iter_ = detail::explicit_append<char_type>(cp, iter_);
@@ -215,6 +219,7 @@ struct utf_explicit_output_iterator_t
       return *this;
       }
     };
+
   template<std::output_iterator<char_type> TargetIter>
   iterator(TargetIter src) -> iterator<TargetIter>;
   };

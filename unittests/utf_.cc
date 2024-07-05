@@ -1,5 +1,8 @@
 #include <unit_test_core.h>
 #include <stralgo/utf/utf.h>
+#include <stralgo/utf/foramtters/std/string.h>
+#include <stralgo/utf/foramtters/std/string_view.h>
+#include <stralgo/utf/foramtters/small_vectors/string.h>
 #include <codecvt>
 #include <cstdint>
 
@@ -512,5 +515,31 @@ int main()
     result |= run_constexpr_test(fn_tmpl);
     result |= run_consteval_test(fn_tmpl);
   };
-  }
 
+  "formatters"_test = [&]
+  {
+    using namespace std::string_view_literals;
+    using namespace std::string_literals;
+    using boost::ut::expect;
+    using boost::ut::eq;
+      {
+      auto res{std::format(
+        "{}-{}-{}-גראַדזשאַווייטיד", U"𐂀𐂁𐂂𐂃𐂄𐂅𐂆𐂇𐂈𐂉𐂊𐂋𐂌𐂍𐂎𐂏𐂐𐂑𐂒𐂓𐂔𐂕𐂖𐂗"sv, u"бакалавра"sv, L"𐀀𐀁𐀂𐀃𐀄𐀅𐀆"sv, L"גראַדזשאַווייטיד"s
+      )};
+      expect(eq(res, "𐂀𐂁𐂂𐂃𐂄𐂅𐂆𐂇𐂈𐂉𐂊𐂋𐂌𐂍𐂎𐂏𐂐𐂑𐂒𐂓𐂔𐂕𐂖𐂗-бакалавра-𐀀𐀁𐀂𐀃𐀄𐀅𐀆-גראַדזשאַווייטיד"sv));
+      }
+      {
+      using namespace small_vectors;
+      auto res{std::format(
+        "{}-{}-{} {}-{}-{}",
+        small_vectors::u16string{u"бакалавра"sv},
+        small_vectors::u32string{U"томатами"sv},
+        small_vectors::wstring{L"бакалавра"sv},
+        small_vectors::static_u16string<16>{u"томатами"sv},
+        small_vectors::static_u32string<16>{U"бакалавра"sv},
+        small_vectors::static_wstring<16>{L"томатами"sv}
+      )};
+      expect(eq(res, "бакалавра-томатами-бакалавра томатами-бакалавра-томатами"sv));
+      }
+  };
+  }
