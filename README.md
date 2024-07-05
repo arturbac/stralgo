@@ -23,7 +23,7 @@ This code solves those problems:
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
 * compose, merge doesn't allow using directly pointers to chars and char tables (usable only with std::basic_string_view), to disallow working with pointers
 * supports std::basic_string and my own coll::basic_string
-* stralgo::utf - fully constant evaluated utf8,16,32 string manipulation
+* stralgo::utf - fully constant evaluated utf8,16,32 string manipulation with formatters for char format
 
 ## installation
 
@@ -234,6 +234,7 @@ Example using output iterator
 * deducing utf_forward_iterator_t
 * deducing utf_output_iterator_t with typed output iterators
 * utf_explicit_output_iterator_t for use with untyped outpt iterators (new in version 1.3.0)
+* formatters of utf char16_t,char32_t,wchar_t for std::format char
 * length - number of code points in range
 * capacity_t<char_type> - number of bytes required to encode range into given char type, ie char8_t, char16_t, char32_t, wchar_t ...
 * convert - convert range into output iterator with other utf encoding
