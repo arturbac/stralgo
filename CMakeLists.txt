@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(stralgo 
-        VERSION 1.3.1
+        VERSION 1.3.2
         LANGUAGES CXX
         HOMEPAGE_URL "https://github.com/arturbac/stralgo"
         )
@@ -36,7 +36,7 @@ CPMAddPackage(
 CPMAddPackage(
   small_vectors
   GITHUB_REPOSITORY arturbac/small_vectors
-  GIT_TAG        v3.1.6
+  GIT_TAG        v3.1.8
   )
   
 if( PROJECT_IS_TOP_LEVEL )
