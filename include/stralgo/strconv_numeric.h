@@ -138,7 +138,7 @@ template<
   std::integral integral_type,
   input_format_e input_format = input_format_e::undetermined,
   stralgo::concepts::char_range string_view_type>
-inline constexpr auto str2int(string_view_type const & str_number) noexcept
+inline constexpr auto str2int(string_view_type && str_number) noexcept
   {
   return string_to_integral<integral_type, input_format>(str_number);
   }
@@ -147,7 +147,7 @@ inline constexpr auto str2int(string_view_type const & str_number) noexcept
 ///\brief signed float conversion from string supports untrimmed strings of decimal notation [+/-]d[n] and hexadecimal
 ///lower and uppercase [+/-]0xh[n] numbers
 template<std::floating_point float_type, stralgo::concepts::char_range string_view_type>
-inline constexpr auto str2f(string_view_type const & str_number) noexcept
+inline constexpr auto str2f(string_view_type && str_number) noexcept
   {
   return string_to_float<float_type>(str_number);
   }

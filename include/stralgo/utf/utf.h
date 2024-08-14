@@ -244,7 +244,7 @@ struct utf_input_view_t : public std::ranges::view_interface<utf_input_view_t<So
   inline constexpr utf_input_view_t(iterator b, sentinel e) noexcept : begin_{b}, end_{e} {}
 
   template<concepts::char_range forward_range>
-  explicit inline constexpr utf_input_view_t(forward_range const & range) :
+  explicit inline constexpr utf_input_view_t(forward_range && range) :
       begin_{utf_forward_iterator_t(std::ranges::begin(range))},
       end_{utf_forward_iterator_t(std::ranges::end(range))}
     {
@@ -267,7 +267,7 @@ template<class T>
 using const_iterator_t = decltype(std::ranges::begin(std::declval<T const &>()));
 
 template<concepts::char_range forward_range>
-utf_input_view_t(forward_range const & r) -> utf_input_view_t<const_iterator_t<forward_range>>;
+utf_input_view_t(forward_range && r) -> utf_input_view_t<const_iterator_t<forward_range>>;
 
 ///\brief returns code point length of utf sequence
 struct length_t
@@ -293,7 +293,7 @@ struct length_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  stralgo_static_call_operator constexpr auto operator()(forward_range && range
   ) stralgo_static_call_operator_const noexcept
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));
@@ -334,7 +334,7 @@ struct capacity_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  stralgo_static_call_operator constexpr auto operator()(forward_range && range
   ) stralgo_static_call_operator_const noexcept
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));
@@ -364,7 +364,7 @@ struct convert_t
 
   template<concepts::char_range forward_range, concepts::char_iterator target_iterator>
   stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range, target_iterator out) stralgo_static_call_operator_const noexcept
+    operator()(forward_range && range, target_iterator out) stralgo_static_call_operator_const noexcept
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range), out);
     }
@@ -418,7 +418,7 @@ struct to_string_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  stralgo_static_call_operator constexpr auto operator()(forward_range && range
   ) stralgo_static_call_operator_const->string_type
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));
@@ -483,7 +483,7 @@ struct verify_t
 
   template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto operator()(forward_range const & range
+  stralgo_static_call_operator constexpr auto operator()(forward_range && range
   ) noexcept stralgo_static_call_operator_const->verify_status_e
     {
     return operator()(std::ranges::begin(range), std::ranges::end(range));

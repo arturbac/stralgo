@@ -542,4 +542,18 @@ int main()
       expect(eq(res, "бакалавра-томатами-бакалавра томатами-бакалавра-томатами"sv));
       }
   };
+  "std::ranges::filter_view as argument to to_string_t #3"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      using namespace std::string_view_literals;
+      auto inview{U"бакалавра"sv | std::views::filter([](char32_t c) noexcept -> bool { return c != U'а'; })};
+      static_assert(stralgo::concepts::char_range<decltype(inview)>);
+      auto res{utf::to_string(inview)};
+      constexpr_test("бклвр"sv == res);
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
   }
