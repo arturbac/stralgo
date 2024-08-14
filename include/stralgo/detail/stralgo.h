@@ -285,7 +285,7 @@ struct find_first_of_t
     requires concepts::same_range_type<string_view_type, string_view_type2>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, string_view_type2 const & one_of)
+    operator()(string_view_type && view, string_view_type2 && one_of)
       stralgo_static_call_operator_const noexcept
     {
     return ranges::find_if(
@@ -301,7 +301,7 @@ struct trim_left_with_pred_t
   {
   template<concepts::char_range string_view_type, typename predicate_type>
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, predicate_type const & pred) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, predicate_type && pred) stralgo_static_call_operator_const noexcept
     {
     auto first{ranges::find_if(view, pred)};
     auto last{ranges::end(view)};
@@ -319,7 +319,7 @@ struct trim_right_with_pred_t
   {
   template<concepts::char_range string_view_type, typename predicate_type>
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, predicate_type const & pred) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, predicate_type && pred) stralgo_static_call_operator_const noexcept
     {
 #if defined(__clang__) && !defined(_LIBCPP_STD_VER) && __clang_major__ <= 15
     // clang 15 with libstdc++ has broken unusable views
@@ -344,7 +344,7 @@ struct trim_pred_t
   {
   template<concepts::char_range string_view_type, typename predicate_type>
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, predicate_type const & pred) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, predicate_type && pred) stralgo_static_call_operator_const noexcept
     {
     return trim_left_with_pred(trim_right_with_pred(view, pred), pred);
     }
@@ -374,7 +374,7 @@ struct substr_t
   template<concepts::char_range string_view_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, std::size_t pos, std::size_t count = npos)
+    operator()(string_view_type && view, std::size_t pos, std::size_t count = npos)
       stralgo_static_call_operator_const noexcept
     {
     return operator()(ranges::begin(view), ranges::end(view), pos, count);
@@ -401,7 +401,7 @@ struct left_t
   template<concepts::char_range string_view_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, std::size_t count) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, std::size_t count) stralgo_static_call_operator_const noexcept
     {
     return operator()(ranges::begin(view), ranges::end(view), count);
     }
@@ -430,7 +430,7 @@ struct right_t
   template<concepts::char_range string_view_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, std::size_t count) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, std::size_t count) stralgo_static_call_operator_const noexcept
     {
     return operator()(ranges::begin(view), ranges::end(view), count);
     }
@@ -448,13 +448,13 @@ constexpr size_t view_size(maybe_char_type) noexcept
 
 template<concepts::char_range string_view_type>
   requires(!concepts::char_type<string_view_type>)
-constexpr size_t view_size(string_view_type const & view) noexcept
+constexpr size_t view_size(string_view_type && view) noexcept
   {
   return ranges::size(view);
   }
 
 template<typename string_view_type, typename... args_type>
-constexpr auto count_size(string_view_type const & viewl, args_type const &... args) noexcept
+constexpr auto count_size(string_view_type && viewl, args_type &&... args) noexcept
   {
   if constexpr(sizeof...(args_type) != 0)
     return view_size(viewl) + count_size(args...);
@@ -472,7 +472,7 @@ struct copy_view_data_t<char_type>
   {
   template<concepts::char_output_iterator<char_type> iterator, typename... args_type>
   stralgo_static_call_operator constexpr iterator operator()(
-    iterator it, char_type const & char_value, args_type const &... args
+    iterator it, char_type const & char_value, args_type &&... args
   ) stralgo_static_call_operator_const noexcept
     {
     *it = char_value;
@@ -493,7 +493,7 @@ struct copy_view_data_t<char_range>
 
   template<concepts::char_output_iterator<char_type> iterator, typename... args_type>
   stralgo_static_call_operator constexpr iterator operator()(
-    iterator it, char_range const & view, args_type const &... args
+    iterator it, char_range const & view, args_type &&... args
   ) stralgo_static_call_operator_const noexcept
     {
     it = ranges::copy(view, it).out;
@@ -624,7 +624,7 @@ struct merge_range_t
       itbeg,
       itend,
       size_type{},
-      [](size_type init, auto const & view) noexcept -> size_type
+      [](size_type init, auto && view) noexcept -> size_type
       { return init + static_cast<size_type>(ranges::size(view)); }
     )};
     return copy_views_t<string_type, supports_resize_and_overwrite>{
@@ -640,7 +640,7 @@ struct merge_range_t
   template<ranges::forward_range forward_range>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range) stralgo_static_call_operator_const
+    operator()(forward_range && range) stralgo_static_call_operator_const
     {
     return operator()(ranges::begin(range), ranges::end(range));
     }
@@ -660,7 +660,7 @@ struct ends_with_t
     requires concepts::same_range_type<string_view_type, string_view_type2>
   [[nodiscard]]
   stralgo_static_call_operator constexpr bool
-    operator()(string_view_type const & str, string_view_type2 const & other)
+    operator()(string_view_type && str, string_view_type2 && other)
       stralgo_static_call_operator_const noexcept
     {
     auto const str0_sz = ranges::size(str);
@@ -686,7 +686,7 @@ struct starts_with_t
     requires concepts::same_range_type<string_view_type, string_view_type2>
   [[nodiscard]]
   stralgo_static_call_operator constexpr bool
-    operator()(string_view_type const & str, string_view_type2 const & other)
+    operator()(string_view_type && str, string_view_type2 && other)
       stralgo_static_call_operator_const noexcept
     {
     using ranges::begin;
@@ -714,7 +714,7 @@ struct compare_no_case_t
     requires concepts::same_range_type<string_view_type, string_view_type2>
   [[nodiscard]]
   stralgo_static_call_operator constexpr int
-    operator()(string_view_type const & s1, string_view_type2 const & s2) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && s1, string_view_type2 && s2) stralgo_static_call_operator_const noexcept
     {
     using difference_type = ranges::range_difference_t<string_view_type>;
     using char_type = ranges::range_value_t<string_view_type>;
@@ -752,7 +752,7 @@ struct is_number_t
   template<concepts::char_range string_view_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr bool
-    operator()(string_view_type const & str) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && str) stralgo_static_call_operator_const noexcept
     {
     using char_type = ranges::range_value_t<string_view_type>;
     return ranges::end(str) == ranges::find_if(str, [](char_type c) noexcept { return !isdigit(c); });
@@ -767,7 +767,7 @@ struct is_hexnumber_t
   template<concepts::char_range string_view_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr bool
-    operator()(string_view_type const & str) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && str) stralgo_static_call_operator_const noexcept
     {
     using char_type = ranges::range_value_t<string_view_type>;
     return ranges::end(str) == ranges::find_if(str, [](char_type c) noexcept { return !isxdigit(c); });

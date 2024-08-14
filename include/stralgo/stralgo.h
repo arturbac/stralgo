@@ -31,7 +31,7 @@ struct trim_left_t
   ///ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(concepts::char_range auto const & view) stralgo_static_call_operator_const noexcept
+    operator()(concepts::char_range auto && view) stralgo_static_call_operator_const noexcept
     {
     return detail::trim_left_with_pred(view, detail::not_is_space);
     }
@@ -42,7 +42,7 @@ struct trim_left_t
     requires std::same_as<ranges::range_value_t<string_view_type>, char_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, char_type value) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, char_type value) stralgo_static_call_operator_const noexcept
     {
     return detail::trim_left_with_pred(view, detail::not_is_char_pred_t<char_type>{value});
     }
@@ -53,7 +53,7 @@ struct trim_left_t
     requires concepts::same_range_type<string_view_type, string_view_type2>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, string_view_type2 const & any_of)
+    operator()(string_view_type && view, string_view_type2 && any_of)
       stralgo_static_call_operator_const noexcept
     {
     return detail::trim_left_with_pred(view, detail::not_is_any_of{ranges::begin(any_of), ranges::end(any_of)});
@@ -71,7 +71,7 @@ struct trim_right_t
   ///ranges::contiguous_range concept then return type is basic_string_view and ranges::subrange if not.
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(concepts::char_range auto const & view) stralgo_static_call_operator_const noexcept
+    operator()(concepts::char_range auto && view) stralgo_static_call_operator_const noexcept
     {
     return detail::trim_right_with_pred(view, detail::not_is_space);
     }
@@ -82,7 +82,7 @@ struct trim_right_t
     requires std::same_as<ranges::range_value_t<string_view_type>, char_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, char_type value) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, char_type value) stralgo_static_call_operator_const noexcept
     {
     return detail::trim_right_with_pred(view, detail::not_is_char_pred_t<char_type>{value});
     }
@@ -93,7 +93,7 @@ struct trim_right_t
     requires concepts::same_range_type<string_view_type, string_view_type2>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, string_view_type2 const & any_of)
+    operator()(string_view_type && view, string_view_type2 && any_of)
       stralgo_static_call_operator_const noexcept
     {
     return detail::trim_right_with_pred(view, detail::not_is_any_of{ranges::begin(any_of), ranges::end(any_of)});
@@ -115,7 +115,7 @@ struct trim_t
   ///\returns trimmed view of \param view from values that match isspace
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(concepts::char_range auto const & view) stralgo_static_call_operator_const noexcept
+    operator()(concepts::char_range auto && view) stralgo_static_call_operator_const noexcept
     {
     return detail::trim_pred(view, detail::not_is_space);
     }
@@ -125,7 +125,7 @@ struct trim_t
     requires std::same_as<ranges::range_value_t<string_view_type>, char_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, char_type value) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view, char_type value) stralgo_static_call_operator_const noexcept
     {
     return detail::trim_pred(view, detail::not_is_char_pred_t<char_type>{value});
     }
@@ -135,7 +135,7 @@ struct trim_t
     requires concepts::same_range_type<string_view_type, string_view_type2>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & view, string_view_type2 const & any_of)
+    operator()(string_view_type && view, string_view_type2 && any_of)
       stralgo_static_call_operator_const noexcept
     {
     return detail::trim_pred(view, detail::not_is_any_of{ranges::begin(any_of), ranges::end(any_of)});
