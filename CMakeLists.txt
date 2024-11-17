@@ -21,13 +21,13 @@ if( PROJECT_IS_TOP_LEVEL AND STRALGO_ENABLE_UNIT_TESTS)
   enable_testing()
 endif()
 
-include(cmake/CPM.cmake)
+include(cmake/get_cpm.cmake)
 # ---- Add dependencies via CPM ----
 # see https://github.com/cpm-cmake/CPM.cmake for more info
 CPMAddPackage(
   NAME PackageProject.cmake
   GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-  VERSION 1.11.2
+  VERSION 1.12.0
 )
 
 #----------------------------------------------------------------
@@ -36,7 +36,7 @@ CPMAddPackage(
 CPMAddPackage(
   small_vectors
   GITHUB_REPOSITORY arturbac/small_vectors
-  GIT_TAG        v3.1.8
+  GIT_TAG        v3.1.9
   )
   
 if( PROJECT_IS_TOP_LEVEL )
