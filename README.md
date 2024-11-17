@@ -298,13 +298,12 @@ full implementation performance comparison can be seen in perf/perf.cc
 ### tested compilers
 
 there are predefined cmake workflows to test
-* cmake --workflow --preset="clang-16-release"
-* cmake --workflow --preset="clang-16-libc++release"
-* cmake --workflow --preset="clang-15-release" , this is limited as clang 15 has broken views
-* cmake --workflow --preset="clang-15-libc++release"
+* cmake --workflow --preset="clang-19-release"
+* cmake --workflow --preset="clang-19-libc++release"
+* cmake --workflow --preset="clang-18-release"
+* cmake --workflow --preset="clang-18-libc++release"
+* cmake --workflow --preset="gcc-14-release"
 * cmake --workflow --preset="gcc-13-release"
-* cmake --workflow --preset="gcc-12-release"
-* msvc support is planned
 
 ## Feedback
 
