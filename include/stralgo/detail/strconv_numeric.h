@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stralgo/stralgo.h>
-#include <stralgo/strconv_numeric.h>
 #include <cmath>
 #include <optional>
 #include <cassert>
@@ -741,7 +740,9 @@ struct float_to_ascii_t
         float_type next_fraction{fraction * base_conv_type::base};
         unsigned ufraction{static_cast<unsigned>(next_fraction)};
         *oit = value_to_hex<char_case_e::lowercase, char_type>(static_cast<uint8_t>(ufraction));
+        stralgo_clang_unsafe_buffer_usage_begin //
         ++oit;
+        stralgo_clang_unsafe_buffer_usage_end //
         fraction = next_fraction - static_cast<float_type>(ufraction);
         }
       }
@@ -887,20 +888,23 @@ struct string_to_unsigned_integral_t
         if constexpr(input_format == input_format_e::undetermined)
           {
           // if contains hex prefix assume hexadecimal
+          stralgo_clang_unsafe_buffer_usage_begin //
           if(auto next_it{it + 1}; next_it < end(snumber) && is_hex_prefix(*it, *next_it))
             {
             it += 2;
             data = trimed_string_to_unsigned_integral<integral_type, base_16_t>(it, end(snumber));
             }
+          stralgo_clang_unsafe_buffer_usage_end //
           else
             data = trimed_string_to_unsigned_integral<integral_type, base_10_t>(it, end(snumber));
           }
         else if constexpr(input_format == input_format_e::hexadecimal)
           {
+          stralgo_clang_unsafe_buffer_usage_begin //
           // skip hex prefix if exists
           if(auto next_it{it + 1}; next_it < end(snumber) && is_hex_prefix(*it, *next_it))
             it += 2;
-
+          stralgo_clang_unsafe_buffer_usage_end //
           data = trimed_string_to_unsigned_integral<integral_type, base_16_t>(it, end(snumber));
           }
         else

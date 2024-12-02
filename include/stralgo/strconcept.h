@@ -10,6 +10,15 @@
 #include <iterator>
 #include <string>
 
+#ifdef __clang__
+#define stralgo_clang_do_pragma(x) _Pragma(#x)
+#define stralgo_clang_unsafe_buffer_usage_begin stralgo_clang_do_pragma(clang unsafe_buffer_usage begin)
+#define stralgo_clang_unsafe_buffer_usage_end stralgo_clang_do_pragma(clang unsafe_buffer_usage end)
+#else
+#define stralgo_clang_unsafe_buffer_usage_begin
+#define stralgo_clang_unsafe_buffer_usage_end
+#endif
+
 namespace stralgo
   {
 namespace ranges = std::ranges;

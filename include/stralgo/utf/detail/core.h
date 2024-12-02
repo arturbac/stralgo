@@ -135,10 +135,11 @@ inline constexpr u32 mask_6b{0b11'1111u};
 
 struct dereference_t
   {
-  [[nodiscard]]
+  [[nodiscard,clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr char32_t operator()(concepts::octet_iterator auto it
   ) stralgo_static_call_operator_const noexcept
     {
+    stralgo_clang_unsafe_buffer_usage_begin //
     switch(sequence_length(*it))
       {
       case 1:
@@ -177,17 +178,20 @@ struct dereference_t
           return char32_t(((v0 & mask_3b) << 18) | ((v1 & mask_6b) << 12) | ((v2 & mask_6b) << 6) | (v3 & mask_6b));
           }
       }
+    stralgo_clang_unsafe_buffer_usage_end //
     return {};
     }
 
-  [[nodiscard]]
+  [[nodiscard,clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr char32_t operator()(concepts::u16bit_iterator auto it
   ) stralgo_static_call_operator_const noexcept
     {
     auto cp{static_cast<char16_t>(*it)};
     if(lead_surrogate(cp)) [[unlikely]]
       {
+      stralgo_clang_unsafe_buffer_usage_begin //
       ++it;
+      stralgo_clang_unsafe_buffer_usage_end //
       auto trail_surrogate{static_cast<char32_t>(*it)};
       return (char32_t(cp) << 10) + trail_surrogate + surrogate_offset;
       }
@@ -214,10 +218,12 @@ inline constexpr u32 lead_11110{0b11110'000};
 template<stralgo::concepts::char_1b_type char_type>
 struct u8_append_t
   {
+  [[clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr auto operator()(
     std::same_as<char32_t> auto c, std::output_iterator<char_type> auto result
   ) stralgo_static_call_operator_const noexcept
     {
+    stralgo_clang_unsafe_buffer_usage_begin //
     auto cp{static_cast<u32>(c)};
     if(cp < 0x80)
       {
@@ -255,6 +261,7 @@ struct u8_append_t
       *result = static_cast<char_type>(lead_10 | (cp & mask_6b));
       ++result;
       }
+    stralgo_clang_unsafe_buffer_usage_end //
     return result;
     }
   };
@@ -262,10 +269,12 @@ struct u8_append_t
 template<stralgo::utf::concepts::char_size<2u> char_type>
 struct u16_append_t
   {
+  [[clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr auto operator()(
     std::same_as<char32_t> auto cp, std::output_iterator<char_type> auto result
   ) stralgo_static_call_operator_const noexcept
     {
+    stralgo_clang_unsafe_buffer_usage_begin //
     if(cp > 0xffffu)
       {
       *result = static_cast<char_type>((cp >> 10) + lead_offset);
@@ -279,18 +288,22 @@ struct u16_append_t
       ++result;
       }
     return result;
+    stralgo_clang_unsafe_buffer_usage_end //
     }
   };
 
 template<stralgo::utf::concepts::char_size<4u> char_type>
 struct u32_append_t
   {
+  [[clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr auto operator()(
     std::same_as<char32_t> auto cp, std::output_iterator<char_type> auto result
   ) stralgo_static_call_operator_const noexcept
     {
     *result = static_cast<char_type>(cp);
+    stralgo_clang_unsafe_buffer_usage_begin //
     ++result;
+    stralgo_clang_unsafe_buffer_usage_end //
     return result;
     }
   };
@@ -298,30 +311,37 @@ struct u32_append_t
 ///\brief append which deduces output encoding by iterator value, requires typed output iterator
 struct append_t
   {
+  [[nodiscard,clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr auto operator()(
     std::same_as<char32_t> auto c, concepts::octet_iterator auto result
   ) stralgo_static_call_operator_const noexcept
     {
     using char_type = std::iter_value_t<decltype(result)>;
+    stralgo_clang_unsafe_buffer_usage_begin //
     return u8_append_t<char_type>{}(c, result);
+    stralgo_clang_unsafe_buffer_usage_end //
     }
 
-  [[nodiscard]]
+  [[nodiscard,clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr auto operator()(
     std::same_as<char32_t> auto cp, concepts::u16bit_iterator auto result
   ) stralgo_static_call_operator_const noexcept
     {
     using char_type = std::iter_value_t<decltype(result)>;
+    stralgo_clang_unsafe_buffer_usage_begin //
     return u16_append_t<char_type>{}(cp, result);
+    stralgo_clang_unsafe_buffer_usage_end //
     }
 
-  [[nodiscard]]
+  [[nodiscard,clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr auto operator()(
     std::same_as<char32_t> auto cp, concepts::u32bit_iterator auto result
   ) stralgo_static_call_operator_const noexcept
     {
     using char_type = std::iter_value_t<decltype(result)>;
+    stralgo_clang_unsafe_buffer_usage_begin //
     return u32_append_t<char_type>{}(cp, result);
+    stralgo_clang_unsafe_buffer_usage_end //
     }
   };
 
@@ -331,10 +351,12 @@ inline constexpr append_t append;
 template<stralgo::concepts::char_type char_type>
 struct explicit_append_t
   {
+  [[nodiscard,clang::unsafe_buffer_usage]]
   stralgo_static_call_operator constexpr auto operator()(
     std::same_as<char32_t> auto c, std::output_iterator<char_type> auto result
   ) stralgo_static_call_operator_const noexcept
     {
+    stralgo_clang_unsafe_buffer_usage_begin //
     if constexpr( sizeof(char_type)== 1)
       return u8_append_t<char_type>{}(c, result);
     else if constexpr( sizeof(char_type)== 2)
@@ -343,6 +365,7 @@ struct explicit_append_t
       return u32_append_t<char_type>{}(c, result);
     else 
       throw;
+    stralgo_clang_unsafe_buffer_usage_end //
     }
   };
 template<stralgo::concepts::char_type char_type>
@@ -408,12 +431,14 @@ struct verify_code_point_t
       return {truncated_code_point, {}};
 
     auto end_cp{std::ranges::next(beg, code_point_length)};
+    stralgo_clang_unsafe_buffer_usage_begin  //
     for(auto it{std::ranges::next(beg, 1)}; it < end_cp; ++it)
       if(((*it) & 0b1100'0000u) != lead_10) [[unlikely]]
         return {invalid_trail, {}};
-
+      
     // at this point code point can be decoded safely
     char32_t const code_point{dereference(beg)};
+    stralgo_clang_unsafe_buffer_usage_end  //
     if(code_point > 0x10ffffu || (code_point >= lead_surrogate_min && code_point <= trail_surrogate_max)) [[unlikely]]
       return {invalid_code_point, {}};
 

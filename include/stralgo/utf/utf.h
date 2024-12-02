@@ -45,10 +45,12 @@ struct utf_forward_iterator_t
 
   constexpr explicit utf_forward_iterator_t(source_iterator src) : iter_{src} {}
 
-  [[nodiscard]]
+  [[nodiscard,clang::unsafe_buffer_usage]]
   inline constexpr value_type operator*() const noexcept
     {
+    stralgo_clang_unsafe_buffer_usage_begin  //
     return detail::dereference(iter_);
+    stralgo_clang_unsafe_buffer_usage_end  //
     }
 
   inline constexpr utf_forward_iterator_t & operator++() noexcept
@@ -167,9 +169,12 @@ struct utf_output_iterator_t
 
   inline constexpr auto base() const noexcept -> target_iterator { return iter_; }
 
+  [[clang::unsafe_buffer_usage]]
   inline constexpr utf_output_iterator_t & operator=(std::same_as<char32_t> auto cp) noexcept
     {
+    stralgo_clang_unsafe_buffer_usage_begin //
     iter_ = detail::append(cp, iter_);
+    stralgo_clang_unsafe_buffer_usage_end //
     return *this;
     }
 
@@ -203,9 +208,12 @@ struct utf_explicit_output_iterator_t
 
     inline constexpr auto base() const noexcept -> target_iterator { return iter_; }
 
+    [[clang::unsafe_buffer_usage]]
     inline constexpr iterator & operator=(std::same_as<char32_t> auto cp) noexcept
       {
+      stralgo_clang_unsafe_buffer_usage_begin //
       iter_ = detail::explicit_append<char_type>(cp, iter_);
+      stralgo_clang_unsafe_buffer_usage_end //
       return *this;
       }
 

@@ -132,7 +132,5 @@ BinPackArguments: false
 BinPackParameters: false
 AlignAfterOpenBracket: BlockIndent
 WhitespaceSensitiveMacros:
-  - PRAGMA_CLANG_WARNING_OFF
-  - PRAGMA_CLANG_WARNING_PUSH_OFF
-  - PRAGMA_GCC_WARNING_PUSH_OFF
-  - PRAGMA_GCC_WARNING_OFF
+  - stralgo_clang_unsafe_buffer_usage_begin
+  - stralgo_clang_unsafe_buffer_usage_end
