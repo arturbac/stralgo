@@ -100,7 +100,9 @@ constexpr std::basic_string_view wtest{
 static char hex4(unsigned value)
   {
   static char const ALPHA[] = "0123456789ABCDEF";
+  stralgo_clang_unsafe_buffer_usage_begin //
   return ALPHA[value];
+  stralgo_clang_unsafe_buffer_usage_end //
   }
 
 [[maybe_unused]]
@@ -152,7 +154,9 @@ int main()
         // 0b11110'000  10'001111 10'111010 10'011101
         std::array<char8_t, 4> ic{0b11110000, 0b10'001111, 0b10'111010, 0b10'011101};
         constexpr_test(utf::verify(ic) == overlength_code_point);
+        stralgo_clang_unsafe_buffer_usage_begin  //
         constexpr_test(utf::detail::dereference(ic.begin()) == char32_t(0xFE9D));
+        stralgo_clang_unsafe_buffer_usage_end  //
         }
         {
         // invalid code point 0x17FFFF

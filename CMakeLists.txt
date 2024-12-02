@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(stralgo 
-        VERSION 1.3.2
+        VERSION 1.3.3
         LANGUAGES CXX
         HOMEPAGE_URL "https://github.com/arturbac/stralgo"
         )
@@ -21,6 +21,13 @@ if( PROJECT_IS_TOP_LEVEL AND STRALGO_ENABLE_UNIT_TESTS)
   enable_testing()
 endif()
 
+if(NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 23 )
+  message(STATUS "Assuming by default c++23 standard")
+  set( CMAKE_CXX_STANDARD 23 )
+endif()
+set( CMAKE_CXX_STANDARD_REQUIRED ON )
+set( CMAKE_CXX_EXTENSIONS OFF)
+
 include(cmake/get_cpm.cmake)
 # ---- Add dependencies via CPM ----
 # see https://github.com/cpm-cmake/CPM.cmake for more info
@@ -36,7 +43,7 @@ CPMAddPackage(
 CPMAddPackage(
   small_vectors
   GITHUB_REPOSITORY arturbac/small_vectors
-  GIT_TAG        v3.1.9
+  GIT_TAG        v3.2.0
   )
   
 if( PROJECT_IS_TOP_LEVEL )
@@ -50,12 +57,7 @@ if( PROJECT_IS_TOP_LEVEL )
   )
 endif()
 
-if(NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 20 )
-  message(STATUS "Assuming by default c++20 standard")
-  set( CMAKE_CXX_STANDARD 20 )
-endif()
-set( CMAKE_CXX_STANDARD_REQUIRED ON )
-set( CMAKE_CXX_EXTENSIONS OFF)
+
 
 
 add_library(stralgo INTERFACE )
@@ -100,11 +102,12 @@ if( PROJECT_IS_TOP_LEVEL )
         -Wno-unused-parameter
         -Wno-padded
         -Wno-unused-command-line-argument
+        -Wunsafe-buffer-usage
         )
-      check_cxx_compiler_flag(-Wunsafe-buffer-usage WUNSAFE_BUFFER_USAGE)
-      if(WUNSAFE_BUFFER_USAGE)
-        list(APPEND STRALGO_COMPILE_OPTIONS -Wno-unsafe-buffer-usage)
-      endif()
+      # check_cxx_compiler_flag(-Wunsafe-buffer-usage WUNSAFE_BUFFER_USAGE)
+      # if(WUNSAFE_BUFFER_USAGE)
+        # list(APPEND STRALGO_COMPILE_OPTIONS -Wunsafe-buffer-usage)
+      # endif()
   endif()
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
       set(STRALGO_COMPILE_OPTIONS
