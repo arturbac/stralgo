@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
 #include <stralgo/stralgo.h>
@@ -6,14 +9,14 @@
 #include <cassert>
 #include <bit>
 
-namespace stralgo::detail
+namespace stralgo::inline v1_4::detail
   {
 struct log2p1_t
   {
   template<std::integral value_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr uint8_t
-    operator()(value_type value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr uint8_t operator()(value_type value
+  ) stralgo_static_call_operator_const noexcept
     {
     if(value != value_type{})
       {
@@ -32,8 +35,8 @@ struct value_to_hex_t
   {
   ///\returns char representation of single decimal value, value must be in range 0..15
   [[nodiscard]]
-  stralgo_static_call_operator constexpr char_type
-    operator()(concepts::integral_uint8 auto value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr char_type operator()(concepts::integral_uint8 auto value
+  ) stralgo_static_call_operator_const noexcept
     {
     if(value < 10)
       return static_cast<char_type>('0' + value);
@@ -55,17 +58,15 @@ inline constexpr value_to_hex_t<char_case, char_type> value_to_hex;
 template<char_case_e char_case>
 struct to_hex_ascii_t
   {
-  template<
-    concepts::ui8_iterator iterator,
-    std::sentinel_for<iterator> sentinel,
-    concepts::typed_char_output_iterator output_iterator>
-  stralgo_static_call_operator constexpr output_iterator
-    operator()(iterator sbeg, sentinel send, output_iterator outit) stralgo_static_call_operator_const noexcept
+  template<ranges::forward_range forward_range, concepts::typed_char_output_iterator output_iterator>
+  [[nodiscard]]
+  stralgo_static_call_operator constexpr auto
+    operator()(forward_range const & range, output_iterator outit) stralgo_static_call_operator_const
     {
     using char_type = std::iter_value_t<output_iterator>;
-    for(; sbeg != send; ranges::advance(sbeg, 1))
+    for(auto const val: range)
       {
-      uint8_t const source_byte = static_cast<uint8_t>(*sbeg);
+      uint8_t const source_byte = static_cast<uint8_t>(val);
       char_type c0 = value_to_hex<char_case, char_type>(static_cast<uint8_t>(source_byte & 0xFu));
       char_type c1 = value_to_hex<char_case, char_type>(static_cast<uint8_t>((source_byte >> 4) & 0xFu));
       *outit = c1;
@@ -74,14 +75,6 @@ struct to_hex_ascii_t
       ranges::advance(outit, 1);
       }
     return outit;
-    }
-
-  template<ranges::forward_range forward_range, concepts::typed_char_output_iterator output_iterator>
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range, output_iterator outit) stralgo_static_call_operator_const
-    {
-    return operator()(ranges::begin(range), ranges::end(range), outit);
     }
   };
 
@@ -92,25 +85,16 @@ inline constexpr to_hex_ascii_t<char_case> to_hex_ascii;
 template<template<typename> typename basic_string_type, char_case_e char_case, concepts::char_type char_type>
 struct to_hex_ascii_string_t
   {
-  template<concepts::ui8_iterator iterator, std::sentinel_for<iterator> sentinel>
+  template<ranges::forward_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(iterator sbeg, sentinel send) stralgo_static_call_operator_const
+  stralgo_static_call_operator constexpr auto operator()(forward_range const & range) stralgo_static_call_operator_const
     {
     using string_type = basic_string_type<char_type>;
     using size_type = typename string_type::size_type;
     constexpr bool supports_resize_and_overwrite = string_supports_resize_and_overwrite_t<basic_string_type>::value;
-    size_type output_size{static_cast<size_type>(send - sbeg) * 2};
+    size_type output_size{static_cast<size_type>(std::ranges::distance(range)) * 2};
     return stralgo::detail::copy_views_t<string_type, supports_resize_and_overwrite>{
-    }(output_size, [sbeg, send](auto out_iterator) { return to_hex_ascii<char_case>(sbeg, send, out_iterator); });
-    }
-
-  template<ranges::forward_range forward_range>
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(forward_range const & range) stralgo_static_call_operator_const
-    {
-    return operator()(ranges::begin(range), ranges::end(range));
+    }(output_size, [&range](auto out_iterator) { return to_hex_ascii<char_case>(range, out_iterator); });
     }
   };
 
@@ -128,8 +112,7 @@ struct from_xdigit_t
   {
   template<concepts::char_type char_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr uint32_t
-    operator()(char_type c) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr uint32_t operator()(char_type c) stralgo_static_call_operator_const noexcept
     {
     return static_cast<uint32_t>(
       stralgo::isdigit(c) ? uint32_t(c) - uint32_t('0')
@@ -143,32 +126,21 @@ inline constexpr from_xdigit_t from_xdigit;
 //--------------------------------------------------------------------------------------------------------
 struct from_hex_ascii_t
   {
-  ///\warning \ref outit must have half the size capacity of source range and source range must be multiple of 2
-  template<
-    concepts::char_iterator iterator,
-    std::sentinel_for<iterator> sentinel,
-    std::output_iterator<std::uint8_t> output_iterator>
-  stralgo_static_call_operator constexpr output_iterator
-    operator()(iterator sbeg, sentinel send, output_iterator outit) stralgo_static_call_operator_const noexcept
-    {
-    using char_type = std::iter_value_t<iterator>;
-    while(sbeg != send)
-      {
-      char_type c0{*sbeg};
-      ranges::advance(sbeg, 1);
-      char_type c1{*sbeg};
-      ranges::advance(sbeg, 1);
-      *outit = static_cast<uint8_t>(from_xdigit(c1) + 16u * from_xdigit(c0));
-      ranges::advance(outit, 1);
-      }
-    return outit;
-    }
-
   template<ranges::forward_range forward_range, std::output_iterator<std::uint8_t> output_iterator>
   stralgo_static_call_operator constexpr auto
     operator()(forward_range const & range, output_iterator outit) stralgo_static_call_operator_const
     {
-    return operator()(ranges::begin(range), ranges::end(range), outit);
+    auto it{ranges::begin(range)};
+    auto it2{ ranges::next(it, 1) };
+    auto end{ranges::end(range)};
+    while(it2 < end)
+      {
+      *outit = static_cast<uint8_t>(from_xdigit(*it2) + 16u * from_xdigit(*it));
+      ranges::advance(outit, 1);
+      ranges::advance(it, 2);
+      ranges::advance(it2, 2);
+      }
+    return outit;
     }
   };
 
@@ -266,37 +238,13 @@ using base_conv_by_format_t = typename base_conv_by_format<fmt>::type;
 
 //--------------------------------------------------------------------------------------------------------
 
-struct lower_projection_t
-  {
-  template<concepts::char_type char_type>
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr char_type
-    operator()(char_type c) stralgo_static_call_operator_const noexcept
-    {
-    return stralgo::to_lower(c);
-    }
-  };
-
-inline constexpr lower_projection_t lower_projection;
-
-struct upper_projection_t
-  {
-  template<concepts::char_type char_type>
-  stralgo_static_call_operator constexpr char_type operator()(char_type c) stralgo_static_call_operator_const noexcept
-    {
-    return stralgo::to_upper(c);
-    }
-  };
-
-inline constexpr upper_projection_t upper_projection;
-
 template<char_case_e char_case>
 constexpr auto char_case_projection()
   {
   if constexpr(char_case == char_case_e::lowercase)
-    return lower_projection;
+    return stralgo::to_lower;
   else
-    return upper_projection;
+    return stralgo::to_upper;
   }
 
 //--------------------------------------------------------------------------------------------------------
@@ -424,8 +372,7 @@ struct estimate_integral_to_str_t
 
   template<std::signed_integral value_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(value_type value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(value_type value) stralgo_static_call_operator_const noexcept
     {
     using unsigned_type = std::make_unsigned_t<value_type>;
     unsigned_type uvalue;
@@ -557,8 +504,8 @@ struct integral_to_string_t
   {
   template<std::integral value_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(value_type value) stralgo_static_call_operator_const->basic_string_type<char_type>
+  stralgo_static_call_operator constexpr auto operator()(value_type value
+  ) stralgo_static_call_operator_const->basic_string_type<char_type>
     {
     using string_type = basic_string_type<char_type>;
     using size_type = typename string_type::size_type;
@@ -609,8 +556,7 @@ struct estimate_float_to_string_t
   {
   template<std::floating_point float_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(float_type value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(float_type value) stralgo_static_call_operator_const noexcept
     {
     using base_conv_type = base_conv_by_format_t<format_e::decimal>;
 
@@ -678,9 +624,9 @@ struct float_to_ascii_t
   {
   template<std::floating_point float_type, concepts::typed_char_output_iterator output_iterator>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(float_estimate_info_t<float_type> const & est_info, output_iterator oit)
-      stralgo_static_call_operator_const noexcept -> output_iterator
+  stralgo_static_call_operator constexpr auto operator()(
+    float_estimate_info_t<float_type> const & est_info, output_iterator oit
+  ) stralgo_static_call_operator_const noexcept -> output_iterator
     {
     using base_conv_type = base_conv_by_format_t<format_e::decimal>;
     using char_type = std::iter_value_t<output_iterator>;
@@ -740,10 +686,11 @@ struct float_to_ascii_t
         float_type next_fraction{fraction * base_conv_type::base};
         unsigned ufraction{static_cast<unsigned>(next_fraction)};
         *oit = value_to_hex<char_case_e::lowercase, char_type>(static_cast<uint8_t>(ufraction));
-        stralgo_clang_unsafe_buffer_usage_begin //
-        ++oit;
-        stralgo_clang_unsafe_buffer_usage_end //
-        fraction = next_fraction - static_cast<float_type>(ufraction);
+        stralgo_clang_unsafe_buffer_usage_begin  //
+          ++ oit;
+        stralgo_clang_unsafe_buffer_usage_end  //
+          fraction
+          = next_fraction - static_cast<float_type>(ufraction);
         }
       }
 
@@ -781,8 +728,8 @@ struct float_to_string_t
   {
   template<std::floating_point value_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(value_type value) stralgo_static_call_operator_const->basic_string_type<char_type>
+  stralgo_static_call_operator constexpr auto operator()(value_type value
+  ) stralgo_static_call_operator_const->basic_string_type<char_type>
     {
     using string_type = basic_string_type<char_type>;
     using size_type = typename string_type::size_type;
@@ -864,8 +811,8 @@ struct string_to_unsigned_integral_t
   {
   template<concepts::char_range string_view_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & str_number) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(string_view_type const & str_number
+  ) stralgo_static_call_operator_const noexcept
     {
     using ranges::begin;
     using ranges::end;
@@ -888,24 +835,25 @@ struct string_to_unsigned_integral_t
         if constexpr(input_format == input_format_e::undetermined)
           {
           // if contains hex prefix assume hexadecimal
-          stralgo_clang_unsafe_buffer_usage_begin //
-          if(auto next_it{it + 1}; next_it < end(snumber) && is_hex_prefix(*it, *next_it))
+          stralgo_clang_unsafe_buffer_usage_begin  //
+            if(auto next_it{it + 1}; next_it < end(snumber) && is_hex_prefix(*it, *next_it))
             {
             it += 2;
             data = trimed_string_to_unsigned_integral<integral_type, base_16_t>(it, end(snumber));
             }
-          stralgo_clang_unsafe_buffer_usage_end //
-          else
-            data = trimed_string_to_unsigned_integral<integral_type, base_10_t>(it, end(snumber));
+          stralgo_clang_unsafe_buffer_usage_end  //
+            else data
+            = trimed_string_to_unsigned_integral<integral_type, base_10_t>(it, end(snumber));
           }
         else if constexpr(input_format == input_format_e::hexadecimal)
           {
-          stralgo_clang_unsafe_buffer_usage_begin //
-          // skip hex prefix if exists
-          if(auto next_it{it + 1}; next_it < end(snumber) && is_hex_prefix(*it, *next_it))
-            it += 2;
-          stralgo_clang_unsafe_buffer_usage_end //
-          data = trimed_string_to_unsigned_integral<integral_type, base_16_t>(it, end(snumber));
+          stralgo_clang_unsafe_buffer_usage_begin  //
+            // skip hex prefix if exists
+            if(auto next_it{it + 1}; next_it < end(snumber) && is_hex_prefix(*it, *next_it)) it
+            += 2;
+          stralgo_clang_unsafe_buffer_usage_end  //
+            data
+            = trimed_string_to_unsigned_integral<integral_type, base_16_t>(it, end(snumber));
           }
         else
           data = trimed_string_to_unsigned_integral<integral_type, base_10_t>(it, end(snumber));
@@ -927,14 +875,14 @@ inline constexpr string_to_unsigned_integral_t<integral_type, input_format> stri
 
 //--------------------------------------------------------------------------------------------------------
 ///\brief signed integral convertion from string supports untrimmed strings of decimal [+/-]d[n] and hexadecimal lower
-///and uppercase [+/-]0xh[n] numbers
+/// and uppercase [+/-]0xh[n] numbers
 template<std::signed_integral integral_type, input_format_e input_format>
 struct string_to_signed_integral_t
   {
   template<concepts::char_range string_view_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & str_number) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(string_view_type const & str_number
+  ) stralgo_static_call_operator_const noexcept
     {
     using char_type = ranges::range_value_t<string_view_type>;
     using unsigned_itegral_type = std::make_unsigned_t<integral_type>;
@@ -1001,8 +949,8 @@ struct string_to_integral_t
   {
   template<concepts::char_range string_view_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & str_number) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(string_view_type const & str_number
+  ) stralgo_static_call_operator_const noexcept
     {
     if constexpr(std::is_signed_v<integral_type>)
       return string_to_signed_integral<integral_type, input_format>(str_number);
@@ -1072,8 +1020,8 @@ struct string_to_float_t
   {
   template<concepts::char_range string_view_type>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & str_number) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(string_view_type const & str_number
+  ) stralgo_static_call_operator_const noexcept
     {
     using char_type = ranges::range_value_t<string_view_type>;
     using ranges::advance;
@@ -1148,8 +1096,8 @@ template<concepts::char_type char_type, concepts::char_type maybe_char_type>
 struct compose_preconv_t<char_type, maybe_char_type>
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(maybe_char_type value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(maybe_char_type value
+  ) stralgo_static_call_operator_const noexcept
     requires std::same_as<char_type, maybe_char_type>
     {
     return view_preconv_char_t<char_type>{value};
@@ -1178,8 +1126,8 @@ template<concepts::char_type char_type, concepts::char_range string_view_type>
 struct compose_preconv_t<char_type, string_view_type>
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(string_view_type const & value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(string_view_type const & value
+  ) stralgo_static_call_operator_const noexcept
     {
     return view_preconv_string_view_t<char_type>{
       std::basic_string_view<char_type>(ranges::begin(value), ranges::end(value))
@@ -1222,8 +1170,8 @@ template<concepts::char_type char_type, std::integral integral_type>
 struct compose_preconv_t<char_type, integral_type>
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(integral_type value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(integral_type value
+  ) stralgo_static_call_operator_const noexcept
     {
     return view_preconv_integral_t<integral_type>{value};
     }
@@ -1244,8 +1192,8 @@ template<concepts::char_type char_type, concepts::enumeration maybe_enum_type>
 struct compose_preconv_t<char_type, maybe_enum_type>
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(maybe_enum_type value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(maybe_enum_type value
+  ) stralgo_static_call_operator_const noexcept
     {
     using underlying_type = std::underlying_type_t<maybe_enum_type>;
     return compose_preconv_t<char_type, underlying_type>{}(static_cast<underlying_type>(value));
@@ -1281,8 +1229,7 @@ template<concepts::char_type char_type, std::floating_point float_type>
 struct compose_preconv_t<char_type, float_type>
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(float_type value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(float_type value) stralgo_static_call_operator_const noexcept
     {
     return view_preconv_float_t<float_type>{value};
     }
@@ -1292,8 +1239,8 @@ template<concepts::char_type char_type, std::floating_point float_type, float_fo
 struct compose_preconv_t<char_type, view_preconv_float_t<float_type, traits>>
   {
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(view_preconv_float_t<float_type, traits> value) stralgo_static_call_operator_const noexcept
+  stralgo_static_call_operator constexpr auto operator()(view_preconv_float_t<float_type, traits> value
+  ) stralgo_static_call_operator_const noexcept
     {
     return value;
     }
@@ -1346,8 +1293,8 @@ struct compose_t
   template<compose_arg_concept<char_type>... input_argument_type_n>
     requires(sizeof...(input_argument_type_n) > 1)
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(input_argument_type_n const &... args) stralgo_static_call_operator_const
+  stralgo_static_call_operator constexpr auto operator()(input_argument_type_n const &... args
+  ) stralgo_static_call_operator_const
     {
     auto preprocessed{compose_preprocess<char_type>(args...)};
     using string_type = basic_string_type<char_type>;

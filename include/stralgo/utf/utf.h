@@ -1,10 +1,13 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
 #include "detail/core.h"
 #include <small_vectors/basic_string.h>
 #include <small_vectors/ranges/accumulate.h>
 
-namespace stralgo::utf
+namespace stralgo::inline v1_4::utf
   {
 namespace detail
   {
@@ -45,11 +48,11 @@ struct utf_forward_iterator_t
 
   constexpr explicit utf_forward_iterator_t(source_iterator src) : iter_{src} {}
 
-  [[nodiscard,clang::unsafe_buffer_usage]]
+  [[nodiscard, clang::unsafe_buffer_usage]]
   inline constexpr value_type operator*() const noexcept
     {
     stralgo_clang_unsafe_buffer_usage_begin  //
-    return detail::dereference(iter_);
+      return detail::dereference(iter_);
     stralgo_clang_unsafe_buffer_usage_end  //
     }
 
@@ -172,10 +175,11 @@ struct utf_output_iterator_t
   [[clang::unsafe_buffer_usage]]
   inline constexpr utf_output_iterator_t & operator=(std::same_as<char32_t> auto cp) noexcept
     {
-    stralgo_clang_unsafe_buffer_usage_begin //
-    iter_ = detail::append(cp, iter_);
-    stralgo_clang_unsafe_buffer_usage_end //
-    return *this;
+    stralgo_clang_unsafe_buffer_usage_begin  //
+      iter_
+      = detail::append(cp, iter_);
+    stralgo_clang_unsafe_buffer_usage_end  //
+      return *this;
     }
 
   inline constexpr utf_output_iterator_t & operator*() noexcept { return *this; }
@@ -211,10 +215,11 @@ struct utf_explicit_output_iterator_t
     [[clang::unsafe_buffer_usage]]
     inline constexpr iterator & operator=(std::same_as<char32_t> auto cp) noexcept
       {
-      stralgo_clang_unsafe_buffer_usage_begin //
-      iter_ = detail::explicit_append<char_type>(cp, iter_);
-      stralgo_clang_unsafe_buffer_usage_end //
-      return *this;
+      stralgo_clang_unsafe_buffer_usage_begin  //
+        iter_
+        = detail::explicit_append<char_type>(cp, iter_);
+      stralgo_clang_unsafe_buffer_usage_end  //
+        return *this;
       }
 
     inline constexpr iterator & operator*() noexcept { return *this; }
@@ -232,7 +237,6 @@ struct utf_explicit_output_iterator_t
   iterator(TargetIter src) -> iterator<TargetIter>;
   };
 
-// TODO write sentinel adapter for source sentinel
 template<
   concepts::char_iterator SourceIter,
   std::sentinel_for<utf_forward_iterator_t<SourceIter>> Sentinel = utf_forward_iterator_t<SourceIter>>
@@ -280,31 +284,15 @@ utf_input_view_t(forward_range && r) -> utf_input_view_t<const_iterator_t<forwar
 ///\brief returns code point length of utf sequence
 struct length_t
   {
-  template<concepts::char_iterator source_iterator, std::sentinel_for<source_iterator> sentinel>
-    requires(!concepts::u32bit_iterator<source_iterator>)
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(source_iterator beg, sentinel end) stralgo_static_call_operator_const noexcept
-    {
-    // return static_cast<std::size_t>(std::ranges::distance(utf_input_view_t{beg, end}));
-    return static_cast<std::size_t>(std::distance(utf_forward_iterator_t{beg}, utf_forward_iterator_t{end}));
-    }
-
-  template<concepts::u32bit_iterator source_iterator, std::sentinel_for<source_iterator> sentinel>
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(source_iterator beg, sentinel end) stralgo_static_call_operator_const noexcept
-    {
-    // optimise if u32bit iterator is random access
-    return static_cast<std::size_t>(std::ranges::distance(beg, end));
-    }
-
   template<concepts::char_range forward_range>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto operator()(forward_range && range
   ) stralgo_static_call_operator_const noexcept
     {
-    return operator()(std::ranges::begin(range), std::ranges::end(range));
+    if constexpr(sizeof(std::ranges::range_value_t<forward_range>) == 4)
+      return static_cast<std::size_t>(std::ranges::distance(range));
+    else
+      return static_cast<std::size_t>(std::ranges::distance(utf_input_view_t{range}));
     }
   };
 
@@ -316,36 +304,24 @@ using code_point_size_t = typename detail::code_point_size_selector_t<sizeof(cha
 template<concepts::char_type char_type>
 struct capacity_t
   {
-  template<concepts::char_iterator source_iterator, std::sentinel_for<source_iterator> sentinel>
-    requires(sizeof(std::iter_value_t<source_iterator>) != sizeof(char_type))
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(source_iterator beg, sentinel end) stralgo_static_call_operator_const noexcept
-    {
-    using cpsize_type = code_point_size_t<char_type>;
-    return small_vectors::ranges::accumulate(
-      utf_forward_iterator_t{beg},
-      utf_forward_iterator_t{end},
-      std::size_t{},
-      [code_point_size = cpsize_type{}](std::size_t init, char32_t cp) noexcept { return init + code_point_size(cp); }
-    );
-    }
-
-  template<concepts::char_iterator source_iterator, std::sentinel_for<source_iterator> sentinel>
-    requires(sizeof(std::iter_value_t<source_iterator>) == sizeof(char_type))
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(source_iterator beg, sentinel end) stralgo_static_call_operator_const noexcept
-    {
-    return static_cast<std::size_t>(std::ranges::distance(beg, end));
-    }
-
   template<concepts::char_range forward_range>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto operator()(forward_range && range
   ) stralgo_static_call_operator_const noexcept
     {
-    return operator()(std::ranges::begin(range), std::ranges::end(range));
+    if constexpr(sizeof(std::ranges::range_value_t<forward_range>) != sizeof(char_type))
+      {
+      using cpsize_type = code_point_size_t<char_type>;
+      return small_vectors::ranges::accumulate(
+        utf_input_view_t{range},
+        std::size_t{},
+        [code_point_size = cpsize_type{}](std::size_t init, char32_t cp) noexcept { return init + code_point_size(cp); }
+      );
+      }
+    else
+      {
+      return static_cast<std::size_t>(std::ranges::distance(range));
+      }
     }
   };
 
@@ -356,25 +332,13 @@ inline constexpr capacity_t<char32_t> u32capacity;
 /// \brief converts any utf encoding into any other utf encoding
 struct convert_t
   {
-  template<
-    concepts::char_iterator source_iterator,
-    std::sentinel_for<source_iterator> sentinel,
-    concepts::char_iterator target_iterator>
-    requires(sizeof(std::iter_value_t<source_iterator>) != sizeof(std::iter_value_t<target_iterator>))
-  stralgo_static_call_operator constexpr auto
-    operator()(source_iterator beg, sentinel end, target_iterator out) stralgo_static_call_operator_const noexcept
-    {
-    // auto end_it{ std::ranges::copy( utf_input_view_t{beg, end}, utf_output_iterator_t(out) )};
-    auto end_it{std::ranges::copy(utf_forward_iterator_t{beg}, utf_forward_iterator_t{end}, utf_output_iterator_t(out))
-    };
-    return end_it.out.iter_;
-    }
-
   template<concepts::char_range forward_range, concepts::char_iterator target_iterator>
   stralgo_static_call_operator constexpr auto
     operator()(forward_range && range, target_iterator out) stralgo_static_call_operator_const noexcept
+    -> target_iterator
     {
-    return operator()(std::ranges::begin(range), std::ranges::end(range), out);
+    auto end_it{std::ranges::copy(utf_input_view_t{range}, utf_output_iterator_t(out))};
+    return end_it.out.iter_;
     }
   };
 
@@ -396,40 +360,32 @@ struct to_string_t
   {
   using string_type = basic_string_type<target_string_char>;
 
-  template<concepts::char_iterator source_iterator, std::sentinel_for<source_iterator> sentinel>
+  template<concepts::char_range forward_range>
   [[nodiscard]]
-  stralgo_static_call_operator constexpr auto
-    operator()(source_iterator beg, sentinel end) stralgo_static_call_operator_const->string_type
+  stralgo_static_call_operator constexpr auto operator()(forward_range && range
+  ) stralgo_static_call_operator_const->string_type
     {
     using size_type = typename string_type::size_type;
     using capacity_type = capacity_t<target_string_char>;
 
-    auto const req_capacity{static_cast<size_type>(capacity_type{}(beg, end))};
+    auto const req_capacity{static_cast<size_type>(capacity_type{}(range))};
     string_type result;
     if constexpr(detail::string_cpp_lib_string_resize_and_overwrite_t<basic_string_type>::value)
       result.resize_and_overwrite(
         req_capacity,
-        [beg, end](target_string_char * out, size_type) noexcept
+        [&range](target_string_char * out, size_type) noexcept
         {
-          auto end_it{convert(beg, end, out)};
+          auto end_it{convert(range, out)};
           return static_cast<size_type>(std::ranges::distance(out, end_it));
         }
       );
     else
       {
       result.resize(req_capacity);
-      auto end_it{convert(beg, end, result.begin())};
+      auto end_it{convert(range, result.begin())};
       result.resize(static_cast<size_type>(std::ranges::distance(result.begin(), end_it)));
       }
     return result;
-    }
-
-  template<concepts::char_range forward_range>
-  [[nodiscard]]
-  stralgo_static_call_operator constexpr auto operator()(forward_range && range
-  ) stralgo_static_call_operator_const->string_type
-    {
-    return operator()(std::ranges::begin(range), std::ranges::end(range));
     }
   };
 

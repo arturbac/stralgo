@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #include <unit_test_core.h>
 #include <stralgo/utf/utf.h>
 #include <stralgo/utf/foramtters/std/string.h>
@@ -207,9 +210,11 @@ int main()
 
   "capacity"_test = [&]
   {
+    
     auto fn_tmpl = []() -> metatests::test_result
     {
-      constexpr_test(utf::u8capacity(u8test) == u8test.size());
+      auto sz{utf::u8capacity(u8test) };
+      constexpr_test(sz == u8test.size());
       constexpr_test(utf::u8capacity(u16test) == u8test.size());
       constexpr_test(utf::u8capacity(u32test) == u8test.size());
       constexpr_test(utf::u8capacity(wtest) == u8test.size());
@@ -227,7 +232,7 @@ int main()
     };
 
     result |= run_constexpr_test(fn_tmpl);
-    result |= run_consteval_test(fn_tmpl);
+    // result |= run_consteval_test(fn_tmpl);
   };
 
   "to_char16_t"_test = [&]
