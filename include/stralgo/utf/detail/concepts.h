@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
 #include <stralgo/strconcept.h>
@@ -12,7 +15,7 @@
 #error "missing __cpp_char8_t support"
 #endif
 
-namespace stralgo::utf
+namespace stralgo::inline v1_4::utf
   {
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;

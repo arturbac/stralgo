@@ -1,4 +1,6 @@
-// #define BOOST_TEST_MAIN
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #include <unit_test_core.h>
 
 std::ostream & operator<<(std::ostream & stream, non_trivial_ptr const & v)

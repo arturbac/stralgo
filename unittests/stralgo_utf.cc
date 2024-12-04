@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #include <unit_test_core.h>
 #include <stralgo/stralgo.h>
 #include <small_vectors/basic_fixed_string.h>

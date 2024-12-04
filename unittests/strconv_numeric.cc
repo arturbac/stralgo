@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #include <unit_test_core.h>
 #include <stralgo/strconv_numeric.h>
 #include <stralgo/detail/strong_type_compose.h>
@@ -57,7 +60,7 @@ static void do_test(test_result & result)
       constexpr cfs_t<char_type> cfs;
       constexpr auto input{cfs("ff1a34b5f30027")};
       std::array<uint8_t, 7> res{};
-      stralgo::from_hex_ascii(std::begin(input), std::end(input), std::begin(res));
+      stralgo::from_hex_ascii(input, std::begin(res));
       constexpr std::array<uint8_t, 7> expected{{0xff, 0x1a, 0x34, 0xb5, 0xf3, 0x00, 0x27}};
       constexpr_test(std::ranges::equal(expected, res));
       return {};
@@ -82,14 +85,14 @@ static void do_test(test_result & result)
         constexpr auto expected{cfs("000102FF347F0A")};
         std::array<char_type, 14> out{};
         std::basic_string_view res{out.begin(), out.end()};
-        stralgo::to_hex_ascii<stralgo::char_case_e::uppercase>(std::begin(tst), std::end(tst), std::begin(out));
+        std::ignore = stralgo::to_hex_ascii<stralgo::char_case_e::uppercase>(tst, std::begin(out));
         constexpr_test(res == expected);
         }
         {
         constexpr auto expected{cfs("000102ff347f0a")};
         std::array<char_type, 14> out{};
         std::basic_string_view res{out.begin(), out.end()};
-        stralgo::to_hex_ascii<stralgo::char_case_e::lowercase>(std::begin(tst), std::end(tst), std::begin(out));
+        std::ignore = stralgo::to_hex_ascii<stralgo::char_case_e::lowercase>(tst, std::begin(out));
         constexpr_test(res == expected);
         }
       return {};
@@ -113,7 +116,7 @@ static void do_test(test_result & result)
         constexpr std::array<uint8_t, 7> tst{0u, 1u, 2u, 0xffu, 0x34, 0x7f, 10};
         constexpr auto expected{cfs("000102FF347F0A")};
         auto res{
-          stralgo::to_hex_ascii_string<stralgo::char_case_e::uppercase, char_type>(std::begin(tst), std::end(tst))
+          stralgo::to_hex_ascii_string<stralgo::char_case_e::uppercase, char_type>(tst)
         };
         constexpr_test(res == expected.view());
         }
@@ -121,7 +124,7 @@ static void do_test(test_result & result)
         constexpr std::array<uint8_t, 7> tst{0u, 1u, 2u, 0xffu, 0x34, 0x7f, 10};
         constexpr auto expected{cfs("000102ff347f0a")};
         auto res{
-          stralgo::to_hex_ascii_string<stralgo::char_case_e::lowercase, char_type>(std::begin(tst), std::end(tst))
+          stralgo::to_hex_ascii_string<stralgo::char_case_e::lowercase, char_type>(tst)
         };
         constexpr_test(res == expected.view());
         }

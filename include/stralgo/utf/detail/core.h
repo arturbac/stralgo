@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
 #include "concepts.h"
 #include <cassert>
 
-namespace stralgo::utf::detail
+namespace stralgo::inline v1_4::utf::detail
   {
 inline constexpr u16 lead_surrogate_min = 0xd800u;
 inline constexpr u16 lead_surrogate_max = 0xdbffu;

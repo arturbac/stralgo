@@ -1,10 +1,13 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
 #include <stralgo/utf/utf.h>
 #include <format>
 #include <ranges>
 
-namespace stralgo::utf::detail
+namespace stralgo::inline v1_4::utf::detail
   {
 template<typename input_range, typename output_iterator>
 inline auto tansform_to_conetxt(input_range const & str, output_iterator oit)

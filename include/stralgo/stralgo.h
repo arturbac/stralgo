@@ -1,7 +1,6 @@
-//--------------------------------------------------------------------------
-// string view manipulation algorithms without dependency on null termination
-// {C} Artur Bac 2021
-//--------------------------------------------------------------------------
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
 #include <stralgo/detail/stralgo.h>
@@ -10,7 +9,7 @@
 #include <cwctype>
 #include <iterator>
 
-namespace stralgo
+namespace stralgo::inline v1_4
   {
 using detail::find_first_of;
 using detail::isblank;
@@ -56,7 +55,7 @@ struct trim_left_t
     operator()(string_view_type && view, string_view_type2 && any_of)
       stralgo_static_call_operator_const noexcept
     {
-    return detail::trim_left_with_pred(view, detail::not_is_any_of{ranges::begin(any_of), ranges::end(any_of)});
+    return detail::trim_left_with_pred(view, detail::not_is_any_of{any_of});
     }
   };
 
@@ -96,7 +95,7 @@ struct trim_right_t
     operator()(string_view_type && view, string_view_type2 && any_of)
       stralgo_static_call_operator_const noexcept
     {
-    return detail::trim_right_with_pred(view, detail::not_is_any_of{ranges::begin(any_of), ranges::end(any_of)});
+    return detail::trim_right_with_pred(view, detail::not_is_any_of{std::forward<string_view_type2>(any_of)});
     }
   };
 
@@ -113,11 +112,12 @@ using detail::trim_pred;
 struct trim_t
   {
   ///\returns trimmed view of \param view from values that match isspace
+    template<concepts::char_range string_view_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto
-    operator()(concepts::char_range auto && view) stralgo_static_call_operator_const noexcept
+    operator()(string_view_type && view) stralgo_static_call_operator_const noexcept
     {
-    return detail::trim_pred(view, detail::not_is_space);
+    return detail::trim_pred(std::forward<string_view_type>(view), detail::not_is_space);
     }
 
   ///\returns trimmed view of \param view from values that match value
@@ -127,7 +127,7 @@ struct trim_t
   stralgo_static_call_operator constexpr auto
     operator()(string_view_type && view, char_type value) stralgo_static_call_operator_const noexcept
     {
-    return detail::trim_pred(view, detail::not_is_char_pred_t<char_type>{value});
+    return detail::trim_pred(std::forward<string_view_type>(view), detail::not_is_char_pred_t<char_type>{value});
     }
 
   ///\returns trimmed view of \param view from values that match any chars in any_of
@@ -138,7 +138,7 @@ struct trim_t
     operator()(string_view_type && view, string_view_type2 && any_of)
       stralgo_static_call_operator_const noexcept
     {
-    return detail::trim_pred(view, detail::not_is_any_of{ranges::begin(any_of), ranges::end(any_of)});
+    return detail::trim_pred(std::forward<string_view_type>(view), detail::not_is_any_of{std::forward<string_view_type2>(any_of)});
     }
   };
 

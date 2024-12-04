@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
 
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/extract_version.cmake)
 project(stralgo 
-        VERSION 1.3.4
+        VERSION ${STRALGO_VERSION}
         LANGUAGES CXX
         HOMEPAGE_URL "https://github.com/arturbac/stralgo"
         )

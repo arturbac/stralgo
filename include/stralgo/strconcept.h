@@ -1,8 +1,9 @@
-//--------------------------------------------------------------------------
-// string view manipulation algorithms without dependency on null termination
-// {C} Artur Bac 2021
-//--------------------------------------------------------------------------
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
+
+#include <stralgo/version.h>
 #include <cstdint>
 #include <ranges>
 #include <type_traits>
@@ -24,7 +25,7 @@ namespace stralgo
 namespace ranges = std::ranges;
   }
 
-namespace stralgo::concepts
+namespace stralgo::inline v1_4::concepts
   {
 template<typename type>
 inline constexpr bool is_const = !std::is_same_v<std::remove_const_t<type>, type>;

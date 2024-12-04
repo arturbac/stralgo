@@ -1,11 +1,10 @@
-//--------------------------------------------------------------------------
-// string view manipulation algorithms without dependency on null termination
-// {C} Artur Bac 2021
-//--------------------------------------------------------------------------
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 #include <cstdint>
 
-namespace stralgo
+namespace stralgo::inline v1_4
   {
 enum struct char_case_e : bool
   {

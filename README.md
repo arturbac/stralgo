@@ -1,40 +1,31 @@
 # stralgo ![MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![language](https://img.shields.io/badge/language-C%2B%2B20-blue.svg)
-constexpr number &lt;-> string composition, formatting and conversions with full support of unterminated string views.
-I started my journey with C++ in the 2004 with compilers like embedded visual c++ 4, gcc 2.95. Thru years of participation in big projects i have had to fix many errors that source was in string formatting like vnprintf.
-
-The source of problems I have many time found was:
-* there was no consistency between formatting string and arguments, that was source of errors detected at runtime.
-* string composition was always done at runtime even if some operations and arguments were known and could be used at compile time
-* all that C library functions require null terminated C strings
-* formatting information for example in vsnprintf could not be easily shared/reused across project.
-* working on pointers to null terminated strings often causes a lot of redundant strlen and dangling pointer errors
+constexpr number &lt;-> string composition, formatting and utf/number conversions with full support of unterminated string views and forward ranges.
 
 ## features
 
 This code solves those problems:
 
+* stralgo::utf - fully constant evaluated utf8,16,32 string manipulation with formatters for char format
 * formatting information is attached to arguments and prevents mismatching formatting with argument type errors at compile time
 * every conversion, composing, formatting is constexpr except allocations
-* full support for std::string_view with not null terminated strings
+* full support for basic_string_view and forward_ranges with not null terminated strings
 * formatting traits can be declared constexpr constant and reused consistently across project
 * minimum c++20 compiler required (stl at least c++17)
 * fully constexpr string to number and number to string conversion for functions that doesn't allocate (using output iterators)
 * extensive number formating with constexpr traits
 * merging string_views and composing any data (string_views, numbers) with one variadic template, one allocation
-* compose, merge doesn't allow using directly pointers to chars and char tables (usable only with std::basic_string_view), to disallow working with pointers
-* supports std::basic_string and my own coll::basic_string
-* stralgo::utf - fully constant evaluated utf8,16,32 string manipulation with formatters for char format
+* compose, merge doesn't allow using directly pointers to chars and char tables (usable only with basic_string_view), to disallow working with pointers
+* supports std::basic_string and my own small_vectors::basic_string
 
 ## installation
 
 * header only, except unit tests
 
 ## c++ compilers
-At this point of early development I work with clang 15,16,17 and gcc-12,gcc-13.
-I'm planing checking and porting to msvc in near future.
+At this point of development I work with clang 18,19 and gcc-14
 
 ## small_vectors integration
-* this header only library integrates with cpm my other repository small_vectors and uses from it fully constexpr coll::basic_string and coll::basic_fixed_string for unit tests
+* this header only library integrates with cpm my other repository small_vectors and uses from it fully constexpr small_vectors::basic_string and small_vectors::basic_fixed_string for unit tests
 
 ## examples
 ### stralgo::compose
@@ -58,7 +49,6 @@ I'm planing checking and porting to msvc in near future.
     };
   //output string value type is deduced as char
   auto strres { 
-   //stralgo::compose uses my own coll::basic_string_view
    stralgo::stl::compose(
     " some view "sv,
     127.3f, //default formatted floating point see float_format_traits{}
@@ -230,10 +220,10 @@ Example using output iterator
 ```
 #### stralgo::utf convertion namespace
 
-* utf_input_view_t - utf view over range
+* utf_input_view_t - deducing utf view over range
 * deducing utf_forward_iterator_t
 * deducing utf_output_iterator_t with typed output iterators
-* utf_explicit_output_iterator_t for use with untyped outpt iterators (new in version 1.3.0)
+* utf_explicit_output_iterator_t for use with untyped output iterators
 * formatters of utf char16_t,char32_t,wchar_t for std::format char
 * length - number of code points in range
 * capacity_t<char_type> - number of bytes required to encode range into given char type, ie char8_t, char16_t, char32_t, wchar_t ...
@@ -311,4 +301,4 @@ If you think you have found a bug, please file an issue via issue submission [fo
 
 ## License
 
-This library is available to anybody free of charge, under the terms of MIT License (see LICENSE.md).
+This library is available to anybody free of charge, under the terms of BSL-1.0 License (see LICENSE.md).

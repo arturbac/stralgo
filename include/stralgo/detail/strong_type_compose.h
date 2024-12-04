@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2024 Artur Bać
+// SPDX-License-Identifier: BSL-1.0
+// SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
 #include <stralgo/strconcept.h>
 #include <small_vectors/utils/strong_type.h>
 
-namespace stralgo::detail
+namespace stralgo::inline v1_4::detail
   {
 //--------------------------------------------------------------------------------------------------------------
 //
