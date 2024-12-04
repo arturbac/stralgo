@@ -1,4 +1,4 @@
-# stralgo ![MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![language](https://img.shields.io/badge/language-C%2B%2B20-blue.svg)
+# stralgo ![BSL](https://img.shields.io/badge/license-BSL1.0-blue.svg) ![language](https://img.shields.io/badge/language-C%2B%2B20-blue.svg)
 constexpr number &lt;-> string composition, formatting and utf/number conversions with full support of unterminated string views and forward ranges.
 
 ## features
