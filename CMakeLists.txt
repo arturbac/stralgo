@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.23)
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/extract_version.cmake)
-project(stralgo 
-        VERSION ${STRALGO_VERSION}
-        LANGUAGES CXX
-        HOMEPAGE_URL "https://github.com/arturbac/stralgo"
-        )
+project(
+  stralgo
+  VERSION ${STRALGO_VERSION}
+  LANGUAGES CXX
+  HOMEPAGE_URL "https://github.com/arturbac/stralgo")
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(
     FATAL_ERROR
@@ -13,114 +16,79 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   )
 endif()
 
-include(FeatureSummary)
-option(STRALGO_ENABLE_UNIT_TESTS "unit tests available from CTest"  ${PROJECT_IS_TOP_LEVEL} )
-add_feature_info("STRALGO_ENABLE_UNIT_TESTS" STRALGO_ENABLE_UNIT_TESTS "unit test available from CTest")
-
-if( PROJECT_IS_TOP_LEVEL AND STRALGO_ENABLE_UNIT_TESTS)
-  set(SMALL_VECTORS_ENABLE_UNIT_TESTS ON)
-  enable_testing()
+if(PROJECT_IS_TOP_LEVEL)
+  include(FeatureSummary)
 endif()
-
-if(NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 23 )
-  message(STATUS "Assuming by default c++23 standard")
-  set( CMAKE_CXX_STANDARD 23 )
-endif()
-set( CMAKE_CXX_STANDARD_REQUIRED ON )
-set( CMAKE_CXX_EXTENSIONS OFF)
-
-include(cmake/get_cpm.cmake)
-# ---- Add dependencies via CPM ----
-# see https://github.com/cpm-cmake/CPM.cmake for more info
-CPMAddPackage(
-  NAME PackageProject.cmake
-  GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-  VERSION 1.12.0
-)
-
-#----------------------------------------------------------------
-# small_vectors
-#----------------------------------------------------------------
-CPMAddPackage(
-  small_vectors
-  GITHUB_REPOSITORY arturbac/small_vectors
-  GIT_TAG        v3.2.0
-  )
-  
-if( PROJECT_IS_TOP_LEVEL )
-  #----------------------------------------------------------------
-  # boost-ext/ut
-  #----------------------------------------------------------------
-  CPMAddPackage(
-    ut
-    GITHUB_REPOSITORY arturbac/ut-ext
-    GIT_TAG        master
-  )
-endif()
-
-
-
-
-add_library(stralgo INTERFACE )
 
 if(PROJECT_IS_TOP_LEVEL)
-  add_library(stralgo::stralgo ALIAS stralgo )
+  option(STRALGO_ENABLE_UNIT_TESTS "unit tests available from CTest"
+         ${PROJECT_IS_TOP_LEVEL})
+  add_feature_info("STRALGO_ENABLE_UNIT_TESTS" STRALGO_ENABLE_UNIT_TESTS
+                   "unit test available from CTest")
+
+  if(STRALGO_ENABLE_UNIT_TESTS)
+    set(SMALL_VECTORS_ENABLE_UNIT_TESTS ON)
+    enable_testing()
+  endif()
+endif()
+option(STRALGO_EXPORT_CMAKE_TARGETS "Enable cmake targets" ON)
+
+if(NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 23)
+  message(STATUS "Assuming by default c++23 standard")
+  set(CMAKE_CXX_STANDARD 23)
+endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# ----------------------------------------------------------------
+# small_vectors
+# ----------------------------------------------------------------
+find_package(small_vectors QUIET)
+if(NOT small_vectors_FOUND)
+  include(cmake/get_cpm.cmake)
+  cpmaddpackage(small_vectors GITHUB_REPOSITORY arturbac/small_vectors GIT_TAG
+                v3.3.4)
 endif()
 
-if(NOT DEFINED INCLUDE_INSTALL_DIR)
-  set(INCLUDE_INSTALL_DIR include/${PROJECT_NAME})
-endif()
+add_library(stralgo INTERFACE)
 
-target_include_directories(stralgo 
-  INTERFACE   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-              $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>
-)
+target_sources(
+  stralgo
+  INTERFACE FILE_SET HEADERS BASE_DIRS
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>)
 target_link_libraries(stralgo INTERFACE small_vectors::small_vectors)
 
-packageProject(
-  NAME ${PROJECT_NAME}
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include)
+install(
+  TARGETS stralgo
+  EXPORT stralgo_targets
+  INCLUDES
+  DESTINATION include
+  FILE_SET HEADERS)
+  
+configure_package_config_file(
+  cmake/stralgoConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/stralgoConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/stralgo)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/stralgoConfigVersion.cmake
   VERSION ${PROJECT_VERSION}
-  NAMESPACE stralgo
-  BINARY_DIR ${PROJECT_BINARY_DIR}
-  INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
-  INCLUDE_DESTINATION ${INCLUDE_INSTALL_DIR}
-  COMPATIBILITY SameMajorVersion
-)
+  COMPATIBILITY SameMajorVersion ARCH_INDEPENDENT)
 
-if( PROJECT_IS_TOP_LEVEL )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/stralgoConfig.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/stralgoConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/stralgo)
 
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-      set(STRALGO_COMPILE_OPTIONS
-        -Weverything
-        -Werror
-        -Wno-c++98-compat
-        -Wno-c++98-compat-pedantic
-        -Wno-pre-c++14-compat
-        -Wno-pre-c++17-compat
-        -Wno-pre-c++20-compat-pedantic
-        -Wno-c++20-compat
-        -Wno-c++2b-extensions
-        -Wno-unused-parameter
-        -Wno-padded
-        -Wno-unused-command-line-argument
-        -Wunsafe-buffer-usage
-        )
-      # check_cxx_compiler_flag(-Wunsafe-buffer-usage WUNSAFE_BUFFER_USAGE)
-      # if(WUNSAFE_BUFFER_USAGE)
-        # list(APPEND STRALGO_COMPILE_OPTIONS -Wunsafe-buffer-usage)
-      # endif()
-  endif()
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      set(STRALGO_COMPILE_OPTIONS
-        -Wall
-        -Wextra
-        -Werror
-      )
-  endif()
+if(STRALGO_EXPORT_CMAKE_TARGETS)
+  install(
+    EXPORT stralgo_targets
+    FILE stralgoTargets.cmake
+    NAMESPACE stralgo::
+    DESTINATION lib/cmake/stralgo)
 endif()
 
-if( STRALGO_ENABLE_UNIT_TESTS)
-  add_subdirectory( unittests )
+if(STRALGO_ENABLE_UNIT_TESTS)
+  add_subdirectory(unittests)
 endif()
-# 
+#
 # add_subdirectory(perf)
