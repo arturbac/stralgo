@@ -47,7 +47,9 @@ find_package(small_vectors QUIET)
 if(NOT small_vectors_FOUND)
   include(cmake/get_cpm.cmake)
   cpmaddpackage(small_vectors GITHUB_REPOSITORY arturbac/small_vectors GIT_TAG
-                v3.3.4)
+                v3.3.5
+                )
+  add_library(small_vectors::small_vectors ALIAS small_vectors )
 endif()
 
 add_library(stralgo INTERFACE)
