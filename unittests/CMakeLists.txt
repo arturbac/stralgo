@@ -1,3 +1,41 @@
+  #----------------------------------------------------------------
+  # boost-ext/ut
+  #----------------------------------------------------------------
+  CPMAddPackage(
+    ut
+    GITHUB_REPOSITORY arturbac/ut-ext
+    GIT_TAG        master
+  )
+  add_library(stralgo::stralgo ALIAS stralgo )
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+      set(STRALGO_COMPILE_OPTIONS
+        -Weverything
+        -Werror
+        -Wno-c++98-compat
+        -Wno-c++98-compat-pedantic
+        -Wno-pre-c++14-compat
+        -Wno-pre-c++17-compat
+        -Wno-pre-c++20-compat-pedantic
+        -Wno-c++20-compat
+        -Wno-c++2b-extensions
+        -Wno-unused-parameter
+        -Wno-padded
+        -Wno-unused-command-line-argument
+        -Wunsafe-buffer-usage
+        )
+      # check_cxx_compiler_flag(-Wunsafe-buffer-usage WUNSAFE_BUFFER_USAGE)
+      # if(WUNSAFE_BUFFER_USAGE)
+        # list(APPEND STRALGO_COMPILE_OPTIONS -Wunsafe-buffer-usage)
+      # endif()
+  endif()
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(STRALGO_COMPILE_OPTIONS
+        -Wall
+        -Wextra
+        -Werror
+      )
+  endif()
+
 add_subdirectory(ut_core)
 
 function( stralgo_add_unittest name )
