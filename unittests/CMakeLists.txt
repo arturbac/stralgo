@@ -55,3 +55,5 @@ if( NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR ${CMAKE_CXX_COMPILER_VERSION
   stralgo_add_unittest( stralgo_utf )
 endif()
 stralgo_add_unittest( utf_ )
+stralgo_add_unittest( utf_case )
+target_link_libraries( utf_case_ut PRIVATE stralgo::utf_case )
