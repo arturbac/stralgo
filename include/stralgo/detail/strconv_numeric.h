@@ -382,7 +382,8 @@ struct estimate_integral_to_str_t
     else
       {
       sign = '-';
-      uvalue = static_cast<unsigned_type>(-value);
+      // negation in unsigned arithmetic, -value overflows for the minimum value
+      uvalue = static_cast<unsigned_type>(unsigned_type{} - static_cast<unsigned_type>(value));
       }
     return operator()(uvalue, sign);
     }
@@ -926,9 +927,10 @@ struct string_to_signed_integral_t
       else
         data = trimed_string_to_unsigned_integral<unsigned_itegral_type, base_10_t>(data.out, end(snumber));
 
-      total = static_cast<integral_type>(data.result);
+      // negation in unsigned arithmetic, -total overflows for the minimum value
       if(sign == '-')
-        total = static_cast<integral_type>(-total);
+        data.result = static_cast<unsigned_itegral_type>(unsigned_itegral_type{} - data.result);
+      total = static_cast<integral_type>(data.result);
 
       using ranges::size;
 

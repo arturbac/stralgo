@@ -6,6 +6,7 @@
 #include <stralgo/detail/strong_type_compose.h>
 #include <small_vectors/basic_fixed_string.h>
 #include <ctime>
+#include <limits>
 
 using namespace std::literals::string_view_literals;
 using stralgo::char_case_e;
@@ -661,6 +662,24 @@ static void do_test(test_result & result)
         auto res = stralgo::integral_to_string<char_type, traits{}>(value);
         constexpr_test(expected.view() == res);
         }
+        // minimum values, negation must not overflow
+        {
+        constexpr auto expected{cfs("-2147483648")};
+        auto res = stralgo::integral_to_string<char_type, traits{}>(std::numeric_limits<int32_t>::min());
+        constexpr_test(expected.view() == res);
+        }
+        {
+        constexpr auto expected{cfs("-9223372036854775808")};
+        auto res = stralgo::integral_to_string<char_type, traits{}>(std::numeric_limits<int64_t>::min());
+        constexpr_test(expected.view() == res);
+        }
+        {
+        constexpr auto expected{cfs("-0x80000000")};
+        auto res = stralgo::integral_to_string<char_type, traits{.format = format_e::hexadecimal}>(
+          std::numeric_limits<int32_t>::min()
+        );
+        constexpr_test(expected.view() == res);
+        }
         {
         constexpr int8_t value{0b1010011};
         constexpr auto expected{cfs(" 0b1010011")};
@@ -997,6 +1016,15 @@ static void do_test(test_result & result)
       test<int16_t>(cfs("32767"), 0x7fff, 5);
       test<int16_t>(cfs("0x7fff"), 0x7fff, 6);
       test<int16_t>(cfs("-0x7fff"), -0x7fff, 7);
+
+      // minimum values, negation must not overflow
+      test<int8_t>(cfs("-128"), std::numeric_limits<int8_t>::min(), 4);
+      test<int16_t>(cfs("-32768"), std::numeric_limits<int16_t>::min(), 6);
+      test<int32_t>(cfs("-2147483648"), std::numeric_limits<int32_t>::min(), 11);
+      test<int32_t>(cfs("-0x80000000"), std::numeric_limits<int32_t>::min(), 11);
+      test<int64_t>(cfs("-9223372036854775808"), std::numeric_limits<int64_t>::min(), 20);
+      test<int32_t>(cfs("2147483647"), std::numeric_limits<int32_t>::max(), 10);
+      test<int64_t>(cfs("9223372036854775807"), std::numeric_limits<int64_t>::max(), 19);
 
       test<uint32_t>(cfs("0"), 0u, 1);
       test<uint32_t>(cfs("+0"), 0u, 2);
