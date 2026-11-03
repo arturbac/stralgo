@@ -419,13 +419,41 @@ int main()
   {
     auto fn_tmpl = []() -> metatests::test_result
     {
-      using enum utf::detail::verify_status_e;
       auto const res{utf::to_wstring_checked(u8test)};
       constexpr_test(res.has_value());
       constexpr_test(*res == wtest);
-      constexpr_test(utf::to_u16string_checked(u8test).value() == utf::to_u16string(u8test));
-      constexpr_test(utf::to_u32string_checked(u8test).value() == utf::to_u32string(u8test));
-      constexpr_test(utf::to_u8string_checked(u8test).value() == utf::to_u8string(u8test));
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  // separate tests, each consteval run converts u8test once to stay within default constexpr step limit
+  "to_u16string_checked"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      constexpr_test(utf::to_u16string_checked(u8test).value() == u16test);
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  "to_u32string_checked"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      constexpr_test(utf::to_u32string_checked(u8test).value() == u32test);
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  "to_string_checked errors"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      using enum utf::detail::verify_status_e;
+      constexpr_test(utf::to_u8string_checked(std::u8string_view{u8"żółw"}).value() == std::u8string_view{u8"żółw"});
       constexpr_test(utf::to_wstring_checked(std::array<char8_t, 0>{}).value().empty());
         {
         // truncated code point at end
