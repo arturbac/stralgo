@@ -487,9 +487,11 @@ struct copy_views_t
   {
   using size_type = typename string_type::size_type;
 
+  // explicit return type, clang does not apply NRVO with deduced return type of function template
   template<typename copy_type>
   stralgo_static_call_operator constexpr auto
     operator()(size_type aggregated_size, copy_type const & copy_views_op) stralgo_static_call_operator_const noexcept
+    -> string_type
     {
     string_type result;
     if constexpr(supports_resize_and_overwrite)

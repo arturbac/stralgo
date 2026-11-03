@@ -333,9 +333,11 @@ struct estimate_info_t
 template<integral_format_traits traits>
 struct estimate_integral_to_str_t
   {
+  // explicit return type, clang does not apply NRVO with deduced return type of function template
   template<std::unsigned_integral value_type>
   stralgo_static_call_operator constexpr auto
     operator()(value_type value, std::optional<char> sign = {}) stralgo_static_call_operator_const noexcept
+    -> estimate_info_t<value_type>
     {
     using base_conv_type = detail::base_conv_by_format_t<traits.format>;
     constexpr value_type base{static_cast<value_type>(base_conv_type::base)};
@@ -555,9 +557,11 @@ struct float_estimate_info_t
 template<float_format_traits traits>
 struct estimate_float_to_string_t
   {
+  // explicit return type, clang does not apply NRVO with deduced return type of function template
   template<std::floating_point float_type>
   [[nodiscard]]
   stralgo_static_call_operator constexpr auto operator()(float_type value) stralgo_static_call_operator_const noexcept
+    -> float_estimate_info_t<float_type>
     {
     using base_conv_type = base_conv_by_format_t<format_e::decimal>;
 

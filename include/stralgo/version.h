@@ -3,5 +3,5 @@
 // SPDX-PackageHomePage: https://github.com/arturbac/stralgo
 #pragma once
 
-#define STRALGO_VERSION "1.5.0"
+#define STRALGO_VERSION "1.6.0"
 

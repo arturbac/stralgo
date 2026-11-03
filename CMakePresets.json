@@ -36,6 +36,15 @@
       }
     },
     {
+      "name": "clang-21-release",
+      "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
+      "cacheVariables": { "CMAKE_CXX_COMPILER" : "clang++-21" }
+    },
+    {
+      "name": "clang-21-libc++release",
+      "inherits": ["clang-21-release", "cfg-libc++"]
+    },
+    {
       "name": "clang-19-release",
       "inherits": [ "cfg-common", "cfg-ninja", "cfg-c++23" ],
       "cacheVariables": { "CMAKE_CXX_COMPILER" : "clang++-19" }
@@ -90,6 +99,14 @@
   ],
   "buildPresets": [
     {
+      "name": "clang-21-release",
+      "configurePreset": "clang-21-release"
+    },
+    {
+      "name": "clang-21-libc++release",
+      "configurePreset": "clang-21-libc++release"
+    },
+    {
       "name": "clang-19-release",
       "configurePreset": "clang-19-release"
     },
@@ -115,6 +132,18 @@
     }
   ],
   "testPresets": [
+    {
+      "name": "clang-21-release",
+      "configurePreset": "clang-21-release",
+      "output": {"outputOnFailure": true},
+      "execution": {"noTestsAction": "error", "stopOnFailure": true}
+    },
+    {
+      "name": "clang-21-libc++release",
+      "configurePreset": "clang-21-libc++release",
+      "output": {"outputOnFailure": true},
+      "execution": {"noTestsAction": "error", "stopOnFailure": true}
+    },
     {
       "name": "clang-19-release",
       "configurePreset": "clang-19-release",
@@ -153,6 +182,40 @@
     }
   ],
   "workflowPresets": [
+    {
+      "name": "clang-21-release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang-21-release"
+        },
+        {
+          "type": "build",
+          "name": "clang-21-release"
+        },
+        {
+          "type": "test",
+          "name": "clang-21-release"
+        }
+      ]
+    },
+    {
+      "name": "clang-21-libc++release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang-21-libc++release"
+        },
+        {
+          "type": "build",
+          "name": "clang-21-libc++release"
+        },
+        {
+          "type": "test",
+          "name": "clang-21-libc++release"
+        }
+      ]
+    },
     {
       "name": "clang-19-release",
       "steps": [

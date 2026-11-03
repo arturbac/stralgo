@@ -6,6 +6,7 @@
 #include "detail/core.h"
 #include <small_vectors/basic_string.h>
 #include <small_vectors/ranges/accumulate.h>
+#include <expected>
 
 namespace stralgo::inline v1_4::utf
   {
@@ -112,6 +113,15 @@ struct utf_forward_iterator_t
     requires std::derived_from<iterator_category, std::random_access_iterator_tag>
     {
     return utf_forward_iterator_t{std::next(iter_, count)};
+    }
+
+  ///\brief distance between iterators, random access category exists only for char32_t source (code unit = code point),
+  /// required by libc++ std::distance dispatch on iterator_category
+  [[nodiscard]]
+  inline constexpr difference_type operator-(utf_forward_iterator_t const & rh) const noexcept
+    requires std::derived_from<iterator_category, std::random_access_iterator_tag>
+    {
+    return static_cast<difference_type>(iter_ - rh.iter_);
     }
 
   [[nodiscard]]
@@ -439,9 +449,17 @@ struct verify_t
     {
     using enum verify_status_e;
     verify_status_e result{};
-    while(beg != end && result <= overlength_code_point)
-      std::tie(result, beg) = detail::verify_code_point(beg, end);
-
+    while(beg != end)
+      {
+      auto const [status, next]{detail::verify_code_point(beg, end)};
+      // first code point that can not be decoded stops verification
+      if(status > overlength_code_point)
+        return status;
+      // overlength code point is kept until end unless critical error follows
+      if(status == overlength_code_point)
+        result = status;
+      beg = next;
+      }
     return result;
     }
 
@@ -455,5 +473,42 @@ struct verify_t
   };
 
 inline constexpr verify_t verify;
+
+//--------------------------------------------------------------------------------------------------------
+///\brief converts utf-8 range into string with other utf encoding after verification of whole range
+template<
+  concepts::char_type target_string_char,
+  template<typename> typename basic_string_type = small_vectors::basic_string>
+struct to_string_checked_t
+  {
+  using string_type = basic_string_type<target_string_char>;
+
+  ///\returns converted string or verify_status_e of first invalid code point, overlength code point is an error
+  template<concepts::char_range forward_range>
+    requires concepts::octet_iterator<std::ranges::iterator_t<forward_range>>
+  [[nodiscard]]
+  stralgo_static_call_operator constexpr auto operator()(forward_range && range
+  ) stralgo_static_call_operator_const->std::expected<string_type, verify_status_e>
+    {
+    if(verify_status_e const status{verify(range)}; status != verify_status_e::valid)
+      return std::unexpected{status};
+    return to_string_t<target_string_char, basic_string_type>{}(range);
+    }
+  };
+
+inline constexpr to_string_checked_t<char> to_string_checked;
+inline constexpr to_string_checked_t<char8_t> to_u8string_checked;
+inline constexpr to_string_checked_t<char16_t> to_u16string_checked;
+inline constexpr to_string_checked_t<char32_t> to_u32string_checked;
+inline constexpr to_string_checked_t<wchar_t> to_wstring_checked;
+
+namespace stl
+  {
+  inline constexpr to_string_checked_t<char, stralgo::utf::stl::basic_string> to_string_checked;
+  inline constexpr to_string_checked_t<char8_t, stralgo::utf::stl::basic_string> to_u8string_checked;
+  inline constexpr to_string_checked_t<char16_t, stralgo::utf::stl::basic_string> to_u16string_checked;
+  inline constexpr to_string_checked_t<char32_t, stralgo::utf::stl::basic_string> to_u32string_checked;
+  inline constexpr to_string_checked_t<wchar_t, stralgo::utf::stl::basic_string> to_wstring_checked;
+  }  // namespace stl
   }  // namespace stralgo::utf
 

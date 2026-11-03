@@ -186,6 +186,36 @@ int main()
         std::array<char8_t, 4> ic{0b111110'00, 0b10'001111, 0b10'111010, 0b10'011101};
         constexpr_test(utf::verify(ic) == invalid_lead);
         }
+        {
+        // continuation byte as lead
+        std::array<char8_t, 1> ic{0b10'000000};
+        constexpr_test(utf::verify(ic) == invalid_lead);
+        std::array<char8_t, 2> ic2{0b10'111111, u8'a'};
+        constexpr_test(utf::verify(ic2) == invalid_lead);
+        std::array<char, 2> ic3{static_cast<char>(0x80), 'a'};
+        constexpr_test(utf::verify(ic3) == invalid_lead);
+        }
+        {
+        // overlength followed by valid code point is still reported
+        std::array<char8_t, 3> ic{0b110'00001, 0b10'000001, u8'a'};
+        constexpr_test(utf::verify(ic) == overlength_code_point);
+        std::array<char8_t, 3> ic2{u8'a', 0b110'00001, 0b10'000001};
+        constexpr_test(utf::verify(ic2) == overlength_code_point);
+        }
+        {
+        // critical error after overlength wins
+        std::array<char8_t, 4> ic{0b110'00001, 0b10'000001, 0b1110'1111, 0b10'111010};
+        constexpr_test(utf::verify(ic) == truncated_code_point);
+        }
+        {
+        // first critical error is returned
+        std::array<char8_t, 3> ic{0b10'000000, 0b1110'1111, 0b10'111010};
+        constexpr_test(utf::verify(ic) == invalid_lead);
+        }
+        {
+        std::array<char8_t, 0> ic{};
+        constexpr_test(utf::verify(ic) == valid);
+        }
       return {};
     };
 
@@ -385,6 +415,84 @@ int main()
     result |= run_consteval_test(fn_tmpl);
   };
 #endif
+  "to_wstring_checked"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      auto const res{utf::to_wstring_checked(u8test)};
+      constexpr_test(res.has_value());
+      constexpr_test(*res == wtest);
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  // separate tests, each consteval run converts u8test once to stay within default constexpr step limit
+  "to_u16string_checked"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      constexpr_test(utf::to_u16string_checked(u8test).value() == u16test);
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  "to_u32string_checked"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      constexpr_test(utf::to_u32string_checked(u8test).value() == u32test);
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
+  "to_string_checked errors"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      using enum utf::detail::verify_status_e;
+      constexpr_test(utf::to_u8string_checked(std::u8string_view{u8"żółw"}).value() == std::u8string_view{u8"żółw"});
+      constexpr_test(utf::to_wstring_checked(std::array<char8_t, 0>{}).value().empty());
+        {
+        // truncated code point at end
+        std::array<char8_t, 3> ic{u8'a', 0b1110'1111, 0b10'111010};
+        constexpr_test(utf::to_wstring_checked(ic).error() == truncated_code_point);
+        }
+        {
+        std::array<char8_t, 2> ic{0b10'000000, u8'a'};
+        constexpr_test(utf::to_wstring_checked(ic).error() == invalid_lead);
+        }
+        {
+        std::array<char8_t, 3> ic{0b1110'1111, 0b00'111010, 0b10'011101};
+        constexpr_test(utf::to_wstring_checked(ic).error() == invalid_trail);
+        }
+        {
+        // surrogate U+D800 encoded in utf-8
+        std::array<char8_t, 3> ic{0b1110'1101, 0b10'100000, 0b10'000000};
+        constexpr_test(utf::to_wstring_checked(ic).error() == invalid_code_point);
+        }
+        {
+        std::array<char8_t, 3> ic{0b110'00001, 0b10'000001, u8'a'};
+        constexpr_test(utf::to_wstring_checked(ic).error() == overlength_code_point);
+        }
+        {
+        std::array<char, 2> ic{static_cast<char>(0xC4), static_cast<char>(0x85)};
+        constexpr_test(utf::to_wstring_checked(ic).value() == std::wstring_view{L"ą"});
+        }
+      // libc++ std::expected holding std::basic_string is not usable in consteval
+      if(!std::is_constant_evaluated())
+        {
+        constexpr_test(utf::stl::to_wstring_checked(u8test).value() == wtest);
+        std::array<char8_t, 1> ic{0b1110'1111};
+        constexpr_test(utf::stl::to_string_checked(ic).error() == truncated_code_point);
+        }
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
   "to_wstring"_test = [&]
   {
     auto fn_tmpl = []() -> metatests::test_result
