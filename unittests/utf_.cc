@@ -186,6 +186,36 @@ int main()
         std::array<char8_t, 4> ic{0b111110'00, 0b10'001111, 0b10'111010, 0b10'011101};
         constexpr_test(utf::verify(ic) == invalid_lead);
         }
+        {
+        // continuation byte as lead
+        std::array<char8_t, 1> ic{0b10'000000};
+        constexpr_test(utf::verify(ic) == invalid_lead);
+        std::array<char8_t, 2> ic2{0b10'111111, u8'a'};
+        constexpr_test(utf::verify(ic2) == invalid_lead);
+        std::array<char, 2> ic3{static_cast<char>(0x80), 'a'};
+        constexpr_test(utf::verify(ic3) == invalid_lead);
+        }
+        {
+        // overlength followed by valid code point is still reported
+        std::array<char8_t, 3> ic{0b110'00001, 0b10'000001, u8'a'};
+        constexpr_test(utf::verify(ic) == overlength_code_point);
+        std::array<char8_t, 3> ic2{u8'a', 0b110'00001, 0b10'000001};
+        constexpr_test(utf::verify(ic2) == overlength_code_point);
+        }
+        {
+        // critical error after overlength wins
+        std::array<char8_t, 4> ic{0b110'00001, 0b10'000001, 0b1110'1111, 0b10'111010};
+        constexpr_test(utf::verify(ic) == truncated_code_point);
+        }
+        {
+        // first critical error is returned
+        std::array<char8_t, 3> ic{0b10'000000, 0b1110'1111, 0b10'111010};
+        constexpr_test(utf::verify(ic) == invalid_lead);
+        }
+        {
+        std::array<char8_t, 0> ic{};
+        constexpr_test(utf::verify(ic) == valid);
+        }
       return {};
     };
 

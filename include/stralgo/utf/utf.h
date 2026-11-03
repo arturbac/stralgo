@@ -439,9 +439,17 @@ struct verify_t
     {
     using enum verify_status_e;
     verify_status_e result{};
-    while(beg != end && result <= overlength_code_point)
-      std::tie(result, beg) = detail::verify_code_point(beg, end);
-
+    while(beg != end)
+      {
+      auto const [status, next]{detail::verify_code_point(beg, end)};
+      // first code point that can not be decoded stops verification
+      if(status > overlength_code_point)
+        return status;
+      // overlength code point is kept until end unless critical error follows
+      if(status == overlength_code_point)
+        result = status;
+      beg = next;
+      }
     return result;
     }
 
@@ -455,5 +463,6 @@ struct verify_t
   };
 
 inline constexpr verify_t verify;
+
   }  // namespace stralgo::utf
 

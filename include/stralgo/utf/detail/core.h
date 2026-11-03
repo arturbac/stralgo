@@ -430,13 +430,17 @@ struct verify_code_point_t
     if(code_point_length > 4 || code_point_length < 1) [[unlikely]]
       return {invalid_lead, {}};
 
+    // continuation byte 10xxxxxx can not start a code point
+    if((static_cast<u8>(*beg) & 0b1100'0000u) == lead_10) [[unlikely]]
+      return {invalid_lead, {}};
+
     if(std::ranges::distance(beg, end) < code_point_length) [[unlikely]]
       return {truncated_code_point, {}};
 
     auto end_cp{std::ranges::next(beg, code_point_length)};
     stralgo_clang_unsafe_buffer_usage_begin  //
     for(auto it{std::ranges::next(beg, 1)}; it < end_cp; ++it)
-      if(((*it) & 0b1100'0000u) != lead_10) [[unlikely]]
+      if((static_cast<u8>(*it) & 0b1100'0000u) != lead_10) [[unlikely]]
         return {invalid_trail, {}};
       
     // at this point code point can be decoded safely
