@@ -50,6 +50,8 @@ if(NOT small_vectors_FOUND)
                 v3.3.5
                 )
   add_library(small_vectors::small_vectors ALIAS small_vectors )
+  # warnings from small_vectors headers are not errors of stralgo (CMake 3.25+)
+  set_target_properties(small_vectors PROPERTIES SYSTEM TRUE)
 endif()
 
 add_library(stralgo INTERFACE)
