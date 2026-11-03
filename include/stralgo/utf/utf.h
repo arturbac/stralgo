@@ -115,6 +115,15 @@ struct utf_forward_iterator_t
     return utf_forward_iterator_t{std::next(iter_, count)};
     }
 
+  ///\brief distance between iterators, random access category exists only for char32_t source (code unit = code point),
+  /// required by libc++ std::distance dispatch on iterator_category
+  [[nodiscard]]
+  inline constexpr difference_type operator-(utf_forward_iterator_t const & rh) const noexcept
+    requires std::derived_from<iterator_category, std::random_access_iterator_tag>
+    {
+    return static_cast<difference_type>(iter_ - rh.iter_);
+    }
+
   [[nodiscard]]
   inline constexpr char32_t & operator[](std::size_t index) const noexcept
     {
