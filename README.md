@@ -19,10 +19,11 @@ This code solves those problems:
 
 ## installation
 
-* header only, except unit tests
+* header only library stralgo::stralgo, except unit tests
+* static library stralgo::utf_case with Unicode simple case mapping tables (stralgo/utf/case.h)
 
 ## c++ compilers
-At this point of development I work with clang 18,19 and gcc-14
+At this point of development I work with clang 21 and gcc-14
 
 ## small_vectors integration
 * this header only library integrates with cpm my other repository small_vectors and uses from it fully constexpr small_vectors::basic_string and small_vectors::basic_fixed_string for unit tests
@@ -252,6 +253,12 @@ std::u16string str2 = utf::stl::to_u16string(u8test);
 constexpr_test( str2 == u16test );
 ```
 
+#### stralgo::utf case mapping (stralgo/utf/case.h, link stralgo::utf_case)
+
+* to_lower, to_upper - Unicode simple case mapping (UnicodeData.txt) of char16_t, char32_t, wchar_t
+* compare_no_case - compare ranges of these types after simple lowercase mapping
+* char and char8_t hold utf-8 code units, use ASCII stralgo::to_lower, stralgo::to_upper for them
+
 ## Performance
 Performance comparison of compose vs snprintf for bellow test functions
 
@@ -288,7 +295,9 @@ full implementation performance comparison can be seen in perf/perf.cc
 ```
 ### tested compilers
 
-there are predefined cmake workflows to test
+there are predefined cmake workflows to test, github actions run clang-21 and gcc-14 workflows
+* cmake --workflow --preset="clang-21-release"
+* cmake --workflow --preset="clang-21-libc++release"
 * cmake --workflow --preset="clang-19-release"
 * cmake --workflow --preset="clang-19-libc++release"
 * cmake --workflow --preset="clang-18-release"

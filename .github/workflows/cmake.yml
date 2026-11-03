@@ -23,20 +23,20 @@ jobs:
       run: |
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 18
+        sudo ./llvm.sh 21
         
     - name: Install dependencies
       run: |
            sudo apt-get update
-           sudo apt-get install -y gcc-14 g++-14 cmake ninja-build clang-18 libfmt-dev libc++-18-dev libc++abi-18-dev
-           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
-           sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+           sudo apt-get install -y gcc-14 g++-14 cmake ninja-build clang-21 libfmt-dev libc++-21-dev libc++abi-21-dev
+           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 100
+           sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-21 100
 
-    - name: tests clang-18-release
-      run: cmake --workflow --preset="clang-18-release"
+    - name: tests clang-21-release
+      run: cmake --workflow --preset="clang-21-release"
 
-    - name: tests clang-18-libc++release
-      run: cmake --workflow --preset="clang-18-libc++release"
+    - name: tests clang-21-libc++release
+      run: cmake --workflow --preset="clang-21-libc++release"
       
     - name: tests gcc-14-release
       run: cmake --workflow --preset="gcc-14-release"
