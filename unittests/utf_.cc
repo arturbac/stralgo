@@ -453,7 +453,8 @@ int main()
         std::array<char, 2> ic{static_cast<char>(0xC4), static_cast<char>(0x85)};
         constexpr_test(utf::to_wstring_checked(ic).value() == std::wstring_view{L"ą"});
         }
-      if(!std::is_constant_evaluated() || enable_consteval_string_testing)
+      // libc++ std::expected holding std::basic_string is not usable in consteval
+      if(!std::is_constant_evaluated())
         {
         constexpr_test(utf::stl::to_wstring_checked(u8test).value() == wtest);
         std::array<char8_t, 1> ic{0b1110'1111};
