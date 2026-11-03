@@ -6,6 +6,7 @@
 #include "detail/core.h"
 #include <small_vectors/basic_string.h>
 #include <small_vectors/ranges/accumulate.h>
+#include <expected>
 
 namespace stralgo::inline v1_4::utf
   {
@@ -464,5 +465,41 @@ struct verify_t
 
 inline constexpr verify_t verify;
 
+//--------------------------------------------------------------------------------------------------------
+///\brief converts utf-8 range into string with other utf encoding after verification of whole range
+template<
+  concepts::char_type target_string_char,
+  template<typename> typename basic_string_type = small_vectors::basic_string>
+struct to_string_checked_t
+  {
+  using string_type = basic_string_type<target_string_char>;
+
+  ///\returns converted string or verify_status_e of first invalid code point, overlength code point is an error
+  template<concepts::char_range forward_range>
+    requires concepts::octet_iterator<std::ranges::iterator_t<forward_range>>
+  [[nodiscard]]
+  stralgo_static_call_operator constexpr auto operator()(forward_range && range
+  ) stralgo_static_call_operator_const->std::expected<string_type, verify_status_e>
+    {
+    if(verify_status_e const status{verify(range)}; status != verify_status_e::valid)
+      return std::unexpected{status};
+    return to_string_t<target_string_char, basic_string_type>{}(range);
+    }
+  };
+
+inline constexpr to_string_checked_t<char> to_string_checked;
+inline constexpr to_string_checked_t<char8_t> to_u8string_checked;
+inline constexpr to_string_checked_t<char16_t> to_u16string_checked;
+inline constexpr to_string_checked_t<char32_t> to_u32string_checked;
+inline constexpr to_string_checked_t<wchar_t> to_wstring_checked;
+
+namespace stl
+  {
+  inline constexpr to_string_checked_t<char, stralgo::utf::stl::basic_string> to_string_checked;
+  inline constexpr to_string_checked_t<char8_t, stralgo::utf::stl::basic_string> to_u8string_checked;
+  inline constexpr to_string_checked_t<char16_t, stralgo::utf::stl::basic_string> to_u16string_checked;
+  inline constexpr to_string_checked_t<char32_t, stralgo::utf::stl::basic_string> to_u32string_checked;
+  inline constexpr to_string_checked_t<wchar_t, stralgo::utf::stl::basic_string> to_wstring_checked;
+  }  // namespace stl
   }  // namespace stralgo::utf
 

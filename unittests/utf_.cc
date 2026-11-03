@@ -415,6 +415,55 @@ int main()
     result |= run_consteval_test(fn_tmpl);
   };
 #endif
+  "to_wstring_checked"_test = [&]
+  {
+    auto fn_tmpl = []() -> metatests::test_result
+    {
+      using enum utf::detail::verify_status_e;
+      auto const res{utf::to_wstring_checked(u8test)};
+      constexpr_test(res.has_value());
+      constexpr_test(*res == wtest);
+      constexpr_test(utf::to_u16string_checked(u8test).value() == utf::to_u16string(u8test));
+      constexpr_test(utf::to_u32string_checked(u8test).value() == utf::to_u32string(u8test));
+      constexpr_test(utf::to_u8string_checked(u8test).value() == utf::to_u8string(u8test));
+      constexpr_test(utf::to_wstring_checked(std::array<char8_t, 0>{}).value().empty());
+        {
+        // truncated code point at end
+        std::array<char8_t, 3> ic{u8'a', 0b1110'1111, 0b10'111010};
+        constexpr_test(utf::to_wstring_checked(ic).error() == truncated_code_point);
+        }
+        {
+        std::array<char8_t, 2> ic{0b10'000000, u8'a'};
+        constexpr_test(utf::to_wstring_checked(ic).error() == invalid_lead);
+        }
+        {
+        std::array<char8_t, 3> ic{0b1110'1111, 0b00'111010, 0b10'011101};
+        constexpr_test(utf::to_wstring_checked(ic).error() == invalid_trail);
+        }
+        {
+        // surrogate U+D800 encoded in utf-8
+        std::array<char8_t, 3> ic{0b1110'1101, 0b10'100000, 0b10'000000};
+        constexpr_test(utf::to_wstring_checked(ic).error() == invalid_code_point);
+        }
+        {
+        std::array<char8_t, 3> ic{0b110'00001, 0b10'000001, u8'a'};
+        constexpr_test(utf::to_wstring_checked(ic).error() == overlength_code_point);
+        }
+        {
+        std::array<char, 2> ic{static_cast<char>(0xC4), static_cast<char>(0x85)};
+        constexpr_test(utf::to_wstring_checked(ic).value() == std::wstring_view{L"ą"});
+        }
+      if(!std::is_constant_evaluated() || enable_consteval_string_testing)
+        {
+        constexpr_test(utf::stl::to_wstring_checked(u8test).value() == wtest);
+        std::array<char8_t, 1> ic{0b1110'1111};
+        constexpr_test(utf::stl::to_string_checked(ic).error() == truncated_code_point);
+        }
+      return {};
+    };
+    result |= run_constexpr_test(fn_tmpl);
+    result |= run_consteval_test(fn_tmpl);
+  };
   "to_wstring"_test = [&]
   {
     auto fn_tmpl = []() -> metatests::test_result

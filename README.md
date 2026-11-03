@@ -229,7 +229,8 @@ Example using output iterator
 * capacity_t<char_type> - number of bytes required to encode range into given char type, ie char8_t, char16_t, char32_t, wchar_t ...
 * convert - convert range into output iterator with other utf encoding
 * to_string_t<char_type> - convert utf range into coll::basic_string<> or std::basic_string<> with other utf encoding
-* verify - verification of utf range
+* verify - verification of utf-8 range, returns first error that prevents decoding or overlength_code_point
+* to_string_checked_t<char_type> - convert utf-8 range like to_string_t after verify, returns std::expected<string, verify_status_e> (overlength code point is an error), use for untrusted input
 ```C++
 namespace utf = stralgo::utf;
 
